@@ -6,22 +6,15 @@
   <title>Space Holo Landing Page</title>
   <style>
     :root {
-      --bg1: #030711;
-      --bg2: #07192d;
-      --bg3: #0b203d;
       --cyan: #7ef9ff;
       --cyan-strong: #3af2ff;
-      --cyan-soft: rgba(126, 249, 255, 0.18);
       --orange: #ff8a1f;
       --orange-strong: #ff6a00;
-      --panel: rgba(7, 20, 35, 0.55);
-      --panel-strong: rgba(10, 25, 45, 0.82);
-      --line: rgba(126, 249, 255, 0.42);
       --text: #8ff7ff;
       --text-soft: #ffd0a1;
       --muted: #86dce4;
+      --panel-strong: rgba(10, 25, 45, 0.82);
       --shadow: 0 0 24px rgba(58, 242, 255, 0.22), 0 0 80px rgba(58, 242, 255, 0.1);
-      --radius: 24px;
     }
 
     * { box-sizing: border-box; }
@@ -45,7 +38,7 @@
     }
 
     body::before,
-    body.transmission-open::after {
+    body::after {
       content: "";
       position: fixed;
       inset: 0;
@@ -82,14 +75,13 @@
       opacity: .7;
     }
 
+    body.transmission-open::after {
+      opacity: .7;
+    }
+
     @keyframes twinkle {
       0% { opacity: .7; transform: translateY(0px); }
       100% { opacity: 1; transform: translateY(-4px); }
-    }
-
-    @keyframes float {
-      0%, 100% { transform: translateY(0px); }
-      50% { transform: translateY(-10px); }
     }
 
     @keyframes pulse {
@@ -103,9 +95,9 @@
     }
 
     .wrap {
-      min-height: 100%;
+      min-height: 100vh;
       display: grid;
-      place-items: start center;
+      place-items: center;
       padding: 24px 56px;
       position: relative;
       isolation: isolate;
@@ -117,7 +109,6 @@
       filter: blur(30px);
       opacity: .28;
       pointer-events: none;
-      animation: float 8s ease-in-out infinite;
     }
 
     .orb.one {
@@ -134,225 +125,76 @@
       background: rgba(255, 142, 60, 0.14);
       right: 10%;
       bottom: 12%;
-      animation-delay: -2s;
     }
 
     .console {
       width: min(1240px, 100%);
       position: relative;
-      padding-block: 18px 40px;
     }
 
-    .hero {
-      backdrop-filter: blur(10px);
-      background: linear-gradient(180deg, rgba(8, 20, 34, 0.55), rgba(2, 8, 18, 0.3));
-      border: 1px solid rgba(126, 249, 255, 0.22);
-      border-radius: 32px;
-      padding: 28px;
-      box-shadow: 0 0 0 1px rgba(126,249,255,.08), 0 0 28px rgba(58,242,255,.22), 0 0 90px rgba(58,242,255,.14), inset 0 0 24px rgba(126,249,255,.04);
-    }
-
-    .hero-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 24px;
-      align-items: start;
-    }
-
-    .hero-copy {
-      transition: opacity .45s ease, transform .55s ease, max-height .55s ease, margin .55s ease;
-      max-height: 800px;
-      overflow: hidden;
-    }
-
-    .hero-copy.hidden {
-      opacity: 0;
-      transform: translateY(-10px);
-      max-height: 0;
-      margin: 0;
-      pointer-events: none;
-    }
-
-    .eyebrow {
-      display: inline-flex;
-      gap: 10px;
-      align-items: center;
-      padding: 8px 12px;
-      border: 1px solid rgba(126,249,255,.25);
-      border-radius: 999px;
-      background: rgba(126,249,255,.06);
-      color: var(--muted);
-      font-size: .8rem;
-      letter-spacing: .18em;
-      text-transform: uppercase;
-    }
-
-    .title {
-      margin: 18px 0 10px;
-      font-size: clamp(2.5rem, 5vw, 5rem);
-      line-height: .96;
-      letter-spacing: -.04em;
-      text-shadow: 0 0 25px rgba(126,249,255,.18);
-      color: var(--text);
-    }
-
-    .title span {
-      color: var(--orange);
-    }
-
-    .subtitle {
-      margin: 0;
-      max-width: 60ch;
-      color: var(--muted);
-      font-size: clamp(1rem, 1.6vw, 1.16rem);
-      line-height: 1.65;
-    }
-
-    .controls {
+    .landing-start {
+      min-height: calc(100vh - 48px);
       display: flex;
-      gap: 14px;
-      flex-wrap: wrap;
-      margin-top: 24px;
       align-items: center;
+      justify-content: center;
     }
 
     .start-btn {
       appearance: none;
-      border: 1px solid rgba(126,249,255,.5);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 240px;
+      border: 1px solid rgba(126,249,255,.65);
       background:
         linear-gradient(180deg, rgba(126,249,255,.18), rgba(126,249,255,.05)),
         rgba(3,14,24,.8);
-      color: var(--text-soft);
+      color: var(--orange);
       border-radius: 999px;
-      padding: 14px 20px;
-      font-size: 1rem;
-      letter-spacing: .12em;
+      padding: 18px 36px;
+      font-size: 1.05rem;
+      letter-spacing: .18em;
       text-transform: uppercase;
       cursor: pointer;
-      box-shadow: var(--shadow);
+      box-shadow: 0 0 30px rgba(58,242,255,.35), inset 0 0 20px rgba(126,249,255,.15);
       animation: pulse 3.5s ease-in-out infinite;
-      transition: transform .2s ease, background .2s ease, border-color .2s ease;
+      transition: transform .2s ease, background .2s ease, border-color .2s ease, box-shadow .2s ease;
     }
 
     .start-btn:hover,
     .start-btn:focus-visible {
-      transform: translateY(-2px) scale(1.02);
+      transform: scale(1.06);
+      border-color: rgba(255,138,31,.9);
       background:
         linear-gradient(180deg, rgba(255,176,102,.18), rgba(126,249,255,.08)),
         rgba(3,14,24,.95);
-      border-color: rgba(255,176,102,.78);
+      box-shadow: 0 0 40px rgba(58,242,255,.55), inset 0 0 25px rgba(255,138,31,.25);
       outline: none;
     }
 
-    .tip {
-      color: var(--muted);
-      font-size: .95rem;
-    }
-
-    .preview {
-      display: none;
-    }
-
-    .preview.shifted {
-      display: none;
-    }
-
-    .holo-shell {
-      width: min(100%, 420px);
-      aspect-ratio: 4 / 5;
-      position: relative;
-      transform-style: preserve-3d;
-      animation: float 7s ease-in-out infinite;
-    }
-
-    .holo-core,
-    .holo-ring,
-    .holo-grid {
-      position: absolute;
-      inset: 0;
-      border-radius: 28px;
-    }
-
-    .holo-core {
-      background:
-        linear-gradient(180deg, rgba(10, 40, 65, 0.58), rgba(5, 18, 30, 0.28)),
-        rgba(6, 24, 38, 0.4);
-      border: 1px solid rgba(126,249,255,.3);
-      box-shadow: inset 0 0 0 1px rgba(126,249,255,.08), 0 0 40px rgba(58,242,255,.12);
-      transform: rotateX(10deg) rotateY(-12deg);
-    }
-
-    .holo-ring {
-      inset: 8%;
-      border: 1px solid rgba(126,249,255,.3);
-      box-shadow: 0 0 30px rgba(58,242,255,.09), inset 0 0 20px rgba(126,249,255,.05);
-      transform: rotateX(10deg) rotateY(-12deg) translateZ(18px);
-    }
-
-    .holo-grid {
-      inset: 16%;
-      background:
-        repeating-linear-gradient(90deg, rgba(126,249,255,.09) 0 1px, transparent 1px 24px),
-        repeating-linear-gradient(180deg, rgba(126,249,255,.08) 0 1px, transparent 1px 24px);
-      border: 1px solid rgba(126,249,255,.22);
-      transform: rotateX(10deg) rotateY(-12deg) translateZ(36px);
-      opacity: .85;
-    }
-
     .newspaper {
-      display: grid;
-      grid-template-rows: 0fr;
-      transition: grid-template-rows .9s cubic-bezier(.2,.9,.2,1), opacity .4s ease, margin-top .45s ease;
-      opacity: 0;
-      margin-top: 0;
-      max-height: 0;
-      overflow: hidden;
+      display: none;
+      margin-top: 24px;
     }
 
     .newspaper.open {
-      grid-template-rows: 1fr;
-      opacity: 1;
-      margin-top: 16px;
-      max-height: 4000px;
-      overflow: visible;
-    }
-
-    .newspaper.closed {
-      grid-template-rows: 0fr;
-      opacity: 0;
-      margin-top: 0;
-      pointer-events: none;
-      max-height: 0;
-      overflow: hidden;
-    }
-
-    .newspaper-inner {
-      overflow: hidden;
+      display: block;
     }
 
     .news-panel {
-      margin-top: 8px;
       padding: 18px;
       border-radius: 28px;
       background:
         linear-gradient(180deg, rgba(14, 35, 58, 0.6), rgba(5, 18, 33, 0.78)),
         var(--panel-strong);
       border: 1px solid rgba(126,249,255,.28);
-      box-shadow: var(--shadow);
-      transform-origin: top center;
-      transform: perspective(1200px) rotateX(-88deg) scale(.96);
-      transition: transform .9s cubic-bezier(.18,.9,.18,1), opacity .5s ease;
-      opacity: 0;
+      box-shadow:
+        0 0 0 1px rgba(126,249,255,.08),
+        0 0 28px rgba(58,242,255,.22),
+        0 0 90px rgba(58,242,255,.14),
+        inset 0 0 24px rgba(126,249,255,.04);
       position: relative;
       overflow: hidden;
-      width: min(1240px, 100%);
-      margin-left: auto;
-      margin-right: auto;
-    }
-
-    .newspaper.open .news-panel {
-      transform: perspective(1200px) rotateX(0deg) scale(1);
-      opacity: 1;
     }
 
     .news-panel::before {
@@ -368,45 +210,11 @@
 
     .paper-head {
       display: flex;
-      justify-content: space-between;
-      gap: 16px;
       align-items: center;
+      gap: 16px;
       margin-bottom: 18px;
       padding-bottom: 14px;
       border-bottom: 1px solid rgba(126,249,255,.18);
-      position: relative;
-    }
-
-    .landing-start {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: calc(100vh - 120px);
-    }
-
-    .floating-open {
-      font-size:1.1rem;
-      padding:18px 36px;
-      letter-spacing:.18em;
-      border:1px solid rgba(126,249,255,.65);
-      background:rgba(5,20,35,.65);
-      box-shadow:0 0 30px rgba(58,242,255,.35), inset 0 0 20px rgba(126,249,255,.15);
-    }
-
-    .floating-open:hover {
-      transform:scale(1.06);
-      border-color:rgba(255,138,31,.9);
-      box-shadow:0 0 40px rgba(58,242,255,.55), inset 0 0 25px rgba(255,138,31,.25);
-    }
-
-    .floating-open.visible {
-      display: none;
-      min-width: 260px;
-    }
-
-    .floating-open.visible {
-      display: inline-flex;
-      justify-content: center;
     }
 
     .close-btn {
@@ -422,8 +230,10 @@
       cursor: pointer;
       box-shadow: 0 0 16px rgba(255,106,0,.18);
       transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
-      order: 3;
       margin-left: auto;
+      flex: 0 0 auto;
+      position: relative;
+      z-index: 2;
     }
 
     .close-btn:hover,
@@ -518,15 +328,6 @@
     }
 
     @media (max-width: 900px) {
-      .hero-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .preview {
-        order: -1;
-        min-height: 240px;
-      }
-
       .link-grid {
         grid-template-columns: 1fr 1fr;
       }
@@ -537,47 +338,28 @@
         padding: 16px;
       }
 
-      .hero {
-        padding: 18px;
+      .news-panel {
+        padding: 16px;
         border-radius: 24px;
       }
 
       .paper-head {
-        flex-direction: row;
+        flex-wrap: wrap;
         align-items: center;
       }
 
+      .paper-meta {
+        width: 100%;
+        order: 3;
+      }
+
       .link-grid {
         grid-template-columns: 1fr;
       }
 
       .start-btn {
-        width: 100%;
-        justify-content: center;
-      }
-
-      .floating-open {
         min-width: 0;
-      }
-    }
-
-      .hero {
-        padding: 18px;
-        border-radius: 24px;
-      }
-
-      .paper-head {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-
-      .link-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .start-btn {
         width: 100%;
-        justify-content: center;
       }
     }
   </style>
@@ -588,58 +370,60 @@
     <div class="orb two"></div>
 
     <main class="console">
-      <section class="hero">
-        <section id="newsPanel" class="newspaper closed" aria-label="Quick links"> class="newspaper open" aria-label="Quick links">
-          <div class="newspaper-inner">
-            <div class="news-panel">
-              <div class="paper-head">
-                <button id="closeButton" class="close-btn" type="button" aria-label="Close transmission">×</button>
-                <h2 class="paper-title">Daily Transmission</h2>
-                <div class="paper-meta">Edition 01 • Deep Space</div>
-              </div>
+      <div id="landingStart" class="landing-start">
+        <button id="floatingOpenButton" class="start-btn" type="button" aria-controls="newsPanel" aria-expanded="false">
+          Start Transmission
+        </button>
+      </div>
 
-              <div class="link-grid">
-                <a class="link-card" href="#">
-                  <div class="link-kicker">Project</div>
-                  <div class="link-name">Time-Loss Tool</div>
-                  <div class="link-desc">Track pauses, stoppages, and active session time from a clean control panel.</div>
-                </a>
-
-                <a class="link-card" href="#">
-                  <div class="link-kicker">Project</div>
-                  <div class="link-name">Noise Meter</div>
-                  <div class="link-desc">Open a mic-based view with live loudness feedback and threshold controls.</div>
-                </a>
-
-                <a class="link-card" href="#">
-                  <div class="link-kicker">Project</div>
-                  <div class="link-name">Ranch Rogue</div>
-                  <div class="link-desc">Step into your project archive and jump back into the latest prototype.</div>
-                </a>
-
-                <a class="link-card" href="#">
-                  <div class="link-kicker">Hub</div>
-                  <div class="link-name">About</div>
-                  <div class="link-desc">Introduce the site, your work, or the main idea behind your personal portal.</div>
-                </a>
-
-                <a class="link-card" href="#">
-                  <div class="link-kicker">Hub</div>
-                  <div class="link-name">Library</div>
-                  <div class="link-desc">Use this slot for resources, notes, media, or any curated collection you want visible.</div>
-                </a>
-
-                <a class="link-card" href="#">
-                  <div class="link-kicker">Contact</div>
-                  <div class="link-name">Signal</div>
-                  <div class="link-desc">A final destination for your email, socials, contact form, or other external links.</div>
-                </a>
-              </div>
-
-              <div class="footer-note">Replace each card link and label with your real destinations.</div>
-            </div>
+      <section id="newsPanel" class="newspaper" aria-label="Quick links">
+        <div class="news-panel">
+          <div class="paper-head">
+            <h2 class="paper-title">Daily Transmission</h2>
+            <div class="paper-meta">Edition 01 • Deep Space</div>
+            <button id="closeButton" class="close-btn" type="button" aria-label="Close transmission">×</button>
           </div>
-        </section>
+
+          <div class="link-grid">
+            <a class="link-card" href="#">
+              <div class="link-kicker">Project</div>
+              <div class="link-name">Time-Loss Tool</div>
+              <div class="link-desc">Track pauses, stoppages, and active session time from a clean control panel.</div>
+            </a>
+
+            <a class="link-card" href="#">
+              <div class="link-kicker">Project</div>
+              <div class="link-name">Noise Meter</div>
+              <div class="link-desc">Open a mic-based view with live loudness feedback and threshold controls.</div>
+            </a>
+
+            <a class="link-card" href="#">
+              <div class="link-kicker">Project</div>
+              <div class="link-name">Ranch Rogue</div>
+              <div class="link-desc">Step into your project archive and jump back into the latest prototype.</div>
+            </a>
+
+            <a class="link-card" href="#">
+              <div class="link-kicker">Hub</div>
+              <div class="link-name">About</div>
+              <div class="link-desc">Introduce the site, your work, or the main idea behind your personal portal.</div>
+            </a>
+
+            <a class="link-card" href="#">
+              <div class="link-kicker">Hub</div>
+              <div class="link-name">Library</div>
+              <div class="link-desc">Use this slot for resources, notes, media, or any curated collection you want visible.</div>
+            </a>
+
+            <a class="link-card" href="#">
+              <div class="link-kicker">Contact</div>
+              <div class="link-name">Signal</div>
+              <div class="link-desc">A final destination for your email, socials, contact form, or other external links.</div>
+            </a>
+          </div>
+
+          <div class="footer-note">Replace each card link and label with your real destinations.</div>
+        </div>
       </section>
     </main>
   </div>
@@ -648,32 +432,28 @@
     const panel = document.getElementById('newsPanel');
     const closeButton = document.getElementById('closeButton');
     const floatingOpenButton = document.getElementById('floatingOpenButton');
+    const landingStart = document.getElementById('landingStart');
 
     function openPanel() {
-      panel.classList.remove('closed');
       panel.classList.add('open');
-      floatingOpenButton.classList.remove('visible');
-      floatingOpenButton.style.display = 'none';
+      landingStart.style.display = 'none';
+      floatingOpenButton.setAttribute('aria-expanded', 'true');
       document.body.classList.add('transmission-open');
-      setTimeout(() => {
+      requestAnimationFrame(() => {
         panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 120);
-    });
-      }, 120);
+      });
     }
 
     function closePanel() {
       panel.classList.remove('open');
-      panel.classList.add('closed');
-      floatingOpenButton.style.display = 'inline-flex';
-      floatingOpenButton.classList.add('visible');
+      landingStart.style.display = 'flex';
+      floatingOpenButton.setAttribute('aria-expanded', 'false');
       document.body.classList.remove('transmission-open');
       window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
     }
 
-    closeButton.addEventListener('click', closePanel);
     floatingOpenButton.addEventListener('click', openPanel);
+    closeButton.addEventListener('click', closePanel);
   </script>
 </body>
 </html>
