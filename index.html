@@ -12,8 +12,8 @@
       --cyan: #7ef9ff;
       --cyan-strong: #3af2ff;
       --cyan-soft: rgba(126, 249, 255, 0.18);
-      --orange: #ffb066;
-      --orange-strong: #ff8e3c;
+      --orange: #ff8a1f;
+      --orange-strong: #ff6a00;
       --panel: rgba(7, 20, 35, 0.55);
       --panel-strong: rgba(10, 25, 45, 0.82);
       --line: rgba(126, 249, 255, 0.42);
@@ -106,7 +106,7 @@
       min-height: 100%;
       display: grid;
       place-items: start center;
-      padding: 24px;
+      padding: 24px 56px;
       position: relative;
       isolation: isolate;
     }
@@ -138,7 +138,7 @@
     }
 
     .console {
-      width: min(1120px, 100%);
+      width: min(1240px, 100%);
       position: relative;
       padding-block: 18px 40px;
     }
@@ -149,7 +149,7 @@
       border: 1px solid rgba(126, 249, 255, 0.22);
       border-radius: 32px;
       padding: 28px;
-      box-shadow: var(--shadow);
+      box-shadow: 0 0 0 1px rgba(126,249,255,.08), 0 0 28px rgba(58,242,255,.22), 0 0 90px rgba(58,242,255,.14), inset 0 0 24px rgba(126,249,255,.04);
     }
 
     .hero-grid {
@@ -313,6 +313,13 @@
       margin-top: 16px;
     }
 
+    .newspaper.closed {
+      grid-template-rows: 0fr;
+      opacity: 0;
+      margin-top: 0;
+      pointer-events: none;
+    }
+
     .newspaper-inner {
       overflow: hidden;
     }
@@ -358,6 +365,48 @@
       margin-bottom: 18px;
       padding-bottom: 14px;
       border-bottom: 1px solid rgba(126,249,255,.18);
+      position: relative;
+    }
+
+    .top-controls {
+      justify-content: center;
+      margin-top: 0;
+      margin-bottom: 12px;
+    }
+
+    .floating-open {
+      display: none;
+      min-width: 260px;
+    }
+
+    .floating-open.visible {
+      display: inline-flex;
+      justify-content: center;
+    }
+
+    .close-btn {
+      appearance: none;
+      border: 1px solid rgba(255,138,31,.65);
+      background: rgba(8, 18, 30, 0.82);
+      color: var(--orange);
+      width: 40px;
+      height: 40px;
+      border-radius: 999px;
+      font-size: 1.5rem;
+      line-height: 1;
+      cursor: pointer;
+      box-shadow: 0 0 16px rgba(255,106,0,.18);
+      transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+      order: 3;
+      margin-left: auto;
+    }
+
+    .close-btn:hover,
+    .close-btn:focus-visible {
+      transform: scale(1.06);
+      border-color: rgba(255,138,31,.95);
+      box-shadow: 0 0 24px rgba(255,106,0,.28);
+      outline: none;
     }
 
     .paper-title {
@@ -469,6 +518,30 @@
       }
 
       .paper-head {
+        flex-direction: row;
+        align-items: center;
+      }
+
+      .link-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .start-btn {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .floating-open {
+        min-width: 0;
+      }
+    }
+
+      .hero {
+        padding: 18px;
+        border-radius: 24px;
+      }
+
+      .paper-head {
         flex-direction: column;
         align-items: flex-start;
       }
@@ -511,10 +584,17 @@
           </div>
         </div>
 
-        <section id="newsPanel" class="newspaper" aria-label="Quick links">
+        <div class="controls top-controls">
+          <button id="floatingOpenButton" class="start-btn floating-open" type="button" aria-controls="newsPanel">
+            Open Transmission
+          </button>
+        </div>
+
+        <section id="newsPanel" class="newspaper open" aria-label="Quick links">
           <div class="newspaper-inner">
             <div class="news-panel">
               <div class="paper-head">
+                <button id="closeButton" class="close-btn" type="button" aria-label="Close transmission">×</button>
                 <h2 class="paper-title">Daily Transmission</h2>
                 <div class="paper-meta">Edition 01 • Deep Space</div>
               </div>
@@ -570,20 +650,50 @@
     const panel = document.getElementById('newsPanel');
     const heroCopy = document.getElementById('heroCopy');
     const previewPanel = document.getElementById('previewPanel');
+    const closeButton = document.getElementById('closeButton');
+    const floatingOpenButton = document.getElementById('floatingOpenButton');
 
-    button.addEventListener('click', () => {
-      const isOpen = panel.classList.toggle('open');
-      heroCopy.classList.toggle('hidden', isOpen);
-      previewPanel.classList.toggle('shifted', isOpen);
-      button.setAttribute('aria-expanded', String(isOpen));
-      button.textContent = isOpen ? 'Close Transmission' : 'Open Transmission';
-
-      if (isOpen) {
-        setTimeout(() => {
-          panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 180);
+    function openPanel() {
+      panel.classList.add('open');
+      panel.classList.remove('closed');
+      if (heroCopy) heroCopy.classList.add('hidden');
+      if (previewPanel) previewPanel.classList.add('shifted');
+      if (button) {
+        button.setAttribute('aria-expanded', 'true');
+        button.textContent = 'Close Transmission';
       }
-    });
+      floatingOpenButton.classList.remove('visible');
+    }
+
+    function closePanel() {
+      panel.classList.remove('open');
+      panel.classList.add('closed');
+      if (heroCopy) heroCopy.classList.add('hidden');
+      if (previewPanel) previewPanel.classList.remove('shifted');
+      if (button) {
+        button.setAttribute('aria-expanded', 'false');
+        button.textContent = 'Open Transmission';
+      }
+      floatingOpenButton.classList.add('visible');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    if (button) {
+      button.addEventListener('click', () => {
+        const isOpen = panel.classList.contains('open');
+        if (isOpen) {
+          closePanel();
+        } else {
+          openPanel();
+          setTimeout(() => {
+            panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }, 180);
+        }
+      });
+    }
+
+    closeButton.addEventListener('click', closePanel);
+    floatingOpenButton.addEventListener('click', openPanel);
   </script>
 </body>
 </html>
