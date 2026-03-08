@@ -580,32 +580,6 @@
 
     <main class="console">
       <section class="hero">
-        <div class="hero-grid">
-          <div id="heroCopy" class="hero-copy">
-            <div class="eyebrow">Orbital Interface • Personal Portal</div>
-            <h1 class="title">Launch Your <span>Holoscreen</span></h1>
-            <p class="subtitle">
-              A space-inspired landing page with a glowing turquoise interface. Tap the start control to unfold a digital-news style panel and reveal your destinations.
-            </p>
-
-            <div class="controls">
-              <button id="startButton" class="start-btn" type="button" aria-expanded="false" aria-controls="newsPanel">
-                Open Transmission
-              </button>
-              <div class="tip">Open the holo paper to reveal your links.</div>
-            </div>
-          </div>
-
-          </div>
-          </div>
-        </div>
-
-        <div class="landing-start">
-          <button id="floatingOpenButton" class="start-btn floating-open visible" type="button" aria-controls="newsPanel">
-            Start
-          </button>
-        </div>
-
         <section id="newsPanel" class="newspaper closed" aria-label="Quick links"> class="newspaper open" aria-label="Quick links">
           <div class="newspaper-inner">
             <div class="news-panel">
@@ -662,46 +636,26 @@
   </div>
 
   <script>
-    const button = document.getElementById('startButton');
     const panel = document.getElementById('newsPanel');
-    const heroCopy = document.getElementById('heroCopy');
-    const previewPanel = document.getElementById('previewPanel');
     const closeButton = document.getElementById('closeButton');
     const floatingOpenButton = document.getElementById('floatingOpenButton');
 
     function openPanel() {
       panel.classList.remove('closed');
       panel.classList.add('open');
-      floatingOpenButton.style.display='none';
-      document.body.classList.add('transmission-open');
-      setTimeout(()=>panel.scrollIntoView({behavior:'smooth',block:'start'}),120);
-    }
       floatingOpenButton.classList.remove('visible');
+      document.body.classList.add('transmission-open');
+      setTimeout(() => {
+        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 120);
     }
 
     function closePanel() {
       panel.classList.remove('open');
       panel.classList.add('closed');
-      floatingOpenButton.style.display='inline-flex';
-      document.body.classList.remove('transmission-open');
-      window.scrollTo({top:0,behavior:'smooth'});
-    }
       floatingOpenButton.classList.add('visible');
+      document.body.classList.remove('transmission-open');
       window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    if (button) {
-      button.addEventListener('click', () => {
-        const isOpen = panel.classList.contains('open');
-        if (isOpen) {
-          closePanel();
-        } else {
-          openPanel();
-          setTimeout(() => {
-            panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }, 180);
-        }
-      });
     }
 
     closeButton.addEventListener('click', closePanel);
