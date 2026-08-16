@@ -18,7 +18,7 @@ strong{font-weight:500}
 <div id="wrap">
 <header>
 <div>
-<div class="title">⚽ Coin Soccer <span class="version">v0.4.2</span></div>
+<div class="title">⚽ Coin Soccer <span class="version">v0.5.0</span></div>
 <div class="legend" id="legend">Standard · Pennies = 1 · Dime = 2 · First to 3</div>
 </div>
 <div class="status">
@@ -32,7 +32,13 @@ strong{font-weight:500}
 <div id="toast"></div>
 </div>
 <footer>
-<button id="mode">Difficulty: Standard</button>
+<button id="mode">Rules: Standard</button>
+<div class="aiDifficultyControl hidden" id="aiDifficultyControl">
+<div class="aiDifficultyHead"><span>AI Difficulty</span><span id="aiDifficultyLabel">Normal</span></div>
+<input aria-label="AI difficulty" id="aiDifficulty" max="2" min="0" step="1" type="range" value="1"/>
+<div class="aiDifficultyTicks"><span>Easy</span><span>Normal</span><span>Hard</span></div>
+</div>
+<button id="autoGoalie">Auto Goalie: Off</button>
 <button id="mainMenu">Main Menu</button>
 <button id="helpBtn">Help / Rules</button>
 <button class="primary" id="onlineBtn">Play Online</button>
@@ -46,10 +52,10 @@ strong{font-weight:500}
 <div id="startPanel" role="dialog" aria-modal="true" aria-labelledby="startTitle">
 <div class="startCard">
 <div class="startKicker">Choose Match</div>
-<h1 id="startTitle">⚽ Coin Soccer <span class="startVersion">v0.4.2</span></h1>
+<h1 id="startTitle">⚽ Coin Soccer <span class="startVersion">v0.5.0</span></h1>
 <p>How do you want to play?</p>
 <div class="startChoices">
-<button class="startChoice primaryChoice" id="startVsComputer" type="button"><strong>1. VS COMPUTER</strong><span>Play against the Coin Soccer AI.</span></button>
+<button class="startChoice primaryChoice" id="startVsComputer" type="button"><strong>1. VS COMPUTER</strong><span>Play against the Coin Soccer AI. AI difficulty starts at Normal.</span></button>
 <button class="startChoice" id="startOnline" type="button"><strong>2. ONLINE</strong><span>Create or join a lobby with another player.</span></button>
 <button class="startChoice" id="startSameDevice" type="button"><strong>3. SAME DEVICE</strong><span>Take turns playing on one screen.</span></button>
 </div>
@@ -111,13 +117,14 @@ strong{font-weight:500}
 <p><strong>1.</strong> Tap/click a coin, pull backward to set direction and power, then release.</p>
 <p><strong>2.</strong> The other two coins form your <strong>gate</strong>. Every non-kickoff shot must pass through that gate or possession turns over.</p>
 <p><strong>3.</strong> The kickoff shot cannot cause a turnover.</p>
-<p><strong>4.</strong> <strong>Easy:</strong> all three coins are pennies and each goal is worth 1 point. <strong>Standard:</strong> pennies are worth 1 point and the dime is worth 2. <strong>Hard:</strong> only the dime can score; pennies can still be used for passes, gates, and collisions.</p>
-<p><strong>5.</strong> After a goal, the player who conceded gets the next kickoff unless the goal ends the game.</p>
-<p><strong>6.</strong> After a completed game, the player who did <strong>not</strong> kick off that game starts the next one. All human players must press <strong>Play New Game</strong> before the next game begins.</p>
-<p><strong>7.</strong> <strong>Restart Game</strong> restarts the current game with the same kickoff player. <strong>Main Menu</strong> returns to match selection.</p>
-<p><strong>8.</strong> Your goalkeeper moves automatically. Grab and drag it left/right whenever you want manual control. Let go and auto movement resumes.</p>
-<p><strong>9.</strong> On desktop, right-click while pulling a coin to cancel the shot.</p>
-<p><strong>Online:</strong> Create a lobby, share the 6-character code, and both players always see their own goal at the bottom. Both players must ready up after a completed game.</p>
+<p><strong>4.</strong> <strong>Easy rules:</strong> all three coins are pennies and each goal is worth 1 point. <strong>Standard rules:</strong> pennies are worth 1 point and the dime is worth 2. <strong>Hard rules:</strong> only the dime can score; pennies can still be used for passes, gates, and collisions.</p>
+<p><strong>5.</strong> In VS Computer, AI difficulty defaults to <strong>Normal</strong>. Use the Easy / Normal / Hard slider to change AI execution and goalkeeper strength. Normal keeps the established standard AI behavior.</p>
+<p><strong>6.</strong> After a goal, the player who conceded gets the next kickoff unless the goal ends the game.</p>
+<p><strong>7.</strong> After a completed game, the player who did <strong>not</strong> kick off that game starts the next one. All human players must press <strong>Play New Game</strong> before the next game begins.</p>
+<p><strong>8.</strong> <strong>Restart Game</strong> restarts the current game with the same kickoff player. <strong>Main Menu</strong> returns to match selection.</p>
+<p><strong>9.</strong> Human goalkeepers start in <strong>manual</strong> mode. Drag your keeper left/right and it stays where you leave it. Toggle <strong>Auto Goalie</strong> on to make your keeper patrol automatically; grabbing it still temporarily overrides auto movement. The computer's own keeper remains automatic.</p>
+<p><strong>10.</strong> On desktop, right-click while pulling a coin to cancel the shot.</p>
+<p><strong>Online:</strong> Create a lobby, share the 6-character code, and both players always see their own goal at the bottom. Both players must ready up after a completed game. Each player controls their own Auto Goalie preference.</p>
 </div>
 </div>
 </div>
