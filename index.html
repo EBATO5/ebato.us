@@ -3,21 +3,22 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="EBATO — futuristic hologram-style home base." />
+  <meta name="description" content="EBATO — orbital hologram home base." />
   <title>EBATO // Orbital Hologram</title>
   <style>
     :root {
       --cyan: #7df7ff;
-      --cyan-soft: rgba(125, 247, 255, 0.72);
       --cyan-line: rgba(125, 247, 255, 0.24);
+      --cyan-soft: rgba(125, 247, 255, 0.78);
       --orange: #ffab52;
-      --orange-soft: rgba(255, 171, 82, 0.78);
       --orange-line: rgba(255, 171, 82, 0.22);
-      --text: #dfffff;
-      --muted: rgba(164, 234, 240, 0.78);
-      --shadow-cyan: 0 0 18px rgba(125, 247, 255, 0.18), 0 0 38px rgba(125, 247, 255, 0.09);
+      --orange-soft: rgba(255, 171, 82, 0.82);
+      --text: #dcffff;
+      --muted: rgba(166, 232, 238, 0.78);
+      --shadow-cyan: 0 0 18px rgba(125, 247, 255, 0.18), 0 0 40px rgba(125, 247, 255, 0.08);
       --shadow-orange: 0 0 16px rgba(255, 171, 82, 0.18), 0 0 34px rgba(255, 171, 82, 0.08);
     }
+
     * { box-sizing: border-box; }
     html { scroll-behavior: smooth; }
     body {
@@ -29,108 +30,466 @@
         radial-gradient(circle at 18% 14%, rgba(125,247,255,0.14), transparent 24%),
         radial-gradient(circle at 82% 16%, rgba(255,171,82,0.12), transparent 18%),
         radial-gradient(circle at 50% 120%, rgba(70,199,255,0.13), transparent 30%),
-        linear-gradient(rgba(2,8,16,0.56), rgba(2,8,16,0.74)),
+        linear-gradient(rgba(2, 8, 16, 0.58), rgba(2, 8, 16, 0.76)),
         url("https://images.unsplash.com/photo-1462331940025-496dfbfc7564?auto=format&fit=crop&w=2000&q=80") center/cover fixed;
       overflow-x: hidden;
     }
-    body::before, body::after { content:""; position:fixed; inset:0; pointer-events:none; z-index:0; }
+
+    body::before, body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+
     body::before {
       background-image:
-        linear-gradient(rgba(125,247,255,0.038) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(125,247,255,0.038) 1px, transparent 1px);
+        linear-gradient(rgba(125,247,255,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(125,247,255,0.04) 1px, transparent 1px);
       background-size: 46px 46px;
       mask-image: linear-gradient(to bottom, rgba(0,0,0,1), rgba(0,0,0,.34));
     }
+
     body::after {
-      background: repeating-linear-gradient(to bottom, rgba(125,247,255,0.018) 0, rgba(125,247,255,0.018) 1px, transparent 1px, transparent 4px);
-      opacity: .36;
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(125,247,255,0.018) 0,
+        rgba(125,247,255,0.018) 1px,
+        transparent 1px,
+        transparent 4px
+      );
+      opacity: .34;
       mix-blend-mode: screen;
     }
-    .shell { position:relative; z-index:1; width:min(1180px,calc(100% - 30px)); margin:0 auto; padding:26px 0 54px; }
-    .topbar { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:18px; }
-    .brand { display:inline-flex; align-items:center; gap:12px; text-decoration:none; color:var(--cyan); font-weight:900; letter-spacing:.22em; text-transform:uppercase; text-shadow:0 0 18px rgba(125,247,255,.34); }
-    .brand-mark { width:38px; height:38px; display:grid; place-items:center; color:var(--orange); border:1px solid var(--cyan-line); border-radius:10px; background:rgba(6,22,38,.4); box-shadow:inset 0 0 18px rgba(125,247,255,.08), var(--shadow-cyan); }
-    .top-links { display:flex; gap:10px; flex-wrap:wrap; }
-    .top-links a { text-decoration:none; color:var(--orange); background:rgba(6,22,38,.36); border:1px solid var(--orange-line); border-radius:999px; padding:9px 14px; font-size:.83rem; box-shadow:inset 0 0 16px rgba(255,171,82,.04); }
-    .top-links a:hover { color:var(--cyan); border-color:var(--cyan-line); box-shadow:var(--shadow-cyan), var(--shadow-orange); }
-    .holo-panel { position:relative; overflow:hidden; background:linear-gradient(180deg,rgba(8,28,45,.38),rgba(5,18,30,.54)); border:1px solid var(--cyan-line); border-radius:26px; backdrop-filter:blur(14px) saturate(115%); -webkit-backdrop-filter:blur(14px) saturate(115%); box-shadow:0 18px 70px rgba(0,0,0,.34), var(--shadow-cyan); }
-    .holo-panel::before { content:""; position:absolute; inset:0; background:linear-gradient(125deg,rgba(125,247,255,.08),transparent 38%,rgba(255,171,82,.06) 100%),repeating-linear-gradient(to bottom,rgba(125,247,255,.03) 0,rgba(125,247,255,.03) 1px,transparent 1px,transparent 6px); pointer-events:none; }
-    .holo-panel::after { content:""; position:absolute; inset:11px; border:1px solid rgba(125,247,255,.14); border-radius:18px; pointer-events:none; }
-    .corner { position:absolute; width:22px; height:22px; z-index:2; pointer-events:none; }
-    .corner::before,.corner::after { content:""; position:absolute; background:var(--orange); box-shadow:0 0 12px rgba(255,171,82,.35); }
-    .corner::before { width:22px; height:1px; }
-    .corner::after { width:1px; height:22px; }
-    .tl{top:10px;left:10px}.tr{top:10px;right:10px;transform:rotate(90deg)}.bl{bottom:10px;left:10px;transform:rotate(-90deg)}.br{bottom:10px;right:10px;transform:rotate(180deg)}
-    .hero { display:grid; grid-template-columns:minmax(0,1.55fr) minmax(260px,.7fr); gap:18px; margin-bottom:18px; }
-    .hero-main { min-height:340px; padding:clamp(28px,5vw,54px); display:flex; flex-direction:column; justify-content:center; }
-    .label { color:var(--orange); text-transform:uppercase; letter-spacing:.24em; font-size:.72rem; font-weight:800; text-shadow:0 0 12px rgba(255,171,82,.26); }
-    h1 { margin:14px 0 0; font-size:clamp(3rem,8vw,6.2rem); line-height:.88; letter-spacing:-.06em; text-transform:uppercase; color:var(--cyan); text-shadow:0 0 22px rgba(125,247,255,.24); }
-    .hero-copy { margin:18px 0 0; max-width:720px; line-height:1.72; color:var(--muted); font-size:clamp(1rem,2vw,1.1rem); }
-    .hero-copy strong { color:var(--orange); }
-    .radar { position:absolute; right:32px; top:34px; width:138px; height:138px; border:1px solid rgba(125,247,255,.16); border-radius:50%; opacity:.6; pointer-events:none; }
-    .radar::before,.radar::after{content:"";position:absolute;inset:20%;border:1px solid rgba(125,247,255,.12);border-radius:50%}.radar::after{inset:48% 0 auto 0;height:1px;border:0;background:rgba(255,171,82,.26);box-shadow:0 0 10px rgba(255,171,82,.2);transform-origin:center;animation:sweep 7s linear infinite}@keyframes sweep{to{transform:rotate(360deg)}}
-    .status { min-height:340px; padding:24px; display:flex; flex-direction:column; justify-content:space-between; }
-    .signal { display:flex; align-items:center; gap:10px; margin:18px 0; color:var(--cyan); font-weight:800; letter-spacing:.08em; }
-    .signal-dot { width:10px; height:10px; border-radius:50%; background:var(--orange); box-shadow:0 0 18px rgba(255,171,82,.82); animation:pulse 2.1s infinite; }
-    @keyframes pulse { 50% { opacity:.5; transform:scale(.92); } }
-    .status-copy { color:var(--muted); line-height:1.62; font-size:.94rem; }
-    .status-grid { display:grid; gap:10px; margin-top:22px; font-size:.8rem; }
-    .status-grid div { display:flex; justify-content:space-between; gap:12px; border-top:1px solid rgba(125,247,255,.11); padding-top:10px; color:var(--muted); }
-    .status-grid b { color:var(--orange); }
-    .section { margin-top:18px; padding:24px; }
-    .section-head { display:flex; justify-content:space-between; align-items:end; gap:16px; margin-bottom:18px; }
-    .section-title { margin:6px 0 0; color:var(--cyan); font-size:clamp(1.35rem,3vw,2rem); letter-spacing:-.03em; text-shadow:0 0 14px rgba(125,247,255,.18); }
-    .section-note { color:var(--orange); font-size:.88rem; }
-    .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
-    .card { position:relative; display:flex; flex-direction:column; min-height:230px; padding:20px; border-radius:22px; border:1px solid rgba(125,247,255,.16); background:linear-gradient(180deg,rgba(10,28,42,.28),rgba(6,18,31,.46)); backdrop-filter:blur(15px) saturate(120%); -webkit-backdrop-filter:blur(15px) saturate(120%); text-decoration:none; color:var(--text); overflow:hidden; box-shadow:inset 0 0 20px rgba(125,247,255,.03); transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease; }
-    .card::before { content:""; position:absolute; inset:10px; border:1px solid rgba(125,247,255,.11); border-radius:15px; pointer-events:none; }
-    .card::after { content:""; position:absolute; right:-25px; bottom:-25px; width:110px; height:110px; border-radius:50%; background:radial-gradient(circle,rgba(255,171,82,.2),transparent 68%); pointer-events:none; }
-    .card.clickable:hover,.card.clickable:focus-visible { transform:translateY(-4px); border-color:rgba(125,247,255,.42); box-shadow:0 16px 34px rgba(0,0,0,.34),var(--shadow-cyan),var(--shadow-orange); outline:none; }
-    .card-top { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:22px; }
-    .category { color:var(--orange); font-size:.68rem; text-transform:uppercase; font-weight:800; letter-spacing:.2em; }
-    .badge { border-radius:999px; padding:5px 9px; font-size:.63rem; font-weight:900; letter-spacing:.12em; text-transform:uppercase; background:rgba(0,0,0,.12); border:1px solid currentColor; }
-    .badge.live,.badge.soon { color:var(--cyan); } .badge.prototype { color:var(--orange); }
-    .card h3 { margin:0 0 10px; font-size:1.38rem; color:var(--cyan); letter-spacing:-.03em; text-shadow:0 0 12px rgba(125,247,255,.16); }
-    .card p { margin:0; line-height:1.58; color:var(--muted); font-size:.92rem; }
-    .cta { margin-top:auto; padding-top:22px; color:var(--orange); text-transform:uppercase; letter-spacing:.17em; font-size:.72rem; font-weight:900; text-shadow:0 0 10px rgba(255,171,82,.14); }
-    .footer { display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; padding:26px 6px 0; font-size:.8rem; color:var(--muted); }
-    .footer a { color:var(--orange); text-decoration:none; } .footer a:hover { color:var(--cyan); }
-    @media(max-width:900px){.hero{grid-template-columns:1fr}.status{min-height:auto}.radar{opacity:.35}}
-    @media(max-width:700px){.grid{grid-template-columns:1fr}.section-head{flex-direction:column;align-items:start}.holo-panel,.card{border-radius:20px}.hero-main{min-height:280px}.radar{width:100px;height:100px;right:20px;top:20px}}
+
+    .shell {
+      position: relative;
+      z-index: 1;
+      width: min(1180px, calc(100% - 30px));
+      margin: 0 auto;
+      padding: 24px 0 48px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--cyan);
+      font-weight: 900;
+      letter-spacing: .22em;
+      text-transform: uppercase;
+      text-shadow: 0 0 18px rgba(125,247,255,.34);
+    }
+
+    .brand-mark {
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      color: var(--orange);
+      border: 1px solid var(--cyan-line);
+      background: rgba(6, 22, 38, 0.42);
+      box-shadow: inset 0 0 18px rgba(125,247,255,0.08), var(--shadow-cyan);
+    }
+
+    .top-links { display: flex; gap: 10px; flex-wrap: wrap; }
+    .top-links a {
+      text-decoration: none;
+      color: var(--orange);
+      background: rgba(6, 22, 38, 0.38);
+      border: 1px solid var(--orange-line);
+      padding: 9px 14px;
+      font-size: .83rem;
+      box-shadow: inset 0 0 16px rgba(255,171,82,0.04);
+    }
+    .top-links a:hover {
+      color: var(--cyan);
+      border-color: var(--cyan-line);
+      box-shadow: var(--shadow-cyan), var(--shadow-orange);
+    }
+
+    .display-panel {
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(180deg, rgba(8, 28, 45, 0.38), rgba(5, 18, 30, 0.56));
+      border: 1px solid var(--cyan-line);
+      backdrop-filter: blur(14px) saturate(115%);
+      -webkit-backdrop-filter: blur(14px) saturate(115%);
+      box-shadow: 0 18px 70px rgba(0,0,0,.34), var(--shadow-cyan);
+    }
+
+    .display-panel::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(125deg, rgba(125,247,255,0.08), transparent 38%, rgba(255,171,82,0.06) 100%),
+        repeating-linear-gradient(to bottom, rgba(125,247,255,0.03) 0, rgba(125,247,255,0.03) 1px, transparent 1px, transparent 6px);
+      pointer-events: none;
+    }
+
+    .display-panel::after {
+      content: "";
+      position: absolute;
+      inset: 10px;
+      border: 1px solid rgba(125,247,255,0.14);
+      pointer-events: none;
+    }
+
+    .panel-inner { position: relative; z-index: 1; }
+
+    .section-row {
+      position: relative;
+      padding: 24px;
+      border-bottom: 1px solid rgba(125,247,255,0.14);
+    }
+    .section-row:last-child { border-bottom: 0; }
+
+    .hero-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1.55fr) minmax(300px, .75fr);
+      gap: 0;
+      padding: 0;
+    }
+
+    .hero-col, .status-col {
+      padding: 28px;
+      min-height: 320px;
+      position: relative;
+    }
+
+    .status-col { border-left: 1px solid rgba(125,247,255,0.14); }
+
+    .label {
+      color: var(--orange);
+      text-transform: uppercase;
+      letter-spacing: .24em;
+      font-size: .72rem;
+      font-weight: 800;
+      text-shadow: 0 0 12px rgba(255,171,82,0.26);
+    }
+
+    h1 {
+      margin: 14px 0 0;
+      font-size: clamp(3rem, 8vw, 6.2rem);
+      line-height: .88;
+      letter-spacing: -.06em;
+      text-transform: uppercase;
+      color: var(--cyan);
+      text-shadow: 0 0 22px rgba(125,247,255,0.24);
+    }
+
+    .hero-copy {
+      margin: 18px 0 0;
+      max-width: 720px;
+      line-height: 1.72;
+      color: var(--muted);
+      font-size: clamp(1rem, 2vw, 1.1rem);
+    }
+    .hero-copy strong { color: var(--orange); }
+
+    .signal {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 18px 0;
+      color: var(--cyan);
+      font-weight: 800;
+      letter-spacing: .08em;
+    }
+
+    .signal-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--orange);
+      box-shadow: 0 0 18px rgba(255,171,82,0.82);
+      animation: pulse 2.1s infinite;
+    }
+
+    @keyframes pulse { 50% { opacity: .5; transform: scale(.92); } }
+
+    .status-copy {
+      color: var(--muted);
+      line-height: 1.62;
+      font-size: .94rem;
+    }
+
+    .status-grid {
+      display: grid;
+      gap: 10px;
+      margin-top: 22px;
+      font-size: .8rem;
+    }
+
+    .status-grid div {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      border-top: 1px solid rgba(125,247,255,0.11);
+      padding-top: 10px;
+      color: var(--muted);
+    }
+    .status-grid b { color: var(--orange); }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .section-title {
+      margin: 6px 0 0;
+      color: var(--cyan);
+      font-size: clamp(1.35rem, 3vw, 2rem);
+      letter-spacing: -.03em;
+      text-shadow: 0 0 14px rgba(125,247,255,0.18);
+    }
+
+    .section-note { color: var(--orange); font-size: .88rem; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      min-height: 230px;
+      padding: 20px;
+      border: 1px solid rgba(125,247,255,0.16);
+      background: linear-gradient(180deg, rgba(10, 28, 42, 0.28), rgba(6, 18, 31, 0.46));
+      backdrop-filter: blur(15px) saturate(120%);
+      -webkit-backdrop-filter: blur(15px) saturate(120%);
+      text-decoration: none;
+      color: var(--text);
+      overflow: hidden;
+      box-shadow: inset 0 0 20px rgba(125,247,255,0.03);
+      transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 10px;
+      border: 1px solid rgba(125,247,255,0.11);
+      pointer-events: none;
+    }
+
+    .card::after {
+      content: "";
+      position: absolute;
+      right: -25px;
+      bottom: -25px;
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,171,82,0.2), transparent 68%);
+      pointer-events: none;
+    }
+
+    .card.clickable:hover, .card.clickable:focus-visible {
+      transform: translateY(-4px);
+      border-color: rgba(125,247,255,0.42);
+      box-shadow: 0 16px 34px rgba(0,0,0,.34), var(--shadow-cyan), var(--shadow-orange);
+      outline: none;
+    }
+
+    .card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+
+    .category {
+      color: var(--orange);
+      font-size: .68rem;
+      text-transform: uppercase;
+      font-weight: 800;
+      letter-spacing: .2em;
+    }
+
+    .badge {
+      padding: 5px 9px;
+      font-size: .63rem;
+      font-weight: 900;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      background: rgba(0,0,0,.12);
+      border: 1px solid currentColor;
+    }
+
+    .badge.live { color: var(--cyan); }
+    .badge.prototype { color: var(--orange); }
+    .badge.soon { color: var(--cyan); }
+
+    .card h3 {
+      margin: 0 0 10px;
+      font-size: 1.38rem;
+      color: var(--cyan);
+      letter-spacing: -.03em;
+      text-shadow: 0 0 12px rgba(125,247,255,0.16);
+    }
+
+    .card p {
+      margin: 0;
+      line-height: 1.58;
+      color: var(--muted);
+      font-size: .92rem;
+    }
+
+    .cta {
+      margin-top: auto;
+      padding-top: 22px;
+      color: var(--orange);
+      text-transform: uppercase;
+      letter-spacing: .17em;
+      font-size: .72rem;
+      font-weight: 900;
+      text-shadow: 0 0 10px rgba(255,171,82,0.14);
+    }
+
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      padding: 24px 6px 0;
+      font-size: .8rem;
+      color: var(--muted);
+    }
+    .footer a { color: var(--orange); text-decoration: none; }
+    .footer a:hover { color: var(--cyan); }
+
+    @media (max-width: 920px) {
+      .hero-row { grid-template-columns: 1fr; }
+      .status-col { border-left: 0; border-top: 1px solid rgba(125,247,255,0.14); }
+    }
+    @media (max-width: 700px) {
+      .grid { grid-template-columns: 1fr; }
+      .section-head { flex-direction: column; align-items: start; }
+      .hero-col, .status-col, .section-row { padding: 20px; }
+    }
   </style>
 </head>
 <body>
   <div class="shell">
     <header class="topbar">
-      <a class="brand" href="#top" aria-label="EBATO home"><span class="brand-mark">E</span>EBATO</a>
-      <nav class="top-links" aria-label="Primary navigation"><a href="#projects">Project Deck</a><a href="https://github.com/EBATO5" target="_blank" rel="noopener">GitHub ↗</a></nav>
+      <a class="brand" href="#top" aria-label="EBATO home">
+        <span class="brand-mark">E</span>
+        EBATO
+      </a>
+      <nav class="top-links" aria-label="Primary navigation">
+        <a href="#projects">Project Deck</a>
+        <a href="https://github.com/EBATO5" target="_blank" rel="noopener">GitHub ↗</a>
+      </nav>
     </header>
+
     <main id="top">
-      <section class="hero">
-        <div class="holo-panel hero-main">
-          <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span><div class="radar"></div>
-          <div class="label">Orbital Interface // Home Base</div>
-          <h1>Mission Control</h1>
-          <p class="hero-copy">An outer-space backdrop with all content inside translucent futuristic hologram panels. Every heading, line, signal, and interface accent stays within <strong>turquoise and orange</strong>.</p>
-        </div>
-        <aside class="holo-panel status" aria-label="System status">
-          <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
-          <div><div class="label">System State</div><div class="signal"><span class="signal-dot"></span>ORBITAL HOLO DISPLAY ACTIVE</div><div class="status-copy">Current deck includes one live community project, one active game prototype, and two reserved future slots.</div></div>
-          <div class="status-grid"><div><span>Backdrop</span><b>Outer Space</b></div><div><span>Visible projects</span><b>4</b></div><div><span>Display style</span><b>Translucent HUD</b></div><div><span>Palette</span><b>Turquoise / Orange</b></div></div>
-        </aside>
-      </section>
-      <section class="holo-panel section" id="projects">
-        <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
-        <div class="section-head"><div><div class="label">Project Deck</div><h2 class="section-title">Current display</h2></div><div class="section-note">Only the four projects and placeholders currently on the board.</div></div>
-        <div class="grid">
-          <article class="card"><div class="card-top"><span class="category">Game Prototype</span><span class="badge prototype">Prototype</span></div><h3>Coin Soccer</h3><p>A phone-first coin-flick soccer game built around gate-making, keepers, physics, and simple competitive fun.</p><div class="cta">Prototype in development</div></article>
-          <a class="card clickable" href="https://pkconnection.org" target="_blank" rel="noopener"><div class="card-top"><span class="category">Community</span><span class="badge live">Live</span></div><h3>PK Connection</h3><p>A shared space for pastor’s kids centered on belonging, welcome, and the freedom to enter without over-explaining.</p><div class="cta">Open project →</div></a>
-          <article class="card"><div class="card-top"><span class="category">Placeholder</span><span class="badge soon">Coming Soon</span></div><h3>CCCC</h3><p>A reserved slot in the deck, held in place until the project is ready to come online.</p><div class="cta">Awaiting signal</div></article>
-          <article class="card"><div class="card-top"><span class="category">Placeholder</span><span class="badge soon">Coming Soon</span></div><h3>Tillows.com</h3><p>A reserved slot for Tillows.com, ready to be activated when you want it visible as a real destination.</p><div class="cta">Awaiting signal</div></article>
+      <section class="display-panel">
+        <div class="panel-inner">
+          <div class="section-row hero-row">
+            <div class="hero-col">
+              <div class="label">Orbital Interface // Home Base</div>
+              <h1>Mission Control</h1>
+              <p class="hero-copy">
+                An outer-space backdrop with all content contained in one translucent futuristic hologram panel.
+                Every line, heading, and signal uses <strong>turquoise and orange</strong> to keep the display unified.
+              </p>
+            </div>
+            <aside class="status-col" aria-label="System status">
+              <div>
+                <div class="label">System State</div>
+                <div class="signal"><span class="signal-dot"></span> ORBITAL HOLO DISPLAY ACTIVE</div>
+                <div class="status-copy">
+                  Current deck includes one live community project, one active game prototype, and two reserved future slots.
+                </div>
+              </div>
+              <div class="status-grid">
+                <div><span>Backdrop</span><b>Outer Space</b></div>
+                <div><span>Visible projects</span><b>4</b></div>
+                <div><span>Display style</span><b>Unified Panel</b></div>
+                <div><span>Palette</span><b>Turquoise / Orange</b></div>
+              </div>
+            </aside>
+          </div>
+
+          <div class="section-row" id="projects">
+            <div class="section-head">
+              <div>
+                <div class="label">Project Deck</div>
+                <h2 class="section-title">Current display</h2>
+              </div>
+              <div class="section-note">One panel, divided by lines instead of separate blocks.</div>
+            </div>
+
+            <div class="grid">
+              <article class="card">
+                <div class="card-top">
+                  <span class="category">Game Prototype</span>
+                  <span class="badge prototype">Prototype</span>
+                </div>
+                <h3>Coin Soccer</h3>
+                <p>A phone-first coin-flick soccer game built around gate-making, keepers, physics, and simple competitive fun.</p>
+                <div class="cta">Prototype in development</div>
+              </article>
+
+              <a class="card clickable" href="https://pkconnection.org" target="_blank" rel="noopener">
+                <div class="card-top">
+                  <span class="category">Community</span>
+                  <span class="badge live">Live</span>
+                </div>
+                <h3>PK Connection</h3>
+                <p>A shared space for pastor’s kids centered on belonging, welcome, and the freedom to enter without over-explaining.</p>
+                <div class="cta">Open project →</div>
+              </a>
+
+              <article class="card">
+                <div class="card-top">
+                  <span class="category">Placeholder</span>
+                  <span class="badge soon">Coming Soon</span>
+                </div>
+                <h3>CCCC</h3>
+                <p>A reserved slot in the deck, held in place until the project is ready to come online.</p>
+                <div class="cta">Awaiting signal</div>
+              </article>
+
+              <article class="card">
+                <div class="card-top">
+                  <span class="category">Placeholder</span>
+                  <span class="badge soon">Coming Soon</span>
+                </div>
+                <h3>Tillows.com</h3>
+                <p>A reserved slot for Tillows.com, ready to be activated when you want it visible as a real destination.</p>
+                <div class="cta">Awaiting signal</div>
+              </article>
+            </div>
+          </div>
         </div>
       </section>
     </main>
-    <footer class="footer"><span>EBATO // orbital hologram // turquoise × orange</span><span><a href="#top">Back to top ↑</a></span></footer>
+
+    <footer class="footer">
+      <span>EBATO // orbital hologram // turquoise × orange</span>
+      <span><a href="#top">Back to top ↑</a></span>
+    </footer>
   </div>
 </body>
 </html>
