@@ -31,6 +31,7 @@
         url("https://images.unsplash.com/photo-1462331940025-496dfbfc7564?auto=format&fit=crop&w=2200&q=80") center/cover fixed;
       overflow-x:hidden;
     }
+    body.holo-off{overflow:hidden}
     body::before,body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:0}
     body::before{
       background-image:linear-gradient(rgba(125,247,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(125,247,255,.035) 1px,transparent 1px);
@@ -42,7 +43,35 @@
       opacity:.34;
       mix-blend-mode:screen;
     }
+
+    .boot-screen{
+      position:fixed;inset:0;z-index:20;display:grid;place-items:center;
+      background:radial-gradient(circle at center,rgba(13,61,77,.12),transparent 34%);
+      transition:opacity .55s ease,visibility .55s ease;
+    }
+    .boot-screen::before,.boot-screen::after{
+      content:"";position:absolute;left:50%;top:50%;border:1px solid rgba(125,247,255,.16);border-radius:50%;transform:translate(-50%,-50%);pointer-events:none
+    }
+    .boot-screen::before{width:290px;height:290px;animation:orbit 9s linear infinite}
+    .boot-screen::after{width:190px;height:190px;border-color:rgba(255,171,82,.15);animation:orbitReverse 7s linear infinite}
+    .boot-screen.off{opacity:0;visibility:hidden;pointer-events:none}
+    .start-button{
+      position:relative;z-index:2;border:0;background:transparent;color:var(--cyan);cursor:pointer;
+      padding:30px 34px;font:inherit;text-transform:uppercase;letter-spacing:.28em;font-size:clamp(.8rem,2vw,1rem);font-weight:900;
+      text-shadow:0 0 8px rgba(125,247,255,.9),0 0 24px rgba(125,247,255,.44);
+      animation:floatText 2.8s ease-in-out infinite;
+    }
+    .start-button::before,.start-button::after{content:"";position:absolute;left:50%;transform:translateX(-50%);height:1px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);box-shadow:0 0 12px rgba(125,247,255,.45)}
+    .start-button::before{top:16px;width:74%}.start-button::after{bottom:16px;width:46%;background:linear-gradient(90deg,transparent,var(--orange),transparent);box-shadow:0 0 12px rgba(255,171,82,.38)}
+    .start-button:hover,.start-button:focus-visible{color:var(--orange-2);outline:none;text-shadow:0 0 8px rgba(255,171,82,.9),0 0 24px rgba(255,171,82,.42)}
+    .start-sub{display:block;margin-top:9px;color:var(--cyan-muted);font-size:.53rem;letter-spacing:.2em;font-weight:600}
+    @keyframes floatText{50%{transform:translateY(-7px);filter:brightness(1.25)}}
+    @keyframes orbit{to{transform:translate(-50%,-50%) rotate(360deg)}}
+    @keyframes orbitReverse{to{transform:translate(-50%,-50%) rotate(-360deg)}}
+
     .shell{position:relative;z-index:1;width:min(1320px,calc(100% - 28px));margin:auto;padding:20px 0 42px}
+    .topbar,.footer{opacity:0;transform:translateY(-8px);transition:opacity .55s ease .65s,transform .55s ease .65s}
+    body.holo-on .topbar,body.holo-on .footer{opacity:1;transform:none}
     .topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:12px}
     .brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--cyan);font-weight:900;letter-spacing:.22em;text-transform:uppercase;text-shadow:0 0 18px rgba(125,247,255,.3)}
     .brandmark{width:34px;height:34px;display:grid;place-items:center;border:1px solid var(--cyan-line);color:var(--orange);background:rgba(5,18,30,.45)}
@@ -50,21 +79,33 @@
     .nav a{color:var(--orange);text-decoration:none;border:1px solid var(--orange-line);padding:8px 12px;background:rgba(5,18,30,.38);font-size:.78rem;text-transform:uppercase;letter-spacing:.11em}
     .nav a:hover{color:var(--cyan);border-color:var(--cyan-line)}
 
-    .paper{
-      position:relative;
-      overflow:hidden;
-      border:1px solid var(--cyan-line);
-      background:linear-gradient(180deg,rgba(7,27,42,.43),rgba(4,15,26,.58));
-      backdrop-filter:blur(14px) saturate(118%);
-      -webkit-backdrop-filter:blur(14px) saturate(118%);
-      box-shadow:var(--shadow);
+    .paper-stage{
+      position:relative;overflow:hidden;max-height:6px;opacity:.38;
+      transform:scaleX(.16);transform-origin:50% 50%;
+      filter:brightness(2.25) drop-shadow(0 0 12px rgba(125,247,255,.75));
+      transition:max-height 1.15s cubic-bezier(.18,.78,.2,1),transform .8s cubic-bezier(.18,.78,.2,1),opacity .35s ease,filter .9s ease;
     }
+    body.holo-on .paper-stage{max-height:3200px;opacity:1;transform:scaleX(1);filter:none}
+    .paper{
+      position:relative;overflow:hidden;border:1px solid var(--cyan-line);
+      background:linear-gradient(180deg,rgba(7,27,42,.43),rgba(4,15,26,.58));
+      backdrop-filter:blur(14px) saturate(118%);-webkit-backdrop-filter:blur(14px) saturate(118%);
+      box-shadow:var(--shadow);
+      transform:perspective(1200px) rotateX(78deg) scaleY(.025);transform-origin:50% 0%;
+      opacity:.15;transition:transform 1.05s cubic-bezier(.12,.82,.18,1),opacity .45s ease .12s;
+    }
+    body.holo-on .paper{transform:perspective(1200px) rotateX(0) scaleY(1);opacity:1}
     .paper::before{
       content:"";position:absolute;inset:0;pointer-events:none;
       background:linear-gradient(120deg,rgba(125,247,255,.065),transparent 36%,rgba(255,171,82,.045)),repeating-linear-gradient(to bottom,rgba(125,247,255,.025) 0,rgba(125,247,255,.025) 1px,transparent 1px,transparent 6px)
     }
     .paper::after{content:"";position:absolute;inset:9px;border:1px solid rgba(125,247,255,.12);pointer-events:none}
     .inner{position:relative;z-index:1}
+    .inner>*{opacity:0;transform:translateY(-8px);transition:opacity .5s ease,transform .5s ease}
+    body.holo-on .masthead{opacity:1;transform:none;transition-delay:.38s}
+    body.holo-on .ticker{opacity:1;transform:none;transition-delay:.55s}
+    body.holo-on .newsgrid{opacity:1;transform:none;transition-delay:.7s}
+    body.holo-on .bottomstrip{opacity:1;transform:none;transition-delay:.86s}
 
     .masthead{display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:18px;padding:18px 24px;border-bottom:1px solid var(--cyan-line)}
     .edition,.datecode{font-size:.68rem;letter-spacing:.19em;text-transform:uppercase;color:var(--orange)}
@@ -91,21 +132,14 @@
     .story h2{font-size:clamp(2rem,4.3vw,4rem);line-height:.95;max-width:760px}
     .story h3{font-size:1.45rem;line-height:1.05}
     .dek{margin:14px 0 0;color:var(--cyan-muted);line-height:1.62;max-width:760px}
-    .lead .dek{font-size:1rem}
-    .secondary .dek{font-size:.94rem}
-    .brief .dek{font-size:.86rem;line-height:1.5}
+    .lead .dek{font-size:1rem}.secondary .dek{font-size:.94rem}.brief .dek{font-size:.86rem;line-height:1.5}
     .rule{width:78px;height:1px;background:var(--orange);box-shadow:0 0 10px rgba(255,171,82,.28);margin:16px 0 0}
     .meta{margin-top:auto;padding-top:16px;color:var(--orange);font-size:.67rem;letter-spacing:.16em;text-transform:uppercase;font-weight:900}
     .story.link{display:flex;flex-direction:column;color:inherit;text-decoration:none}
     .story.link:hover{background:linear-gradient(180deg,rgba(125,247,255,.035),rgba(255,171,82,.025))}
     .story.link:hover h2,.story.link:hover h3{color:var(--orange-2)}
-
-    .lead::after{
-      content:"01";position:absolute;right:18px;top:14px;color:rgba(125,247,255,.09);font-size:5rem;font-weight:900;line-height:1;pointer-events:none
-    }
-    .secondary::after{
-      content:"02";position:absolute;right:16px;top:14px;color:rgba(255,171,82,.08);font-size:4rem;font-weight:900;line-height:1;pointer-events:none
-    }
+    .lead::after{content:"01";position:absolute;right:18px;top:14px;color:rgba(125,247,255,.09);font-size:5rem;font-weight:900;line-height:1;pointer-events:none}
+    .secondary::after{content:"02";position:absolute;right:16px;top:14px;color:rgba(255,171,82,.08);font-size:4rem;font-weight:900;line-height:1;pointer-events:none}
 
     .bottomstrip{display:grid;grid-template-columns:2fr 1fr 1fr;border-bottom:0}
     .bottomstrip>div{padding:12px 16px;border-right:1px solid var(--cyan-line);font-size:.74rem;color:var(--cyan-muted)}
@@ -116,110 +150,145 @@
     .footer a{color:var(--orange);text-decoration:none}
 
     @media(max-width:980px){
-      .masthead{grid-template-columns:1fr;align-items:start;text-align:left}
-      .title{text-align:left}.datecode{text-align:left}.ticker{grid-template-columns:repeat(2,1fr)}
-      .ticker div:nth-child(2){border-right:0}.ticker div:nth-child(-n+2){border-bottom:1px solid var(--cyan-line)}
-      .lead,.secondary{grid-column:span 12}.lead{border-right:0}.secondary{border-right:0}
-      .brief{grid-column:span 6}.brief:nth-of-type(4){border-right:0}
+      .masthead{grid-template-columns:1fr;align-items:start;text-align:left}.title{text-align:left}.datecode{text-align:left}
+      .ticker{grid-template-columns:repeat(2,1fr)}.ticker div:nth-child(2){border-right:0}.ticker div:nth-child(-n+2){border-bottom:1px solid var(--cyan-line)}
+      .lead,.secondary{grid-column:span 12}.lead{border-right:0}.secondary{border-right:0}.brief{grid-column:span 6}.brief:nth-of-type(4){border-right:0}
     }
     @media(max-width:650px){
-      .shell{width:min(100% - 16px,1320px)}
-      .topbar{align-items:flex-start}.nav{justify-content:flex-end}
+      .shell{width:min(100% - 16px,1320px)}.topbar{align-items:flex-start}.nav{justify-content:flex-end}
       .ticker{grid-template-columns:1fr}.ticker div{border-right:0;border-bottom:1px solid var(--cyan-line)}.ticker div:last-child{border-bottom:0}
-      .lead,.secondary,.brief{grid-column:span 12;border-right:0;min-height:auto}
-      .masthead,.story{padding:18px}
+      .lead,.secondary,.brief{grid-column:span 12;border-right:0;min-height:auto}.masthead,.story{padding:18px}
       .bottomstrip{grid-template-columns:1fr}.bottomstrip>div{border-right:0;border-bottom:1px solid var(--cyan-line)}.bottomstrip>div:last-child{border-bottom:0}
+      .boot-screen::before{width:230px;height:230px}.boot-screen::after{width:150px;height:150px}.start-button{letter-spacing:.2em}
+    }
+    @media(prefers-reduced-motion:reduce){
+      *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
     }
   </style>
 </head>
-<body>
+<body class="holo-off">
+  <div class="boot-screen" id="bootScreen">
+    <button class="start-button" id="startButton" type="button" aria-controls="holoPanel" aria-expanded="false">
+      Press Here To Start
+      <span class="start-sub">Initialize holographic display</span>
+    </button>
+  </div>
+
   <div class="shell">
     <header class="topbar">
       <a class="brand" href="#top"><span class="brandmark">E</span>EBATO</a>
       <nav class="nav"><a href="#projects">Edition</a><a href="https://github.com/EBATO5" target="_blank" rel="noopener">GitHub ↗</a></nav>
     </header>
 
-    <main id="top" class="paper">
-      <div class="inner">
-        <header class="masthead">
-          <div class="edition">Orbital Edition // Home Base</div>
-          <div class="title">
-            <div class="kicker">Independent Project Dispatch</div>
-            <h1>Mission Control</h1>
-            <div class="sub">Current projects, experiments & incoming signals</div>
-          </div>
-          <div class="datecode">EBATO // Sector 04</div>
-        </header>
+    <div class="paper-stage" id="holoPanel" aria-hidden="true">
+      <main id="top" class="paper">
+        <div class="inner">
+          <header class="masthead">
+            <div class="edition">Orbital Edition // Home Base</div>
+            <div class="title">
+              <div class="kicker">Independent Project Dispatch</div>
+              <h1>Mission Control</h1>
+              <div class="sub">Current projects, experiments & incoming signals</div>
+            </div>
+            <div class="datecode">EBATO // Sector 04</div>
+          </header>
 
-        <section class="ticker" aria-label="System summary">
-          <div><span>Display</span><b>Unified Panel</b></div>
-          <div><span>Visible Projects</span><b>4</b></div>
-          <div><span>Palette</span><b>Turquoise / Orange</b></div>
-          <div><span>Backdrop</span><b>Outer Space</b></div>
-        </section>
+          <section class="ticker" aria-label="System summary">
+            <div><span>Display</span><b>Unified Panel</b></div>
+            <div><span>Visible Projects</span><b>4</b></div>
+            <div><span>Palette</span><b>Turquoise / Orange</b></div>
+            <div><span>Backdrop</span><b>Outer Space</b></div>
+          </section>
 
-        <section class="newsgrid" id="projects">
-          <a class="story lead link" href="https://pkconnection.org" target="_blank" rel="noopener">
-            <div class="eyebrow">Lead Story // Community</div>
-            <h2>PK Connection</h2>
-            <div class="rule"></div>
-            <p class="dek">A shared space for pastor’s kids centered on belonging, welcome, and the freedom to enter without over-explaining.</p>
-            <div class="meta">Live now // Open project →</div>
-          </a>
+          <section class="newsgrid" id="projects">
+            <a class="story lead link" href="https://pkconnection.org" target="_blank" rel="noopener">
+              <div class="eyebrow">Lead Story // Community</div>
+              <h2>PK Connection</h2>
+              <div class="rule"></div>
+              <p class="dek">A shared space for pastor’s kids centered on belonging, welcome, and the freedom to enter without over-explaining.</p>
+              <div class="meta">Live now // Open project →</div>
+            </a>
 
-          <article class="story secondary">
-            <div class="eyebrow">Field Report // Game Prototype</div>
-            <h2>Coin Soccer</h2>
-            <div class="rule"></div>
-            <p class="dek">A phone-first coin-flick soccer game built around gate-making, keepers, physics, and simple competitive fun.</p>
-            <div class="meta">Prototype in development</div>
-          </article>
+            <article class="story secondary">
+              <div class="eyebrow">Field Report // Game Prototype</div>
+              <h2>Coin Soccer</h2>
+              <div class="rule"></div>
+              <p class="dek">A phone-first coin-flick soccer game built around gate-making, keepers, physics, and simple competitive fun.</p>
+              <div class="meta">Prototype in development</div>
+            </article>
 
-          <article class="story brief">
-            <div class="eyebrow">Brief 03 // Placeholder</div>
-            <h3>CCCC</h3>
-            <div class="rule"></div>
-            <p class="dek">A reserved slot in the deck, held in place until the project is ready to come online.</p>
-            <div class="meta">Awaiting signal</div>
-          </article>
+            <article class="story brief">
+              <div class="eyebrow">Brief 03 // Placeholder</div>
+              <h3>CCCC</h3>
+              <div class="rule"></div>
+              <p class="dek">A reserved slot in the deck, held in place until the project is ready to come online.</p>
+              <div class="meta">Awaiting signal</div>
+            </article>
 
-          <article class="story brief">
-            <div class="eyebrow">Brief 04 // Placeholder</div>
-            <h3>Tillows.com</h3>
-            <div class="rule"></div>
-            <p class="dek">A reserved slot for Tillows.com, ready to activate when it becomes a live destination.</p>
-            <div class="meta">Awaiting signal</div>
-          </article>
+            <article class="story brief">
+              <div class="eyebrow">Brief 04 // Placeholder</div>
+              <h3>Tillows.com</h3>
+              <div class="rule"></div>
+              <p class="dek">A reserved slot for Tillows.com, ready to activate when it becomes a live destination.</p>
+              <div class="meta">Awaiting signal</div>
+            </article>
 
-          <article class="story brief">
-            <div class="eyebrow">System Note</div>
-            <h3>Holo Display Active</h3>
-            <div class="rule"></div>
-            <p class="dek">One square-edged panel. Editorial columns instead of stacked blocks. Designed to read across the screen.</p>
-            <div class="meta">Layout mode // Horizontal</div>
-          </article>
+            <article class="story brief">
+              <div class="eyebrow">System Note</div>
+              <h3>Holo Display Active</h3>
+              <div class="rule"></div>
+              <p class="dek">One square-edged panel. Editorial columns instead of stacked blocks. Designed to read across the screen.</p>
+              <div class="meta">Layout mode // Horizontal</div>
+            </article>
 
-          <article class="story brief">
-            <div class="eyebrow">Desk Note</div>
-            <h3>Build → Refine</h3>
-            <div class="rule"></div>
-            <p class="dek">The board stays focused on what is active now, while leaving room for future transmissions.</p>
-            <div class="meta">EBATO home base</div>
-          </article>
-        </section>
+            <article class="story brief">
+              <div class="eyebrow">Desk Note</div>
+              <h3>Build → Refine</h3>
+              <div class="rule"></div>
+              <p class="dek">The board stays focused on what is active now, while leaving room for future transmissions.</p>
+              <div class="meta">EBATO home base</div>
+            </article>
+          </section>
 
-        <section class="bottomstrip">
-          <div><strong>Mission Control</strong><br>Outer-space editorial interface for the things currently being built.</div>
-          <div><strong>Signal</strong><br>Turquoise primary / orange emphasis.</div>
-          <div><strong>Format</strong><br>Wide sci-fi newspaper.</div>
-        </section>
-      </div>
-    </main>
+          <section class="bottomstrip">
+            <div><strong>Mission Control</strong><br>Outer-space editorial interface for the things currently being built.</div>
+            <div><strong>Signal</strong><br>Turquoise primary / orange emphasis.</div>
+            <div><strong>Format</strong><br>Wide sci-fi newspaper.</div>
+          </section>
+        </div>
+      </main>
+    </div>
 
     <footer class="footer">
       <span>EBATO // orbital edition // turquoise × orange</span>
       <span><a href="#top">Back to masthead ↑</a></span>
     </footer>
   </div>
+
+  <script>
+    (() => {
+      const body = document.body;
+      const boot = document.getElementById('bootScreen');
+      const button = document.getElementById('startButton');
+      const panel = document.getElementById('holoPanel');
+      let started = false;
+
+      const start = () => {
+        if (started) return;
+        started = true;
+        button.setAttribute('aria-expanded', 'true');
+        panel.setAttribute('aria-hidden', 'false');
+        body.classList.remove('holo-off');
+        body.classList.add('holo-on');
+        boot.classList.add('off');
+        window.setTimeout(() => boot.remove(), 650);
+      };
+
+      button.addEventListener('click', start);
+      button.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') start();
+      });
+    })();
+  </script>
 </body>
 </html>
