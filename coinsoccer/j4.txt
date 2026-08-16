@@ -1,0 +1,291 @@
+   aiTimer=0;
+      return;
+    }
+
+    if(!aiThinking){
+      aiThinking=true;
+      aiTimer=.38+Math.random()*.34;
+      hintEl.textContent='AI is reading the formation… Grab your keeper if you want manual control.';
+      return;
+    }
+
+    aiTimer-=dt;
+    if(aiTimer<=0){
+      aiThinking=false;
+      aiTimer=0;
+      aiChooseShot();
+    }
+  }
+
+  // ---------- Online networking ----------
+  function ensureSupabase(){
+    if(sb)return true;
+    if(!window.supabase||!window.supabase.createClient){
+      onlineStatusEl.textContent='Networking library could not load. Check your internet connection.';
+      return false;
+    }
+    sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{
+      auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}
+    });
+    return true;
+  }
+
+  function generateCode(){
+    const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let out='';
+    for(let i=0;i<6;i++)out+=chars[Math.floor(Math.random()*chars.length)];
+    return out;
+  }
+
+  function sendBroadcast(event,payload){
+    if(!onlineChannel||!onlineSubscribed)return;
+    onlineChannel.send({type:'broadcast',event,payload});
+  }
+
+  function stateForNetwork(){
+    const br=baseRadius();
+    const norm=(o)=>({
+      x:(o.x-field.x)/field.w,
+      y:(o.y-field.y)/field.h,
+      rs:o.r/br
+    });
+    return {
+      attacker,
+      score:[...score],
+      easyMode,
+      running,
+      shotCoinIndex,
+      crossedGate,
+      kickoffShot,
+      goalieDir,
+      coins:coins.map(c=>({...norm(c),type:c.type})),
+      goalie:goalie?{...norm(goalie),side:goalie.side}:null,
+      gate:gateSnapshot?{
+        a:norm(gateSnapshot.a),
+        b:norm(gateSnapshot.b)
+      }:null,
+      sentAt:Date.now()
+    };
+  }
+
+  function sendNetworkState(force=false){
+    if(!isHost()||!onlineConnected||!onlineSubscribed)return;
+    if(force)networkAccumulator=0;
+    sendBroadcast('state',stateForNetwork());
+  }
+
+  function applyNetworkState(s){
+    if(!s||onlineRole!==1)return;
+    lastRemoteState=s;
+
+    attacker=s.attacker;
+    score=[...s.score];
+    easyMode=!!s.easyMode;
+    running=!!s.running;
+    shotCoinIndex=s.shotCoinIndex;
+    crossedGate=!!s.crossedGate;
+    kickoffShot=!!s.kickoffShot;
+    goalieDir=s.goalieDir||1;
+
+    const br=baseRadius();
+    const denorm=(o)=>({
+      x:field.x+o.x*field.w,
+      y:field.y+o.y*field.h,
+      r:br*o.rs
+    });
+
+    coins=s.coins.map(c=>({
+      ...denorm(c),
+      type:c.type,
+      vx:0,vy:0
+    }));
+
+    goalie=s.goalie?{
+      ...denorm(s.goalie),
+      side:s.goalie.side
+    }:null;
+
+    gateSnapshot=s.gate?{
+      a:denorm(s.gate.a),
+      b:denorm(s.gate.b)
+    }:null;
+
+    if(attacker!==onlineRole&&pointer&&pointer.mode==='aim'){
+      pointer=null;aim=null;selected=-1;
+    }
+    updateHUD();
+  }
+
+  function broadcastGameEvent(message){
+    if(isHost()&&onlineConnected)sendBroadcast('game_event',{message});
+  }
+
+  function setOnlineStatus(msg){
+    onlineStatusEl.textContent=msg;
+  }
+
+  async function leaveOnline(resetGame=true){
+    if(onlineChannel&&sb){
+      try{await onlineChannel.untrack()}catch{}
+      try{await sb.removeChannel(onlineChannel)}catch{}
+    }
+    onlineChannel=null;
+    onlineRole=null;
+    lobbyCode='';
+    onlineSubscribed=false;
+    onlineConnected=false;
+    acceptedGuestId=null;
+    lastRemoteState=null;
+    networkAccumulator=0;
+    remoteKeeperHeld=false;
+
+    if(resetGame){
+      opponentMode='human';
+      score=[0,0];
+      attacker=0;
+      resetFormation();
+    }
+
+    roomCodeBox.classList.add('hidden');
+    document.getElementById('leaveLobby').classList.add('hidden');
+    setOnlineStatus('Create a lobby or enter a friend’s code.');
+    updateHUD();
+  }
+
+  async function connectRoom(code,role){
+    if(!ensureSupabase())return;
+    await leaveOnline(false);
+
+    opponentMode='online';
+    onlineRole=role;
+    lobbyCode=code;
+    onlineConnected=false;
+    onlineSubscribed=false;
+    acceptedGuestId=null;
+    remoteKeeperHeld=false;
+
+    if(role===0){
+      score=[0,0];
+      attacker=0;
+      resetFormation();
+    }
+
+    roomCodeText.textContent=code;
+    roomCodeBox.classList.remove('hidden');
+    document.getElementById('leaveLobby').classList.remove('hidden');
+    updateHUD();
+
+    onlineChannel=sb.channel(`coin-soccer:${code}`,{
+      config:{
+        broadcast:{self:false},
+        presence:{key:clientId}
+      }
+    });
+
+    onlineChannel
+      .on('broadcast',{event:'state'},({payload})=>{
+        if(onlineRole===1)applyNetworkState(payload);
+      })
+      .on('broadcast',{event:'request_state'},({payload})=>{
+        if(isHost()&&payload&&payload.clientId===acceptedGuestId)sendNetworkState(true);
+      })
+      .on('broadcast',{event:'shot'},({payload})=>{
+        if(!isHost()||!onlineConnected||running||attacker!==1)return;
+        if(!payload||payload.player!==1)return;
+        const index=Number(payload.index);
+        const ux=Number(payload.ux),uy=Number(payload.uy);
+        const power=Math.max(0,Math.min(1,Number(payload.power)));
+        if(!Number.isFinite(ux)||!Number.isFinite(uy)||!Number.isFinite(power))return;
+        const len=Math.hypot(ux,uy)||1;
+        const maxPull=maxPullDistance();
+        const speed=shotSpeedForPower(power);
+        // P2's view is vertically mirrored, so invert Y back into canonical world coordinates.
+        beginShot(index,ux/len*speed,-uy/len*speed);
+      })
+      .on('broadcast',{event:'keeper_move'},({payload})=>{
+        if(!isHost()||!onlineConnected||!goalie)return;
+        if(!payload||payload.player!==goalie.side||payload.player!==1)return;
+        const nx=Math.max(0,Math.min(1,Number(payload.x)));
+        const left=field.x+(field.w-field.goalWidth)/2+goalie.r;
+        const right=field.x+(field.w+field.goalWidth)/2-goalie.r;
+        goalie.x=Math.max(left,Math.min(right,field.x+nx*field.w));
+      })
+      .on('broadcast',{event:'keeper_hold'},({payload})=>{
+        if(!isHost()||!payload||payload.player!==1)return;
+        remoteKeeperHeld=!!payload.held;
+      })
+      .on('broadcast',{event:'game_event'},({payload})=>{
+        if(onlineRole===1&&payload&&payload.message)toast(payload.message);
+      })
+      .on('broadcast',{event:'admit'},({payload})=>{
+        if(onlineRole!==1||!payload)return;
+        if(payload.guestId===clientId){
+          onlineConnected=true;
+          setOnlineStatus(`Connected as Player 2. Your goal is at the bottom.`);
+          updateHUD();
+          sendBroadcast('request_state',{clientId});
+          setTimeout(()=>onlinePanel.classList.add('hidden'),500);
+        }else if(payload.guestId){
+          setOnlineStatus('That lobby already has two players.');
+          toast('Lobby full');
+          setTimeout(()=>leaveOnline(true),700);
+        }
+      })
+      .on('presence',{event:'sync'},()=>{
+        if(!onlineChannel)return;
+        const state=onlineChannel.presenceState();
+        const people=Object.values(state).flat();
+
+        if(onlineRole===0){
+          const guests=people
+            .filter(p=>p.role===1)
+            .sort((a,b)=>(a.joinedAt||0)-(b.joinedAt||0)||String(a.id).localeCompare(String(b.id)));
+
+          const nextGuest=guests.length?guests[0].id:null;
+          acceptedGuestId=nextGuest;
+
+          if(nextGuest){
+            onlineConnected=true;
+            setOnlineStatus(`Player 2 connected. Lobby ${lobbyCode} is ready.`);
+            sendBroadcast('admit',{guestId:nextGuest,hostId:clientId});
+            sendNetworkState(true);
+          }else{
+            onlineConnected=false;
+            setOnlineStatus(`Lobby ${lobbyCode} created. Share the code with Player 2.`);
+          }
+          updateHUD();
+        }else{
+          const hosts=people.filter(p=>p.role===0);
+          if(!hosts.length)setOnlineStatus(`Joined ${lobbyCode}. Waiting for Player 1…`);
+        }
+      })
+      .subscribe(async status=>{
+        if(status==='SUBSCRIBED'){
+          onlineSubscribed=true;
+          await onlineChannel.track({
+            id:clientId,
+            role,
+            joinedAt,
+            player:`Player ${role+1}`
+          });
+          if(role===0)setOnlineStatus(`Lobby ${code} created. Share the code with Player 2.`);
+          else setOnlineStatus(`Joining ${code}…`);
+        }else if(status==='CHANNEL_ERROR'||status==='TIMED_OUT'){
+          setOnlineStatus('Could not connect to the lobby. Check your connection and try again.');
+        }
+      });
+  }
+
+  // ---------- Drawing ----------
+  function drawField(){
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle='#12552f';
+    ctx.fillRect(field.x,field.y-field.goalDepth,field.w,field.h+field.goalDepth*2);
+
+    const stripes=10;
+    for(let i=0;i<stripes;i++){
+      ctx.fillStyle=i%2?'rgba(255,255,255,.025)':'rgba(0,0,0,.025)';
+      ctx.fillRect(field.x,field.y+i*field.h/stripes,field.w,field.h/stripes);
+    }
+
+    ctx.stroke
