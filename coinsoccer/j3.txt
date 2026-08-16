@@ -89,10 +89,9 @@ mewhat more likely, but the AI intentionally
   }
 
   function aiOpeningContinuationShot(){
-    // The starting triangle is a special case because the kickoff can leave two
-    // coins touching. Keep the anti-stuck formation check, but do NOT prescribe
-    // which coin moves next. Let every legal coin/target compete on formation
-    // quality, future gate health, and useful field progress.
+    // The kickoff can leave two coins touching. Keep the anti-stuck formation
+    // check, but choose among COINS first so one coin cannot flood the candidate
+    // pool with many tiny variations of the same move.
     const choices=[];
 
     for(let i=0;i<coins.length;i++){
@@ -106,9 +105,8 @@ mewhat more likely, but the AI intentionally
         const avgQuality=qualities.reduce((a,b)=>a+b,0)/qualities.length;
         const progress=(cand.target.y-c.y)/field.h;
 
-        // In the opening, keeping all three future gates alive matters most.
-        // Progress helps break ties, but a backward/sideways setup is welcome
-        // when it creates a substantially better next formation.
+        // Keep every future gate healthy first. Progress breaks ties, but a
+        // sideways/backward setup is welcome when it creates a better formation.
         let value=minQuality*3.2 + avgQuality*.8 + cand.value*.18 + progress*14;
         if(minQuality<20)value-=220;
         choices.push({...cand,value,minQuality,avgQuality});
@@ -127,7 +125,41 @@ mewhat more likely, but the AI intentionally
       c.patternKey=`${aiPossessionShots}:${c.index}:${tx.toFixed(2)}:${ty.toFixed(2)}`;
     });
 
-    const choice=aiVariedChoice(safeChoices,20,10,aiLastOpeningPattern)||safeChoices[0];
+    // Build one representative plan per coin. This is the important part: the
+    // chooser now compares coin 0 vs coin 1 vs coin 2, rather than letting fifteen
+    // target points for one penny crowd every other coin out of the top pool.
+    const byCoin=new Map();
+    for(const cand of safeChoices){
+      const bucket=byCoin.get(cand.index)||[];
+      bucket.push(cand);
+      byCoin.set(cand.index,bucket);
+    }
+
+    const coinPlans=[];
+    for(const bucket of byCoin.values()){
+      bucket.sort((a,b)=>b.value-a.value);
+      const bestPlan=bucket[0];
+      const targetPlan=aiVariedChoice(bucket,18,6,aiLastOpeningPattern)||bestPlan;
+      coinPlans.push({...targetPlan,coinValue:bestPlan.value});
+    }
+
+    coinPlans.sort((a,b)=>b.coinValue-a.coinValue);
+    const bestCoinValue=coinPlans[0].coinValue;
+    const coinPool=coinPlans.filter(c=>c.coinValue>=bestCoinValue-45);
+
+    // Favor the stronger strategic plan, but keep a meaningful chance for a
+    // near-equal alternative coin. This makes the opener human-like instead of
+    // repeating the same penny sequence every possession.
+    const coinWeights=coinPool.map(c=>
+      Math.exp((c.coinValue-bestCoinValue)/22)+.55+(c.c.type==='dime'?.08:0)
+    );
+    let coinRoll=Math.random()*coinWeights.reduce((a,b)=>a+b,0);
+    let choice=coinPool[coinPool.length-1];
+    for(let i=0;i<coinPool.length;i++){
+      coinRoll-=coinWeights[i];
+      if(coinRoll<=0){choice=coinPool[i];break;}
+    }
+
     aiLastOpeningPattern=choice.patternKey||'';
     const dist=Math.hypot(choice.target.x-choice.c.x,choice.target.y-choice.c.y);
     const power=aiPowerForDistance(dist,.16,.66);
