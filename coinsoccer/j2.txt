@@ -94,26 +94,54 @@
     return {tMin,tMax};
   }
 
-  function aiGoalTargets(){
+  function aiTravelTime(distance,power){
+    const v=shotSpeedForPower(power);
+    const a=COIN_FRICTION_DECEL;
+    const disc=v*v-2*a*distance;
+    if(disc<=0)return v/a;
+    return (v-Math.sqrt(disc))/a;
+  }
+
+  function aiPredictGoalieX(seconds){
+    if(!goalie)return field.x+field.w/2;
+    if(!shouldAutoPatrol())return goalie.x;
+
+    const left=field.x+(field.w-field.goalWidth)/2+goalie.r;
+    const right=field.x+(field.w+field.goalWidth)/2-goalie.r;
+    const span=Math.max(1,right-left);
+    const period=span*2;
+    const raw=goalie.x+goalieDir*currentGoalieSpeed()*seconds;
+    let p=(raw-left)%period;
+    if(p<0)p+=period;
+    return p<=span ? left+p : right-(p-span);
+  }
+
+  function aiGoalTargets(c){
     const left=field.x+(field.w-field.goalWidth)/2+baseRadius()*.55;
     const right=field.x+(field.w+field.goalWidth)/2-baseRadius()*.55;
     const center=field.x+field.w/2;
     const y=field.y+field.h+field.goalDepth*.72;
-
-    if(goalie&&goalie.x<center){
-      return [
-        {x:right-field.goalWidth*.07,y},
-        {x:center+field.goalWidth*.10,y},
-        {x:center,y},
-        {x:left+field.goalWidth*.07,y}
-      ];
-    }
-    return [
-      {x:left+field.goalWidth*.07,y},
-      {x:center-field.goalWidth*.10,y},
-      {x:center,y},
-      {x:right-field.goalWidth*.07,y}
+    const xs=[
+      left+field.goalWidth*.06,
+      left+field.goalWidth*.18,
+      center-field.goalWidth*.12,
+      center,
+      center+field.goalWidth*.12,
+      right-field.goalWidth*.18,
+      right-field.goalWidth*.06
     ];
+
+    return xs.map(x=>{
+      const distance=Math.hypot(x-c.x,y-c.y);
+      const power=aiPowerForDistance(distance,.30,.80);
+      const arrival=aiTravelTime(distance,power);
+      const predictedKeeperX=aiPredictGoalieX(arrival);
+      const keeperClearance=Math.abs(x-predictedKeeperX)-(goalie?goalie.r:0)-c.r;
+      const behindMotionBonus=(goalie&&shouldAutoPatrol())
+        ? ((goalieDir>0&&x<predictedKeeperX)||(goalieDir<0&&x>predictedKeeperX) ? field.goalWidth*.05 : 0)
+        : 0;
+      return {x,y,keeperClearance,goalValue:keeperClearance+behindMotionBonus,predictedKeeperX};
+    }).sort((a,b)=>b.goalValue-a.goalValue);
   }
 
   function aiPowerForDistance(distance,minPower=.18,maxPower=.82){
