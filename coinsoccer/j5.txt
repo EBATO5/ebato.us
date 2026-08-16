@@ -1,0 +1,279 @@
+Style='rgba(255,255,255,.85)';
+    ctx.lineWidth=2;
+    ctx.strokeRect(field.x,field.y,field.w,field.h);
+
+    ctx.beginPath();
+    ctx.moveTo(field.x,field.y+field.h/2);
+    ctx.lineTo(field.x+field.w,field.y+field.h/2);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(field.x+field.w/2,field.y+field.h/2,Math.min(55,field.w*.14),0,Math.PI*2);
+    ctx.stroke();
+
+    const gl=field.x+(field.w-field.goalWidth)/2;
+    ctx.strokeRect(gl,field.y-field.goalDepth,field.goalWidth,field.goalDepth);
+    ctx.strokeRect(gl,field.y+field.h,field.goalWidth,field.goalDepth);
+
+    const boxH=Math.min(110,field.h*.16),boxW=Math.min(230,field.w*.64);
+    ctx.strokeRect(field.x+(field.w-boxW)/2,field.y,boxW,boxH);
+    ctx.strokeRect(field.x+(field.w-boxW)/2,field.y+field.h-boxH,boxW,boxH);
+  }
+
+  function coinGradient(c,x,y){
+    const g=ctx.createRadialGradient(x-c.r*.35,y-c.r*.35,c.r*.15,x,y,c.r);
+    if(c.type==='penny'){
+      g.addColorStop(0,'#e6a36c');g.addColorStop(.55,COLORS.penny);g.addColorStop(1,COLORS.pennyEdge);
+    }else{
+      g.addColorStop(0,'#fff');g.addColorStop(.55,COLORS.dime);g.addColorStop(1,COLORS.dimeEdge);
+    }
+    return g;
+  }
+
+  function drawCoin(c,i){
+    const v=viewPoint(c);
+    ctx.save();
+    ctx.beginPath();ctx.arc(v.x,v.y,c.r,0,Math.PI*2);
+    ctx.fillStyle=coinGradient(c,v.x,v.y);ctx.fill();
+    ctx.lineWidth=i===selected?4:2;
+    ctx.strokeStyle=i===selected?'#ffd85a':'rgba(0,0,0,.45)';
+    ctx.stroke();
+    ctx.fillStyle='rgba(0,0,0,.58)';
+    ctx.font=`800 ${Math.max(10,c.r*.72)}px system-ui`;
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(c.type==='dime'?'10¢':'1¢',v.x,v.y+1);
+    ctx.restore();
+  }
+
+  function drawGoalie(){
+    if(!goalie)return;
+    const v=viewPoint(goalie);
+    ctx.save();
+    ctx.beginPath();ctx.arc(v.x,v.y,goalie.r,0,Math.PI*2);
+    ctx.fillStyle=goalie.side===0?COLORS.goalie1:COLORS.goalie2;ctx.fill();
+    ctx.lineWidth=3;ctx.strokeStyle='white';ctx.stroke();
+    ctx.fillStyle='white';
+    ctx.font=`900 ${Math.max(10,goalie.r*.8)}px system-ui`;
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText('GK',v.x,v.y+1);
+    ctx.restore();
+  }
+
+  function drawAim(){
+    if(selected<0||!aim)return;
+    const c=coins[selected];
+    const v=viewPoint(c);
+    const dx=v.x-aim.x,dy=v.y-aim.y;
+    const len=Math.hypot(dx,dy);
+    if(len<2)return;
+
+    const maxPull=maxPullDistance();
+    const pull=Math.min(maxPull,len);
+    const nx=dx/len,ny=dy/len;
+    const shotLen=55+pull*1.25;
+
+    ctx.save();
+    ctx.setLineDash([6,6]);
+    ctx.lineWidth=2;ctx.strokeStyle='rgba(255,255,255,.6)';
+    ctx.beginPath();ctx.moveTo(v.x,v.y);ctx.lineTo(aim.x,aim.y);ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.lineWidth=4;ctx.strokeStyle='#ffd85a';
+    ctx.beginPath();ctx.moveTo(v.x,v.y);ctx.lineTo(v.x+nx*shotLen,v.y+ny*shotLen);ctx.stroke();
+
+    const ex=v.x+nx*shotLen,ey=v.y+ny*shotLen;
+    ctx.fillStyle='#ffd85a';
+    ctx.beginPath();
+    ctx.moveTo(ex,ey);
+    ctx.lineTo(ex-nx*14-ny*7,ey-ny*14+nx*7);
+    ctx.lineTo(ex-nx*14+ny*7,ey-ny*14-nx*7);
+    ctx.closePath();ctx.fill();
+
+    const pct=pull/maxPull,bw=90,bh=8,bx=v.x-bw/2,by=v.y+c.r+16;
+    ctx.fillStyle='rgba(0,0,0,.4)';ctx.fillRect(bx,by,bw,bh);
+    ctx.fillStyle='#ffd85a';ctx.fillRect(bx,by,bw*pct,bh);
+    ctx.restore();
+  }
+
+  function drawGate(){
+    let gateA=null, gateB=null;
+    let preview=false;
+
+    // Show the gate immediately while the selected coin is being aimed.
+    if(selected>=0 && aim && !running){
+      const others=[0,1,2].filter(i=>i!==selected);
+      gateA=coins[others[0]];
+      gateB=coins[others[1]];
+      preview=true;
+    }else if(gateSnapshot && running){
+      gateA=gateSnapshot.a;
+      gateB=gateSnapshot.b;
+    }else{
+      return;
+    }
+
+    const a=viewPoint(gateA),b=viewPoint(gateB);
+    const gateColor=preview
+      ? 'rgba(255,216,90,1)'
+      : (crossedGate?'rgba(120,255,160,.9)':'rgba(255,216,90,.9)');
+
+    ctx.save();
+
+    // Draw directly across the two gate coins so it stays visible even when
+    // the coins are touching. This overlay is intentionally drawn on top.
+    ctx.lineWidth=preview?4:5;
+    ctx.strokeStyle=gateColor;
+    ctx.setLineDash(preview?[5,5]:[8,6]);
+    ctx.beginPath();
+    ctx.moveTo(a.x,a.y);
+    ctx.lineTo(b.x,b.y);
+    ctx.stroke();
+
+    // Highlight the two coins that form the gate.
+    if(preview){
+      ctx.setLineDash([4,4]);
+      ctx.lineWidth=3;
+      ctx.strokeStyle='rgba(255,216,90,.95)';
+
+      ctx.beginPath();
+      ctx.arc(a.x,a.y,gateA.r+5,0,Math.PI*2);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(b.x,b.y,gateB.r+5,0,Math.PI*2);
+      ctx.stroke();
+    }
+
+    ctx.restore();
+  }
+
+  function frame(t){
+    const dt=Math.min(.032,(t-lastTime)/1000||.016);
+    lastTime=t;
+
+    if(opponentMode==='ai')maybeStartAI(dt);
+
+    // Host is authoritative online. Guest only renders network snapshots.
+    if(!(onlineActive()&&onlineRole===1))step(dt);
+
+    if(isHost()&&onlineConnected){
+      networkAccumulator+=dt;
+      const interval=running?.033:.35;
+      if(networkAccumulator>=interval){
+        networkAccumulator=0;
+        sendNetworkState();
+      }
+    }
+
+    drawField();
+    coins.forEach(drawCoin);
+    drawGate();
+    drawGoalie();
+    drawAim();
+    requestAnimationFrame(frame);
+  }
+
+  // ---------- UI ----------
+  document.getElementById('helpBtn').addEventListener('click',()=>{
+    document.getElementById('helpPanel').classList.remove('hidden');
+  });
+
+  document.getElementById('closeHelp').addEventListener('click',()=>{
+    document.getElementById('helpPanel').classList.add('hidden');
+  });
+
+  document.getElementById('helpPanel').addEventListener('pointerdown',e=>{
+    if(e.target===document.getElementById('helpPanel')){
+      document.getElementById('helpPanel').classList.add('hidden');
+    }
+  });
+
+  document.getElementById('opponent').addEventListener('click',()=>{
+    if(onlineActive())return;
+    opponentMode=opponentMode==='ai'?'human':'ai';
+    aiThinking=false;aiTimer=0;
+    aiLastCoin=-1;aiLastProgress=null;aiStallCount=0;aiShotCount=0;aiGateAttempts=0;aiGateMakes=0;
+    score=[0,0];attacker=0;resetFormation();updateHUD();
+    toast(opponentMode==='ai'?'AI opponent enabled':'Human opponent enabled');
+  });
+
+
+  document.getElementById('mode').addEventListener('click',()=>{
+    if(onlineActive()&&!isHost()){
+      toast('Player 1 controls match rules');
+      return;
+    }
+    easyMode=!easyMode;
+    score=[0,0];attacker=0;resetFormation();updateHUD();
+    toast(easyMode?'Easy Mode: any coin can score':'Standard Mode: dime scores');
+    sendNetworkState(true);
+  });
+
+  document.getElementById('reset').addEventListener('click',()=>{
+    if(onlineActive()&&!isHost()){toast('Player 1 controls reset');return}
+    aiLastCoin=-1;aiLastProgress=null;aiStallCount=0;aiShotCount=0;aiGateAttempts=0;aiGateMakes=0;
+    score=[0,0];attacker=0;resetFormation();updateHUD();toast('Match reset');
+    sendNetworkState(true);
+  });
+
+  document.getElementById('resetPlay').addEventListener('click',()=>{
+    if(onlineActive()&&!isHost()){toast('Player 1 controls formation reset');return}
+    resetFormation();toast('Formation reset');sendNetworkState(true);
+  });
+
+  document.getElementById('onlineBtn').addEventListener('click',()=>{
+    onlinePanel.classList.remove('hidden');
+    if(onlineActive()){
+      roomCodeText.textContent=lobbyCode;
+      roomCodeBox.classList.remove('hidden');
+    }
+  });
+
+  document.getElementById('closeOnline').addEventListener('click',()=>{
+    onlinePanel.classList.add('hidden');
+  });
+
+  document.getElementById('createLobby').addEventListener('click',async()=>{
+    const code=generateCode();
+    await connectRoom(code,0);
+  });
+
+  document.getElementById('joinLobby').addEventListener('click',async()=>{
+    const code=joinCodeInput.value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
+    if(code.length!==6){
+      setOnlineStatus('Enter the 6-character lobby code.');
+      return;
+    }
+    await connectRoom(code,1);
+  });
+
+  joinCodeInput.addEventListener('input',()=>{
+    joinCodeInput.value=joinCodeInput.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);
+  });
+
+  document.getElementById('copyCode').addEventListener('click',async()=>{
+    if(!lobbyCode)return;
+    try{
+      await navigator.clipboard.writeText(lobbyCode);
+      toast('Lobby code copied');
+    }catch{
+      joinCodeInput.value=lobbyCode;
+      joinCodeInput.select();
+      toast('Code ready to copy');
+    }
+  });
+
+  document.getElementById('leaveLobby').addEventListener('click',async()=>{
+    await leaveOnline(true);
+    toast('Left lobby');
+  });
+
+  window.addEventListener('resize',resize,{passive:true});
+  window.addEventListener('beforeunload',()=>{
+    if(onlineChannel)onlineChannel.untrack();
+  });
+
+  resize();
+  updateHUD();
+  requestAnimationFrame(frame);
+})();
