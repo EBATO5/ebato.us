@@ -1,4 +1,5 @@
-attacker===0;
+score.every(s=>s<7)&&attacker===0;
+    if(score.some(s=>s>=7))return false;
     if(opponentMode==='online')return onlineConnected&&attacker===onlineRole;
     return true;
   }
@@ -62,7 +63,9 @@ attacker===0;
     const c=coins[index];
     c.vx=vx;c.vy=vy;
 
-    goalieDir=Math.random()<.5?-1:1;
+    // Keep the keeper's current patrol direction through the shot so its movement
+    // is readable and can be anticipated. Direction only changes at the goal edges
+    // (or when a new formation resets the keeper).
 
     const others=[0,1,2].filter(i=>i!==index);
     gateSnapshot={
@@ -277,6 +280,26 @@ attacker===0;
         const points=coinPointValue(scoringCoin);
         const coinName=scoringCoin.type==='dime'?'Dime':'Penny';
         score[scorer]+=points;
+
+        if(score[scorer]>=7){
+          coins.forEach(c=>{c.vx=0;c.vy=0});
+          running=false;
+          shotActive=false;
+          selected=-1;
+          pointer=null;
+          aim=null;
+          updateHUD();
+          const winnerName=(opponentMode==='ai'&&scorer===1)?'AI':`Player ${scorer+1}`;
+          hintEl.textContent=`${winnerName} wins with ${score[scorer]} points! Reset Match to play again.`;
+          turnEl.textContent=onlineActive()
+            ? (scorer===onlineRole?'You win!':'Opponent wins!')
+            : `${winnerName} wins!`;
+          toast(`${coinName} GOAL! +${points} — ${winnerName} wins!`);
+          broadcastGameEvent(`${winnerName} wins with ${score[scorer]} points!`);
+          sendNetworkState(true);
+          return;
+        }
+
         attacker=1-scorer;
         resetFormation();
         updateHUD();
