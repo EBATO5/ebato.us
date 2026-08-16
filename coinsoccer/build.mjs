@@ -363,6 +363,17 @@ replaceRequired(
 'restart and ready handlers'
 );
 
+// v0.4.1: Reset Formation was removed from the interface; remove its legacy
+// listener too so there is no dangling DOM lookup during initialization.
+replaceRequired(
+`  document.getElementById('resetPlay').addEventListener('click',()=>{
+    if(onlineActive()&&!isHost()){toast('Player 1 controls formation reset');return}
+    resetFormation();toast('Formation reset');sendNetworkState(true);
+  });`,
+`  // Reset Formation intentionally removed in v0.4.1.`,
+'reset formation handler'
+);
+
 await writeFile('dist/app.js', source, 'utf8');
 await copyFile('index.html', 'dist/index.html');
 await copyFile('style.css', 'dist/style.css');
