@@ -374,6 +374,261 @@ replaceRequired(
 'reset formation handler'
 );
 
+// v0.5.0: AI difficulty is separate from the Easy/Standard/Hard scoring rules.
+// Normal is exactly the established AI tuning; Easy and Hard only change its
+// execution accuracy and computer-goalie speed.
+replaceRequired(
+`  let hardMode=false;
+  let matchStarter=0;
+  let matchOver=false;
+  let nextGameReady=[false,false];`,
+`  let hardMode=false;
+  let aiDifficulty=1; // 0 Easy, 1 Normal, 2 Hard
+  let autoGoalie=[false,false];
+  let matchStarter=0;
+  let matchOver=false;
+  let nextGameReady=[false,false];`,
+'AI difficulty and goalie state'
+);
+
+replaceRequired(
+`    document.getElementById('mode').textContent=easyMode
+      ? 'Difficulty: Easy'
+      : hardMode
+        ? 'Difficulty: Hard'
+        : 'Difficulty: Standard';`,
+`    document.getElementById('mode').textContent=easyMode
+      ? 'Rules: Easy'
+      : hardMode
+        ? 'Rules: Hard'
+        : 'Rules: Standard';`,
+'rules label'
+);
+
+replaceRequired(
+`    document.getElementById('onlineBtn').textContent=onlineActive()
+      ? \`Online: \${lobbyCode}\`
+      : 'Play Online';
+  }`,
+`    document.getElementById('onlineBtn').textContent=onlineActive()
+      ? \`Online: \${lobbyCode}\`
+      : 'Play Online';
+    updateGameplayControls();
+  }`,
+'gameplay control HUD hook'
+);
+
+replaceRequired(
+`  function updateNewGamePanel(){`,
+`  function aiDifficultyName(){
+    return aiDifficulty===0?'Easy':aiDifficulty===2?'Hard':'Normal';
+  }
+
+  function localAutoGoalieSide(){
+    if(onlineActive()&&onlineRole!==null)return onlineRole;
+    if(opponentMode==='ai')return 0;
+    return goalie?goalie.side:Math.max(0,Math.min(1,1-attacker));
+  }
+
+  function updateGameplayControls(){
+    const aiControl=document.getElementById('aiDifficultyControl');
+    const aiSlider=document.getElementById('aiDifficulty');
+    const aiLabel=document.getElementById('aiDifficultyLabel');
+    if(aiControl)aiControl.classList.toggle('hidden',opponentMode!=='ai');
+    if(aiSlider)aiSlider.value=String(aiDifficulty);
+    if(aiLabel)aiLabel.textContent=aiDifficultyName();
+
+    const goalieBtn=document.getElementById('autoGoalie');
+    if(goalieBtn){
+      const side=localAutoGoalieSide();
+      const on=!!autoGoalie[side];
+      goalieBtn.disabled=onlineActive()&&!onlineConnected;
+      goalieBtn.textContent=opponentMode==='human'
+        ? \`Auto Goalie P\${side+1}: \${on?'On':'Off'}\`
+        : \`Auto Goalie: \${on?'On':'Off'}\`;
+    }
+  }
+
+  function updateNewGamePanel(){`,
+'AI and goalie control helpers'
+);
+
+replaceRequired(
+`  window.coinSoccerStartMatchMode=async mode=>{
+    if(onlineActive())await leaveOnline(false);
+    opponentMode=mode==='ai'?'ai':'human';
+    beginMatchAtStarter(0);
+  };`,
+`  window.coinSoccerStartMatchMode=async mode=>{
+    if(onlineActive())await leaveOnline(false);
+    opponentMode=mode==='ai'?'ai':'human';
+    aiDifficulty=1;
+    autoGoalie=[false,false];
+    beginMatchAtStarter(0);
+  };`,
+'default AI and goalie settings'
+);
+
+replaceRequired(
+`  const AI_GATE_TARGET=.90;`,
+`  const AI_GATE_TARGET=.90;
+
+  function aiBaseGateTarget(){
+    return aiDifficulty===0?.78:aiDifficulty===2?.97:AI_GATE_TARGET;
+  }`,
+'AI difficulty gate target'
+);
+
+replaceRequired(
+`  function aiAdaptiveGateSkill(){
+    if(aiGateAttempts<8)return AI_GATE_TARGET;
+    const actual=aiGateMakes/Math.max(1,aiGateAttempts);
+    return aiClamp(AI_GATE_TARGET+(AI_GATE_TARGET-actual)*.35,.84,.96);
+  }`,
+`  function aiAdaptiveGateSkill(){
+    const target=aiBaseGateTarget();
+    if(aiGateAttempts<8)return target;
+    const actual=aiGateMakes/Math.max(1,aiGateAttempts);
+    const low=aiDifficulty===0?.70:aiDifficulty===2?.93:.84;
+    const high=aiDifficulty===0?.87:aiDifficulty===2?.995:.96;
+    return aiClamp(target+(target-actual)*.35,low,high);
+  }`,
+'AI adaptive difficulty'
+);
+
+replaceRequired(
+`    const skilled=openingPrecision || Math.random()<aiAdaptiveGateSkill();
+    const error=openingPrecision
+      ? (Math.random()*2-1)*.0015
+      : skilled
+        ? (Math.random()*2-1)*.0045
+        : (Math.random()<.5?-1:1)*(.028+Math.random()*.050);`,
+`    const skilled=openingPrecision || Math.random()<aiAdaptiveGateSkill();
+    let error;
+    if(openingPrecision){
+      error=(Math.random()*2-1)*.0015;
+    }else if(aiDifficulty===0){
+      error=skilled
+        ? (Math.random()*2-1)*.010
+        : (Math.random()<.5?-1:1)*(.045+Math.random()*.065);
+    }else if(aiDifficulty===2){
+      error=skilled
+        ? (Math.random()*2-1)*.0022
+        : (Math.random()<.5?-1:1)*(.012+Math.random()*.025);
+    }else{
+      // Normal preserves the exact established v0.1.3-era shot execution.
+      error=skilled
+        ? (Math.random()*2-1)*.0045
+        : (Math.random()<.5?-1:1)*(.028+Math.random()*.050);
+    }`,
+'AI aim difficulty'
+);
+
+replaceRequired(
+`  function currentGoalieSpeed(){
+    // One baseline AI for now. Easier variants can be derived from this later.
+    if(opponentMode==='ai'&&goalie&&goalie.side===1)return 78;
+    return goalieSpeed;
+  }`,
+`  function currentGoalieSpeed(){
+    if(opponentMode==='ai'&&goalie&&goalie.side===1){
+      return aiDifficulty===0?62:aiDifficulty===2?96:78;
+    }
+    return goalieSpeed;
+  }`,
+'AI goalie difficulty speed'
+);
+
+replaceRequired(
+`  function shouldAutoPatrol(){
+    if(!goalie)return false;
+    if(pointer && pointer.mode==='goalie' && canControlKeeperLocal())return false;
+    if(onlineActive() && isHost() && goalie.side===1 && remoteKeeperHeld)return false;
+    return true;
+  }`,
+`  function shouldAutoPatrol(){
+    if(!goalie)return false;
+    if(pointer && pointer.mode==='goalie' && canControlKeeperLocal())return false;
+    if(onlineActive() && isHost() && goalie.side===1 && remoteKeeperHeld)return false;
+    // The computer always manages its own keeper. Human keepers default to
+    // manual/stationary and only patrol when that player enables Auto Goalie.
+    if(opponentMode==='ai'&&goalie.side===1)return true;
+    return !!autoGoalie[goalie.side];
+  }`,
+'manual-first goalie patrol'
+);
+
+// Synchronize each human player's Auto Goalie preference online.
+replaceRequired(
+`      nextGameReady:[...nextGameReady],
+      running,`,
+`      nextGameReady:[...nextGameReady],
+      autoGoalie:[...autoGoalie],
+      running,`,
+'network goalie state'
+);
+replaceRequired(
+`    nextGameReady=Array.isArray(s.nextGameReady)?[!!s.nextGameReady[0],!!s.nextGameReady[1]]:[false,false];
+    running=!!s.running;`,
+`    nextGameReady=Array.isArray(s.nextGameReady)?[!!s.nextGameReady[0],!!s.nextGameReady[1]]:[false,false];
+    autoGoalie=Array.isArray(s.autoGoalie)?[!!s.autoGoalie[0],!!s.autoGoalie[1]]:[false,false];
+    running=!!s.running;`,
+'network goalie apply'
+);
+
+replaceRequired(
+`      .on('broadcast',{event:'ready_next'},({payload})=>{
+        if(!isHost()||!matchOver||!payload||payload.player!==1)return;
+        nextGameReady[1]=true;
+        updateNewGamePanel();
+        sendNetworkState(true);
+        maybeStartReadyNextGame();
+      })`,
+`      .on('broadcast',{event:'ready_next'},({payload})=>{
+        if(!isHost()||!matchOver||!payload||payload.player!==1)return;
+        nextGameReady[1]=true;
+        updateNewGamePanel();
+        sendNetworkState(true);
+        maybeStartReadyNextGame();
+      })
+      .on('broadcast',{event:'auto_goalie'},({payload})=>{
+        if(!isHost()||!payload||payload.player!==1)return;
+        autoGoalie[1]=!!payload.enabled;
+        updateHUD();
+        sendNetworkState(true);
+      })`,
+'online goalie preference event'
+);
+
+// Range input supports both clicking and dragging between Easy / Normal / Hard.
+replaceRequired(
+`  document.getElementById('mode').addEventListener('click',()=>{`,
+`  const aiDifficultyInput=document.getElementById('aiDifficulty');
+  if(aiDifficultyInput){
+    aiDifficultyInput.addEventListener('input',()=>{
+      aiDifficulty=Math.max(0,Math.min(2,Number(aiDifficultyInput.value)||0));
+      updateHUD();
+    });
+    aiDifficultyInput.addEventListener('change',()=>{
+      toast(\`AI Difficulty: \${aiDifficultyName()}\`);
+    });
+  }
+
+  document.getElementById('autoGoalie').addEventListener('click',()=>{
+    const side=localAutoGoalieSide();
+    autoGoalie[side]=!autoGoalie[side];
+    updateHUD();
+    if(onlineActive()){
+      if(isHost())sendNetworkState(true);
+      else sendBroadcast('auto_goalie',{player:side,enabled:autoGoalie[side]});
+    }
+    toast(\`Auto Goalie: \${autoGoalie[side]?'On':'Off'}\`);
+  });
+
+  document.getElementById('mode').addEventListener('click',()=>{`,
+'AI slider and goalie toggle handlers'
+);
+
 await writeFile('dist/app.js', source, 'utf8');
 await copyFile('index.html', 'dist/index.html');
 await copyFile('style.css', 'dist/style.css');
