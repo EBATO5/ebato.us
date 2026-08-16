@@ -89,16 +89,14 @@ mewhat more likely, but the AI intentionally
   }
 
   function aiOpeningContinuationShot(){
-    // The starting triangle is a special case: two coins are still touching after
-    // kickoff. During the next two moves, favor formations where EVERY coin has a
-    // usable future gate. This prevents the planner from making a locally strong
-    // pass that strands itself on shot two or three.
-    const preferredType=aiPossessionShots===1?'penny':'dime';
+    // The starting triangle is a special case because the kickoff can leave two
+    // coins touching. Keep the anti-stuck formation check, but do NOT prescribe
+    // which coin moves next. Let every legal coin/target compete on formation
+    // quality, future gate health, and useful field progress.
     const choices=[];
 
     for(let i=0;i<coins.length;i++){
       const c=coins[i];
-      if(c.type!==preferredType || i===aiLastCoin)continue;
 
       for(const cand of aiCandidateTargets(i)){
         const predicted=coins.map(o=>({...o,vx:0,vy:0}));
@@ -108,34 +106,17 @@ mewhat more likely, but the AI intentionally
         const avgQuality=qualities.reduce((a,b)=>a+b,0)/qualities.length;
         const progress=(cand.target.y-c.y)/field.h;
 
-        // An all-live formation dominates raw forward distance in the opening.
-        // A minimum gate quality over ~45 is comfortably playable.
-        let value=minQuality*3.2 + avgQuality*.8 + cand.value*.18 + progress*18;
+        // In the opening, keeping all three future gates alive matters most.
+        // Progress helps break ties, but a backward/sideways setup is welcome
+        // when it creates a substantially better next formation.
+        let value=minQuality*3.2 + avgQuality*.8 + cand.value*.18 + progress*14;
         if(minQuality<20)value-=220;
         choices.push({...cand,value,minQuality,avgQuality});
       }
     }
 
-    // If the exact preferred coin has no legal continuation, fall back to any
-    // candidate rather than freezing the turn.
-    if(!choices.length){
-      for(let i=0;i<coins.length;i++){
-        if(i===aiLastCoin)continue;
-        for(const cand of aiCandidateTargets(i)){
-          const predicted=coins.map(o=>({...o,vx:0,vy:0}));
-          predicted[i]={...predicted[i],x:cand.target.x,y:cand.target.y};
-          const qualities=predicted.map((_,j)=>aiNextGateQuality(predicted,j));
-          const minQuality=Math.min(...qualities);
-          const avgQuality=qualities.reduce((a,b)=>a+b,0)/qualities.length;
-          choices.push({...cand,value:minQuality*3+avgQuality+cand.value*.15,minQuality,avgQuality});
-        }
-      }
-    }
-
     if(!choices.length)return false;
 
-    // Keep the continuation safe, but don't make it scripted. First require a
-    // comfortably live formation, then sample from the strongest near-equal lines.
     choices.sort((a,b)=>b.value-a.value);
     const bestMin=Math.max(...choices.map(c=>c.minQuality??-80));
     let safeChoices=choices.filter(c=>(c.minQuality??-80)>=Math.max(30,bestMin-12));
@@ -145,11 +126,12 @@ mewhat more likely, but the AI intentionally
       const ty=(c.target.y-field.y)/Math.max(1,field.h);
       c.patternKey=`${aiPossessionShots}:${c.index}:${tx.toFixed(2)}:${ty.toFixed(2)}`;
     });
-    const choice=aiVariedChoice(safeChoices,20,8,aiLastOpeningPattern)||safeChoices[0];
+
+    const choice=aiVariedChoice(safeChoices,20,10,aiLastOpeningPattern)||safeChoices[0];
     aiLastOpeningPattern=choice.patternKey||'';
     const dist=Math.hypot(choice.target.x-choice.c.x,choice.target.y-choice.c.y);
     const power=aiPowerForDistance(dist,.16,.66);
-    aiAimAndShoot(choice.index,choice.target,choice.gate,power,true);
+    aiAimAndShoot(choice.index,choice.target,choice.gate,power);
     return true;
   }
 
