@@ -13,19 +13,6 @@
     "search": "pastor kids pk open door community belonging"
   },
   {
-    "id": "coin-soccer",
-    "name": "Coin Soccer",
-    "category": "games",
-    "categoryLabel": "Game",
-    "status": "prototype",
-    "statusLabel": "Prototype",
-    "description": "A phone-first tabletop soccer game built around flicked coins, gate-making, goalkeepers, physics, AI, and multiplayer play.",
-    "url": null,
-    "action": "In development",
-    "featured": true,
-    "search": "coin soccer flick pennies dime multiplayer physics ai goalkeeper mobile browser"
-  },
-  {
     "id": "harvest-grove-64",
     "name": "Harvest Grove 64",
     "category": "games",
@@ -63,70 +50,5 @@
     "action": "Open repository →",
     "featured": false,
     "search": "rancherama ranch rogue farming game prototype"
-  },
-  {
-    "id": "coop-roguelike",
-    "name": "Co-op Roguelike",
-    "category": "games",
-    "categoryLabel": "Game",
-    "status": "prototype",
-    "statusLabel": "Prototype",
-    "description": "A browser-first cooperative survivor-style game concept with controller support, class-building skill trees, upgrades, and shared runs.",
-    "url": null,
-    "action": "Prototype / offline",
-    "featured": false,
-    "search": "coop roguelike vampire survivor multiplayer controller skill tree healing upgrades"
-  },
-  {
-    "id": "intergenerational-village",
-    "name": "Intergenerational Learning Village",
-    "category": "community",
-    "categoryLabel": "Community",
-    "status": "wip",
-    "statusLabel": "Planning",
-    "description": "A long-term vision for a place where children, teens, older adults, tutoring, care, learning, and everyday life can meaningfully overlap.",
-    "url": null,
-    "action": "Planning",
-    "featured": false,
-    "search": "intergenerational learning village daycare elderly children tutoring academy education"
-  },
-  {
-    "id": "dakgangjeong-cart",
-    "name": "Dakgangjeong Cart",
-    "category": "food",
-    "categoryLabel": "Food / Business",
-    "status": "wip",
-    "statusLabel": "Planning",
-    "description": "A Queens food-cart concept centered on Korean sweet crispy chicken, efficient wok workflow, batching, commissary prep, and a focused first recipe.",
-    "url": null,
-    "action": "Planning",
-    "featured": false,
-    "search": "dakgangjeong korean chicken cart food business queens flushing wok commissary"
-  },
-  {
-    "id": "living-world",
-    "name": "The Living World",
-    "category": "creative",
-    "categoryLabel": "Creative",
-    "status": "wip",
-    "statusLabel": "Ongoing",
-    "description": "An ongoing collaborative story and living-world adventure built around exploration, nature, characters, mysteries, and choices that persist.",
-    "url": null,
-    "action": "Story project",
-    "featured": false,
-    "search": "living world story adventure corvin lysa bracken heart oak forest roleplay"
-  },
-  {
-    "id": "ebato-home-base",
-    "name": "EBATO Home Base",
-    "category": "tools",
-    "categoryLabel": "Tool",
-    "status": "live",
-    "statusLabel": "Live",
-    "description": "This site — the launchpad and project atlas for everything else.",
-    "url": null,
-    "action": "You are here",
-    "featured": false,
-    "search": "ebato home base dashboard launcher project atlas website"
   }
 ]
