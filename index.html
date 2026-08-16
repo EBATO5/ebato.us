@@ -1,39 +1,136 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<meta name="description" content="EBATO — hologram-style home base for current projects." />
-<title>EBATO // Hologram Display</title>
-<style>
-:root{--bg:#02080f;--panel:rgba(4,20,31,.82);--cyan:#76f6ff;--cyan2:#39d7e7;--orange:#ff9b42;--orange2:#ffc173;--text:#ecffff;--muted:#8eb4bd;--line:rgba(118,246,255,.22)}
-*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;min-height:100vh;color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:radial-gradient(circle at 15% 10%,rgba(118,246,255,.14),transparent 24%),radial-gradient(circle at 85% 12%,rgba(255,155,66,.12),transparent 22%),linear-gradient(180deg,#02070d,#04131e 48%,#02080f);overflow-x:hidden}
-body:before,body:after{content:"";position:fixed;inset:0;pointer-events:none;z-index:0}body:before{background-image:linear-gradient(rgba(118,246,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(118,246,255,.04) 1px,transparent 1px);background-size:48px 48px;mask-image:linear-gradient(to bottom,#000,transparent 92%)}body:after{background:repeating-linear-gradient(to bottom,rgba(255,255,255,.018) 0,rgba(255,255,255,.018) 1px,transparent 1px,transparent 4px);opacity:.4}
-.shell{width:min(1180px,calc(100% - 30px));margin:auto;padding:26px 0 50px;position:relative;z-index:1}.topbar{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:18px}.brand{display:flex;align-items:center;gap:12px;color:var(--text);text-decoration:none;font-weight:900;letter-spacing:.22em;font-size:.92rem}.brandmark{width:36px;height:36px;display:grid;place-items:center;border:1px solid rgba(118,246,255,.6);border-radius:10px;color:var(--cyan);background:#04131e;box-shadow:inset 0 0 18px rgba(118,246,255,.08),0 0 24px rgba(118,246,255,.2)}.nav{display:flex;gap:10px;flex-wrap:wrap}.nav a{color:var(--muted);text-decoration:none;padding:9px 13px;border:1px solid rgba(118,246,255,.15);border-radius:999px;background:rgba(4,18,29,.55);font-size:.83rem}.nav a:hover{color:var(--cyan);border-color:rgba(118,246,255,.38);box-shadow:0 0 20px rgba(118,246,255,.12)}
-.panel{position:relative;background:linear-gradient(180deg,rgba(7,26,40,.88),rgba(2,11,19,.94));border:1px solid var(--line);border-radius:26px;overflow:hidden;box-shadow:0 18px 60px rgba(0,0,0,.36),0 0 30px rgba(118,246,255,.1);backdrop-filter:blur(12px)}.panel:before{content:"";position:absolute;inset:0;background:linear-gradient(135deg,rgba(118,246,255,.06),transparent 40%,rgba(255,155,66,.05));pointer-events:none}.panel:after{content:"";position:absolute;inset:12px;border:1px solid rgba(118,246,255,.1);border-radius:18px;pointer-events:none}
-.hero{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(260px,.72fr);gap:18px}.hero-main{min-height:320px;padding:clamp(28px,5vw,54px);display:flex;flex-direction:column;justify-content:center}.eyebrow,.label{font-size:.7rem;font-weight:900;letter-spacing:.23em;text-transform:uppercase}.eyebrow{color:var(--orange);margin-bottom:16px;text-shadow:0 0 16px rgba(255,155,66,.35)}.label{color:var(--muted)}h1{margin:0;font-size:clamp(3rem,8vw,6.2rem);line-height:.88;letter-spacing:-.06em;text-transform:uppercase;text-shadow:0 0 24px rgba(118,246,255,.18)}.hero-copy{margin:20px 0 0;max-width:700px;color:#add0d6;font-size:clamp(1rem,1.9vw,1.1rem);line-height:1.7}.hero-copy strong{color:var(--cyan)}
-.status{padding:24px;display:flex;flex-direction:column;justify-content:space-between;min-height:320px}.signal{display:flex;align-items:center;gap:10px;margin:18px 0;color:var(--cyan);font-weight:900;letter-spacing:.08em}.dot{width:10px;height:10px;border-radius:50%;background:var(--orange);box-shadow:0 0 18px rgba(255,155,66,.9);animation:pulse 2s infinite}@keyframes pulse{50%{opacity:.45;transform:scale(.9)}}.status-copy{color:#9fc0c7;line-height:1.6;font-size:.94rem}.status-grid{display:grid;gap:10px;margin-top:22px;font-size:.8rem;color:#83a8b1}.status-grid div{display:flex;justify-content:space-between;gap:12px;border-top:1px solid rgba(118,246,255,.1);padding-top:10px}.status-grid b{color:var(--orange2)}
-.section{margin-top:18px;padding:24px}.section-head{display:flex;justify-content:space-between;align-items:end;gap:16px;margin-bottom:18px}.section-title{margin:6px 0 0;font-size:clamp(1.35rem,3vw,2rem);letter-spacing:-.03em}.section-note{color:var(--muted);font-size:.88rem}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.card{position:relative;display:flex;flex-direction:column;min-height:220px;padding:20px;border-radius:22px;border:1px solid rgba(118,246,255,.18);background:linear-gradient(180deg,rgba(5,21,33,.9),rgba(2,12,21,.96));color:var(--text);text-decoration:none;overflow:hidden;transition:.18s ease}.card:before{content:"";position:absolute;inset:12px;border:1px solid rgba(118,246,255,.1);border-radius:16px;pointer-events:none}.card:after{content:"";position:absolute;right:-35px;bottom:-35px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(255,155,66,.18),transparent 65%);pointer-events:none}.card.clickable:hover,.card.clickable:focus-visible{transform:translateY(-4px);border-color:rgba(118,246,255,.5);box-shadow:0 16px 36px rgba(0,0,0,.34),0 0 28px rgba(118,246,255,.13),0 0 24px rgba(255,155,66,.1);outline:none}.card-top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:22px}.category{color:var(--muted);font-size:.68rem;letter-spacing:.18em;text-transform:uppercase;font-weight:900}.badge{padding:5px 9px;border-radius:999px;font-size:.63rem;letter-spacing:.12em;text-transform:uppercase;font-weight:900;border:1px solid currentColor;background:rgba(0,0,0,.12)}.live{color:var(--cyan)}.prototype{color:var(--orange)}.soon{color:#ffd49a}.card h3{margin:0 0 10px;font-size:1.4rem;letter-spacing:-.03em}.card p{margin:0;color:#9abfc6;line-height:1.58;font-size:.92rem}.cta{margin-top:auto;padding-top:22px;color:var(--orange);text-transform:uppercase;letter-spacing:.17em;font-size:.72rem;font-weight:900}.footer{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;color:#688994;font-size:.8rem;padding:26px 6px 0}.footer a{color:#9dc0c7;text-decoration:none}.footer a:hover{color:var(--cyan)}
-@media(max-width:900px){.hero{grid-template-columns:1fr}.status{min-height:auto}}@media(max-width:700px){.grid{grid-template-columns:1fr}.section-head{flex-direction:column;align-items:start}.panel,.card{border-radius:20px}.hero-main{min-height:280px}}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="EBATO — futuristic hologram-style home base." />
+  <title>EBATO // Orbital Hologram</title>
+  <style>
+    :root {
+      --cyan: #7df7ff;
+      --cyan-soft: rgba(125, 247, 255, 0.72);
+      --cyan-line: rgba(125, 247, 255, 0.24);
+      --orange: #ffab52;
+      --orange-soft: rgba(255, 171, 82, 0.78);
+      --orange-line: rgba(255, 171, 82, 0.22);
+      --text: #dfffff;
+      --muted: rgba(164, 234, 240, 0.78);
+      --shadow-cyan: 0 0 18px rgba(125, 247, 255, 0.18), 0 0 38px rgba(125, 247, 255, 0.09);
+      --shadow-orange: 0 0 16px rgba(255, 171, 82, 0.18), 0 0 34px rgba(255, 171, 82, 0.08);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 18% 14%, rgba(125,247,255,0.14), transparent 24%),
+        radial-gradient(circle at 82% 16%, rgba(255,171,82,0.12), transparent 18%),
+        radial-gradient(circle at 50% 120%, rgba(70,199,255,0.13), transparent 30%),
+        linear-gradient(rgba(2,8,16,0.56), rgba(2,8,16,0.74)),
+        url("https://images.unsplash.com/photo-1462331940025-496dfbfc7564?auto=format&fit=crop&w=2000&q=80") center/cover fixed;
+      overflow-x: hidden;
+    }
+    body::before, body::after { content:""; position:fixed; inset:0; pointer-events:none; z-index:0; }
+    body::before {
+      background-image:
+        linear-gradient(rgba(125,247,255,0.038) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(125,247,255,0.038) 1px, transparent 1px);
+      background-size: 46px 46px;
+      mask-image: linear-gradient(to bottom, rgba(0,0,0,1), rgba(0,0,0,.34));
+    }
+    body::after {
+      background: repeating-linear-gradient(to bottom, rgba(125,247,255,0.018) 0, rgba(125,247,255,0.018) 1px, transparent 1px, transparent 4px);
+      opacity: .36;
+      mix-blend-mode: screen;
+    }
+    .shell { position:relative; z-index:1; width:min(1180px,calc(100% - 30px)); margin:0 auto; padding:26px 0 54px; }
+    .topbar { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:18px; }
+    .brand { display:inline-flex; align-items:center; gap:12px; text-decoration:none; color:var(--cyan); font-weight:900; letter-spacing:.22em; text-transform:uppercase; text-shadow:0 0 18px rgba(125,247,255,.34); }
+    .brand-mark { width:38px; height:38px; display:grid; place-items:center; color:var(--orange); border:1px solid var(--cyan-line); border-radius:10px; background:rgba(6,22,38,.4); box-shadow:inset 0 0 18px rgba(125,247,255,.08), var(--shadow-cyan); }
+    .top-links { display:flex; gap:10px; flex-wrap:wrap; }
+    .top-links a { text-decoration:none; color:var(--orange); background:rgba(6,22,38,.36); border:1px solid var(--orange-line); border-radius:999px; padding:9px 14px; font-size:.83rem; box-shadow:inset 0 0 16px rgba(255,171,82,.04); }
+    .top-links a:hover { color:var(--cyan); border-color:var(--cyan-line); box-shadow:var(--shadow-cyan), var(--shadow-orange); }
+    .holo-panel { position:relative; overflow:hidden; background:linear-gradient(180deg,rgba(8,28,45,.38),rgba(5,18,30,.54)); border:1px solid var(--cyan-line); border-radius:26px; backdrop-filter:blur(14px) saturate(115%); -webkit-backdrop-filter:blur(14px) saturate(115%); box-shadow:0 18px 70px rgba(0,0,0,.34), var(--shadow-cyan); }
+    .holo-panel::before { content:""; position:absolute; inset:0; background:linear-gradient(125deg,rgba(125,247,255,.08),transparent 38%,rgba(255,171,82,.06) 100%),repeating-linear-gradient(to bottom,rgba(125,247,255,.03) 0,rgba(125,247,255,.03) 1px,transparent 1px,transparent 6px); pointer-events:none; }
+    .holo-panel::after { content:""; position:absolute; inset:11px; border:1px solid rgba(125,247,255,.14); border-radius:18px; pointer-events:none; }
+    .corner { position:absolute; width:22px; height:22px; z-index:2; pointer-events:none; }
+    .corner::before,.corner::after { content:""; position:absolute; background:var(--orange); box-shadow:0 0 12px rgba(255,171,82,.35); }
+    .corner::before { width:22px; height:1px; }
+    .corner::after { width:1px; height:22px; }
+    .tl{top:10px;left:10px}.tr{top:10px;right:10px;transform:rotate(90deg)}.bl{bottom:10px;left:10px;transform:rotate(-90deg)}.br{bottom:10px;right:10px;transform:rotate(180deg)}
+    .hero { display:grid; grid-template-columns:minmax(0,1.55fr) minmax(260px,.7fr); gap:18px; margin-bottom:18px; }
+    .hero-main { min-height:340px; padding:clamp(28px,5vw,54px); display:flex; flex-direction:column; justify-content:center; }
+    .label { color:var(--orange); text-transform:uppercase; letter-spacing:.24em; font-size:.72rem; font-weight:800; text-shadow:0 0 12px rgba(255,171,82,.26); }
+    h1 { margin:14px 0 0; font-size:clamp(3rem,8vw,6.2rem); line-height:.88; letter-spacing:-.06em; text-transform:uppercase; color:var(--cyan); text-shadow:0 0 22px rgba(125,247,255,.24); }
+    .hero-copy { margin:18px 0 0; max-width:720px; line-height:1.72; color:var(--muted); font-size:clamp(1rem,2vw,1.1rem); }
+    .hero-copy strong { color:var(--orange); }
+    .radar { position:absolute; right:32px; top:34px; width:138px; height:138px; border:1px solid rgba(125,247,255,.16); border-radius:50%; opacity:.6; pointer-events:none; }
+    .radar::before,.radar::after{content:"";position:absolute;inset:20%;border:1px solid rgba(125,247,255,.12);border-radius:50%}.radar::after{inset:48% 0 auto 0;height:1px;border:0;background:rgba(255,171,82,.26);box-shadow:0 0 10px rgba(255,171,82,.2);transform-origin:center;animation:sweep 7s linear infinite}@keyframes sweep{to{transform:rotate(360deg)}}
+    .status { min-height:340px; padding:24px; display:flex; flex-direction:column; justify-content:space-between; }
+    .signal { display:flex; align-items:center; gap:10px; margin:18px 0; color:var(--cyan); font-weight:800; letter-spacing:.08em; }
+    .signal-dot { width:10px; height:10px; border-radius:50%; background:var(--orange); box-shadow:0 0 18px rgba(255,171,82,.82); animation:pulse 2.1s infinite; }
+    @keyframes pulse { 50% { opacity:.5; transform:scale(.92); } }
+    .status-copy { color:var(--muted); line-height:1.62; font-size:.94rem; }
+    .status-grid { display:grid; gap:10px; margin-top:22px; font-size:.8rem; }
+    .status-grid div { display:flex; justify-content:space-between; gap:12px; border-top:1px solid rgba(125,247,255,.11); padding-top:10px; color:var(--muted); }
+    .status-grid b { color:var(--orange); }
+    .section { margin-top:18px; padding:24px; }
+    .section-head { display:flex; justify-content:space-between; align-items:end; gap:16px; margin-bottom:18px; }
+    .section-title { margin:6px 0 0; color:var(--cyan); font-size:clamp(1.35rem,3vw,2rem); letter-spacing:-.03em; text-shadow:0 0 14px rgba(125,247,255,.18); }
+    .section-note { color:var(--orange); font-size:.88rem; }
+    .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+    .card { position:relative; display:flex; flex-direction:column; min-height:230px; padding:20px; border-radius:22px; border:1px solid rgba(125,247,255,.16); background:linear-gradient(180deg,rgba(10,28,42,.28),rgba(6,18,31,.46)); backdrop-filter:blur(15px) saturate(120%); -webkit-backdrop-filter:blur(15px) saturate(120%); text-decoration:none; color:var(--text); overflow:hidden; box-shadow:inset 0 0 20px rgba(125,247,255,.03); transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease; }
+    .card::before { content:""; position:absolute; inset:10px; border:1px solid rgba(125,247,255,.11); border-radius:15px; pointer-events:none; }
+    .card::after { content:""; position:absolute; right:-25px; bottom:-25px; width:110px; height:110px; border-radius:50%; background:radial-gradient(circle,rgba(255,171,82,.2),transparent 68%); pointer-events:none; }
+    .card.clickable:hover,.card.clickable:focus-visible { transform:translateY(-4px); border-color:rgba(125,247,255,.42); box-shadow:0 16px 34px rgba(0,0,0,.34),var(--shadow-cyan),var(--shadow-orange); outline:none; }
+    .card-top { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:22px; }
+    .category { color:var(--orange); font-size:.68rem; text-transform:uppercase; font-weight:800; letter-spacing:.2em; }
+    .badge { border-radius:999px; padding:5px 9px; font-size:.63rem; font-weight:900; letter-spacing:.12em; text-transform:uppercase; background:rgba(0,0,0,.12); border:1px solid currentColor; }
+    .badge.live,.badge.soon { color:var(--cyan); } .badge.prototype { color:var(--orange); }
+    .card h3 { margin:0 0 10px; font-size:1.38rem; color:var(--cyan); letter-spacing:-.03em; text-shadow:0 0 12px rgba(125,247,255,.16); }
+    .card p { margin:0; line-height:1.58; color:var(--muted); font-size:.92rem; }
+    .cta { margin-top:auto; padding-top:22px; color:var(--orange); text-transform:uppercase; letter-spacing:.17em; font-size:.72rem; font-weight:900; text-shadow:0 0 10px rgba(255,171,82,.14); }
+    .footer { display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; padding:26px 6px 0; font-size:.8rem; color:var(--muted); }
+    .footer a { color:var(--orange); text-decoration:none; } .footer a:hover { color:var(--cyan); }
+    @media(max-width:900px){.hero{grid-template-columns:1fr}.status{min-height:auto}.radar{opacity:.35}}
+    @media(max-width:700px){.grid{grid-template-columns:1fr}.section-head{flex-direction:column;align-items:start}.holo-panel,.card{border-radius:20px}.hero-main{min-height:280px}.radar{width:100px;height:100px;right:20px;top:20px}}
+  </style>
 </head>
 <body>
-<div class="shell">
-<header class="topbar"><a class="brand" href="#top"><span class="brandmark">E</span>EBATO</a><nav class="nav"><a href="#projects">Project Deck</a><a href="https://github.com/EBATO5" target="_blank" rel="noopener">GitHub ↗</a></nav></header>
-<main id="top">
-<section class="hero">
-<div class="panel hero-main"><div class="eyebrow">Hologram Interface // Home Base</div><h1>Mission Control</h1><p class="hero-copy">A hologram-style launchpad for the things I’m building. <strong>Turquoise signals, orange highlights,</strong> and a clean deck for the projects that matter right now.</p></div>
-<aside class="panel status"><div><div class="label">System State</div><div class="signal"><span class="dot"></span>HOLO DISPLAY ACTIVE</div><div class="status-copy">Current deck includes one live community project, one active game prototype, and two reserved future slots.</div></div><div class="status-grid"><div><span>Palette</span><b>Turquoise / Orange</b></div><div><span>Visible projects</span><b>4</b></div><div><span>Primary base</span><b>ebato.us</b></div><div><span>Mode</span><b>Build → Refine</b></div></div></aside>
-</section>
-<section class="panel section" id="projects"><div class="section-head"><div><div class="label">Project Deck</div><h2 class="section-title">Current display</h2></div><div class="section-note">Only the projects and placeholders you asked to keep on the board.</div></div>
-<div class="grid">
-<article class="card"><div class="card-top"><span class="category">Game Prototype</span><span class="badge prototype">Prototype</span></div><h3>Coin Soccer</h3><p>A phone-first coin-flick soccer game built around gate-making, keepers, physics, and simple competitive fun.</p><div class="cta">Prototype in development</div></article>
-<a class="card clickable" href="https://pkconnection.org" target="_blank" rel="noopener"><div class="card-top"><span class="category">Community</span><span class="badge live">Live</span></div><h3>PK Connection</h3><p>A shared space for pastor’s kids centered on belonging, welcome, and the freedom to enter without over-explaining.</p><div class="cta">Open project →</div></a>
-<article class="card"><div class="card-top"><span class="category">Placeholder</span><span class="badge soon">Coming Soon</span></div><h3>CCCC</h3><p>A reserved slot in the deck, held in place until the project is ready to come online.</p><div class="cta">Awaiting signal</div></article>
-<article class="card"><div class="card-top"><span class="category">Placeholder</span><span class="badge soon">Coming Soon</span></div><h3>Tillows.com</h3><p>A reserved slot for Tillows.com, ready to be activated when you want it visible as a real destination.</p><div class="cta">Awaiting signal</div></article>
-</div></section>
-</main>
-<footer class="footer"><span>EBATO // hologram display // turquoise × orange</span><span><a href="#top">Back to top ↑</a></span></footer>
-</div>
+  <div class="shell">
+    <header class="topbar">
+      <a class="brand" href="#top" aria-label="EBATO home"><span class="brand-mark">E</span>EBATO</a>
+      <nav class="top-links" aria-label="Primary navigation"><a href="#projects">Project Deck</a><a href="https://github.com/EBATO5" target="_blank" rel="noopener">GitHub ↗</a></nav>
+    </header>
+    <main id="top">
+      <section class="hero">
+        <div class="holo-panel hero-main">
+          <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span><div class="radar"></div>
+          <div class="label">Orbital Interface // Home Base</div>
+          <h1>Mission Control</h1>
+          <p class="hero-copy">An outer-space backdrop with all content inside translucent futuristic hologram panels. Every heading, line, signal, and interface accent stays within <strong>turquoise and orange</strong>.</p>
+        </div>
+        <aside class="holo-panel status" aria-label="System status">
+          <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
+          <div><div class="label">System State</div><div class="signal"><span class="signal-dot"></span>ORBITAL HOLO DISPLAY ACTIVE</div><div class="status-copy">Current deck includes one live community project, one active game prototype, and two reserved future slots.</div></div>
+          <div class="status-grid"><div><span>Backdrop</span><b>Outer Space</b></div><div><span>Visible projects</span><b>4</b></div><div><span>Display style</span><b>Translucent HUD</b></div><div><span>Palette</span><b>Turquoise / Orange</b></div></div>
+        </aside>
+      </section>
+      <section class="holo-panel section" id="projects">
+        <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
+        <div class="section-head"><div><div class="label">Project Deck</div><h2 class="section-title">Current display</h2></div><div class="section-note">Only the four projects and placeholders currently on the board.</div></div>
+        <div class="grid">
+          <article class="card"><div class="card-top"><span class="category">Game Prototype</span><span class="badge prototype">Prototype</span></div><h3>Coin Soccer</h3><p>A phone-first coin-flick soccer game built around gate-making, keepers, physics, and simple competitive fun.</p><div class="cta">Prototype in development</div></article>
+          <a class="card clickable" href="https://pkconnection.org" target="_blank" rel="noopener"><div class="card-top"><span class="category">Community</span><span class="badge live">Live</span></div><h3>PK Connection</h3><p>A shared space for pastor’s kids centered on belonging, welcome, and the freedom to enter without over-explaining.</p><div class="cta">Open project →</div></a>
+          <article class="card"><div class="card-top"><span class="category">Placeholder</span><span class="badge soon">Coming Soon</span></div><h3>CCCC</h3><p>A reserved slot in the deck, held in place until the project is ready to come online.</p><div class="cta">Awaiting signal</div></article>
+          <article class="card"><div class="card-top"><span class="category">Placeholder</span><span class="badge soon">Coming Soon</span></div><h3>Tillows.com</h3><p>A reserved slot for Tillows.com, ready to be activated when you want it visible as a real destination.</p><div class="cta">Awaiting signal</div></article>
+        </div>
+      </section>
+    </main>
+    <footer class="footer"><span>EBATO // orbital hologram // turquoise × orange</span><span><a href="#top">Back to top ↑</a></span></footer>
+  </div>
 </body>
 </html>
