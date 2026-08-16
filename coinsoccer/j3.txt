@@ -33,14 +33,10 @@ mewhat more likely, but the AI intentionally
             const patternKey=`${i}:${side}:${dxFactor.toFixed(3)}:${dyFactor.toFixed(3)}`;
             let value=aiFormationScore(predicted,i,c.y)+(outward?3:-35);
 
-            // Nudge the opener toward visibly different kickoff families so the
-            // first move does not feel canned from possession to possession.
             if(familyKey!==aiLastKickoffFamily)value+=5;
             if(patternKey!==aiLastKickoffPattern)value+=2;
 
-            candidates.push({
-              index:i,c,target,familyKey,patternKey,value
-            });
+            candidates.push({index:i,c,target,familyKey,patternKey,value});
           }
         }
       }
@@ -105,8 +101,6 @@ mewhat more likely, but the AI intentionally
         const avgQuality=qualities.reduce((a,b)=>a+b,0)/qualities.length;
         const progress=(cand.target.y-c.y)/field.h;
 
-        // Keep every future gate healthy first. Progress breaks ties, but a
-        // sideways/backward setup is welcome when it creates a better formation.
         let value=minQuality*3.2 + avgQuality*.8 + cand.value*.18 + progress*14;
         if(minQuality<20)value-=220;
         choices.push({...cand,value,minQuality,avgQuality});
@@ -125,9 +119,6 @@ mewhat more likely, but the AI intentionally
       c.patternKey=`${aiPossessionShots}:${c.index}:${tx.toFixed(2)}:${ty.toFixed(2)}`;
     });
 
-    // Build one representative plan per coin. This is the important part: the
-    // chooser now compares coin 0 vs coin 1 vs coin 2, rather than letting fifteen
-    // target points for one penny crowd every other coin out of the top pool.
     const byCoin=new Map();
     for(const cand of safeChoices){
       const bucket=byCoin.get(cand.index)||[];
@@ -145,19 +136,24 @@ mewhat more likely, but the AI intentionally
 
     coinPlans.sort((a,b)=>b.coinValue-a.coinValue);
     const bestCoinValue=coinPlans[0].coinValue;
-    const coinPool=coinPlans.filter(c=>c.coinValue>=bestCoinValue-45);
+    const dimePlan=coinPlans.find(c=>c.c.type==='dime');
+    let choice=null;
 
-    // Favor the stronger strategic plan, but keep a meaningful chance for a
-    // near-equal alternative coin. This makes the opener human-like instead of
-    // repeating the same penny sequence every possession.
-    const coinWeights=coinPool.map(c=>
-      Math.exp((c.coinValue-bestCoinValue)/22)+.55+(c.c.type==='dime'?.08:0)
-    );
-    let coinRoll=Math.random()*coinWeights.reduce((a,b)=>a+b,0);
-    let choice=coinPool[coinPool.length-1];
-    for(let i=0;i<coinPool.length;i++){
-      coinRoll-=coinWeights[i];
-      if(coinRoll<=0){choice=coinPool[i];break;}
+    // After the kickoff, a near-tie should favor advancing the 2-point coin.
+    // Only send the untouched penny next when it offers a materially better plan.
+    if(aiPossessionShots===1 && dimePlan && dimePlan.coinValue>=bestCoinValue-10){
+      choice=dimePlan;
+    }else{
+      const coinPool=coinPlans.filter(c=>c.coinValue>=bestCoinValue-45);
+      const coinWeights=coinPool.map(c=>
+        Math.exp((c.coinValue-bestCoinValue)/22)+.55+(c.c.type==='dime'?.08:0)
+      );
+      let coinRoll=Math.random()*coinWeights.reduce((a,b)=>a+b,0);
+      choice=coinPool[coinPool.length-1];
+      for(let i=0;i<coinPool.length;i++){
+        coinRoll-=coinWeights[i];
+        if(coinRoll<=0){choice=coinPool[i];break;}
+      }
     }
 
     aiLastOpeningPattern=choice.patternKey||'';
@@ -173,8 +169,6 @@ mewhat more likely, but the AI intentionally
       return;
     }
 
-    // Opening book: after the spread, build two dependable gates before turning
-    // control back over to the general formation planner.
     if(aiPossessionShots===1 || aiPossessionShots===2){
       if(aiOpeningContinuationShot())return;
     }
