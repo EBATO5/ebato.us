@@ -1,0 +1,242 @@
+mewhat more likely, but the AI intentionally
+    // samples among near-equal plans instead of deterministically taking #1.
+    const weights=pool.map(c=>Math.exp((c.value-best)/10)+.18);
+    let roll=Math.random()*weights.reduce((a,b)=>a+b,0);
+    for(let i=0;i<pool.length;i++){
+      roll-=weights[i];
+      if(roll<=0)return pool[i];
+    }
+    return pool[pool.length-1];
+  }
+
+  function aiKickoffShot(){
+    const candidates=[];
+
+    for(let i=0;i<coins.length;i++){
+      const c=coins[i];
+      if(c.type!=='penny')continue;
+
+      for(const side of [-1,1]){
+        for(const dxFactor of [.075,.10,.125]){
+          for(const dyFactor of [.105,.145,.185,.225]){
+            const target={
+              x:c.x+side*field.w*dxFactor,
+              y:c.y+field.h*dyFactor
+            };
+            if(target.x<field.x+c.r||target.x>field.x+field.w-c.r)continue;
+            if(target.y<field.y+c.r||target.y>field.y+field.h-c.r)continue;
+
+            const predicted=coins.map(o=>({...o,vx:0,vy:0}));
+            predicted[i]={...predicted[i],x:target.x,y:target.y};
+            const outward=(i===0&&side<0)||(i===2&&side>0);
+            const familyKey=`${i}:${side}`;
+            const patternKey=`${i}:${side}:${dxFactor.toFixed(3)}:${dyFactor.toFixed(3)}`;
+            let value=aiFormationScore(predicted,i,c.y)+(outward?3:-35);
+
+            // Nudge the opener toward visibly different kickoff families so the
+            // first move does not feel canned from possession to possession.
+            if(familyKey!==aiLastKickoffFamily)value+=5;
+            if(patternKey!==aiLastKickoffPattern)value+=2;
+
+            candidates.push({
+              index:i,c,target,familyKey,patternKey,value
+            });
+          }
+        }
+      }
+    }
+
+    const familyChoices=[];
+    const familyMap=new Map();
+    for(const cand of candidates){
+      const bucket=familyMap.get(cand.familyKey)||[];
+      bucket.push(cand);
+      familyMap.set(cand.familyKey,bucket);
+    }
+    for(const [familyKey,bucket] of familyMap.entries()){
+      bucket.sort((a,b)=>b.value-a.value);
+      const repr={...bucket[0],familyKey};
+      repr.members=bucket;
+      familyChoices.push(repr);
+    }
+
+    const chosenFamily=aiVariedChoice(familyChoices,18,4,aiLastKickoffFamily)||familyChoices[0];
+    let choice=chosenFamily?aiVariedChoice(chosenFamily.members,12,6,aiLastKickoffPattern):null;
+    if(!choice){
+      choice={
+        index:0,c:coins[0],familyKey:'0:-1',patternKey:'fallback',
+        target:{x:coins[0].x-field.w*.08,y:coins[0].y+field.h*.15}
+      };
+    }
+    aiLastKickoffFamily=choice.familyKey;
+    aiLastKickoffPattern=choice.patternKey;
+    aiLastOpeningPattern='';
+
+    const dx=choice.target.x-choice.c.x,dy=choice.target.y-choice.c.y;
+    const dist=Math.hypot(dx,dy);
+    const power=aiPowerForDistance(dist,.18,.44);
+    const len=dist||1;
+
+    const error=(Math.random()*2-1)*.007;
+    const ca=Math.cos(error),sa=Math.sin(error);
+    const ux=(dx/len)*ca-(dy/len)*sa;
+    const uy=(dx/len)*sa+(dy/len)*ca;
+
+    aiLastCoin=choice.index;
+    aiShotCount++;
+    aiPossessionShots++;
+    beginShot(choice.index,ux*shotSpeedForPower(power),uy*shotSpeedForPower(power));
+  }
+
+  function aiOpeningContinuationShot(){
+    // The starting triangle is a special case: two coins are still touching after
+    // kickoff. During the next two moves, favor formations where EVERY coin has a
+    // usable future gate. This prevents the planner from making a locally strong
+    // pass that strands itself on shot two or three.
+    const preferredType=aiPossessionShots===1?'penny':'dime';
+    const choices=[];
+
+    for(let i=0;i<coins.length;i++){
+      const c=coins[i];
+      if(c.type!==preferredType || i===aiLastCoin)continue;
+
+      for(const cand of aiCandidateTargets(i)){
+        const predicted=coins.map(o=>({...o,vx:0,vy:0}));
+        predicted[i]={...predicted[i],x:cand.target.x,y:cand.target.y};
+        const qualities=predicted.map((_,j)=>aiNextGateQuality(predicted,j));
+        const minQuality=Math.min(...qualities);
+        const avgQuality=qualities.reduce((a,b)=>a+b,0)/qualities.length;
+        const progress=(cand.target.y-c.y)/field.h;
+
+        // An all-live formation dominates raw forward distance in the opening.
+        // A minimum gate quality over ~45 is comfortably playable.
+        let value=minQuality*3.2 + avgQuality*.8 + cand.value*.18 + progress*18;
+        if(minQuality<20)value-=220;
+        choices.push({...cand,value,minQuality,avgQuality});
+      }
+    }
+
+    // If the exact preferred coin has no legal continuation, fall back to any
+    // candidate rather than freezing the turn.
+    if(!choices.length){
+      for(let i=0;i<coins.length;i++){
+        if(i===aiLastCoin)continue;
+        for(const cand of aiCandidateTargets(i)){
+          const predicted=coins.map(o=>({...o,vx:0,vy:0}));
+          predicted[i]={...predicted[i],x:cand.target.x,y:cand.target.y};
+          const qualities=predicted.map((_,j)=>aiNextGateQuality(predicted,j));
+          const minQuality=Math.min(...qualities);
+          const avgQuality=qualities.reduce((a,b)=>a+b,0)/qualities.length;
+          choices.push({...cand,value:minQuality*3+avgQuality+cand.value*.15,minQuality,avgQuality});
+        }
+      }
+    }
+
+    if(!choices.length)return false;
+
+    // Keep the continuation safe, but don't make it scripted. First require a
+    // comfortably live formation, then sample from the strongest near-equal lines.
+    choices.sort((a,b)=>b.value-a.value);
+    const bestMin=Math.max(...choices.map(c=>c.minQuality??-80));
+    let safeChoices=choices.filter(c=>(c.minQuality??-80)>=Math.max(30,bestMin-12));
+    if(!safeChoices.length)safeChoices=choices;
+    safeChoices.forEach(c=>{
+      const tx=(c.target.x-field.x)/Math.max(1,field.w);
+      const ty=(c.target.y-field.y)/Math.max(1,field.h);
+      c.patternKey=`${aiPossessionShots}:${c.index}:${tx.toFixed(2)}:${ty.toFixed(2)}`;
+    });
+    const choice=aiVariedChoice(safeChoices,20,8,aiLastOpeningPattern)||safeChoices[0];
+    aiLastOpeningPattern=choice.patternKey||'';
+    const dist=Math.hypot(choice.target.x-choice.c.x,choice.target.y-choice.c.y);
+    const power=aiPowerForDistance(dist,.16,.66);
+    aiAimAndShoot(choice.index,choice.target,choice.gate,power,true);
+    return true;
+  }
+
+  function aiChooseShot(){
+    if(kickoffShot){
+      aiKickoffShot();
+      return;
+    }
+
+    // Opening book: after the spread, build two dependable gates before turning
+    // control back over to the general formation planner.
+    if(aiPossessionShots===1 || aiPossessionShots===2){
+      if(aiOpeningContinuationShot())return;
+    }
+
+    aiLastProgress=aiTeamProgress(coins);
+
+    const scoringShots=[];
+    for(let i=0;i<coins.length;i++){
+      const c=coins[i];
+      const gate=aiGateFor(i);
+      const range=aiSafeCrossRange(c,gate);
+      if(!range)continue;
+
+      for(const target of aiGoalTargets()){
+        if(!aiRayFitsGate(c,target,gate))continue;
+
+        const dx=target.x-c.x,dy=target.y-c.y;
+        const dist=Math.hypot(dx,dy);
+        const points=coinPointValue(c);
+        const widthComfort=aiClamp(gate.opening/(c.r*3),0,1);
+        const value=points*115 + widthComfort*28 - dist/field.h*10;
+
+        scoringShots.push({
+          index:i,c,gate,target,
+          power:aiPowerForDistance(dist,.30,.80),
+          value
+        });
+        break;
+      }
+    }
+
+    if(scoringShots.length){
+      scoringShots.sort((a,b)=>b.value-a.value);
+      const s=scoringShots[0];
+      aiAimAndShoot(s.index,s.target,s.gate,s.power);
+      return;
+    }
+
+    const candidates=[];
+    for(let i=0;i<coins.length;i++){
+      candidates.push(...aiCandidateTargets(i));
+    }
+
+    if(candidates.length){
+      candidates.sort((a,b)=>b.value-a.value);
+      const choice=candidates[0];
+      const dist=Math.hypot(choice.target.x-choice.c.x,choice.target.y-choice.c.y);
+      const power=aiPowerForDistance(dist,.18,.70);
+      aiAimAndShoot(choice.index,choice.target,choice.gate,power);
+      return;
+    }
+
+    let recovery=null;
+    for(let i=0;i<coins.length;i++){
+      const c=coins[i];
+      const gate=aiGateFor(i);
+      const score=gate.opening;
+      if(!recovery||score>recovery.score)recovery={i,c,gate,score};
+    }
+
+    if(recovery){
+      const {i,c,gate}=recovery;
+      let dx=gate.mx-c.x,dy=gate.my-c.y;
+      const len=Math.hypot(dx,dy)||1;
+      dx/=len;dy/=len;
+
+      const target={
+        x:aiClamp(gate.mx+dx*field.h*.11,field.x+c.r+2,field.x+field.w-c.r-2),
+        y:aiClamp(gate.my+dy*field.h*.11,field.y+c.r+2,field.y+field.h-c.r-2)
+      };
+      const dist=Math.hypot(target.x-c.x,target.y-c.y);
+      aiAimAndShoot(i,target,gate,aiPowerForDistance(dist,.18,.58));
+    }
+  }
+
+  function maybeStartAI(dt){
+    if(opponentMode!=='ai'||attacker!==1||running){
+      aiThinking=false;
+    
