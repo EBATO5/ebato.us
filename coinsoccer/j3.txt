@@ -10,78 +10,24 @@ mewhat more likely, but the AI intentionally
   }
 
   function aiKickoffShot(){
-    const candidates=[];
+    // One recognizable break: drive the rear/center coin into the seam so it
+    // contacts both front coins in the same physics step. Variation comes from
+    // strength plus only a hair of left/right angle, not from changing the play.
+    const index=1;
+    const c=coins[index];
+    const angle=(Math.random()*2-1)*.0045;
+    const power=.30+Math.random()*.18;
+    const speed=shotSpeedForPower(power);
+    const ux=Math.sin(angle);
+    const uy=Math.cos(angle); // AI/P2 attacks downward in canonical coordinates.
 
-    for(let i=0;i<coins.length;i++){
-      const c=coins[i];
-      if(c.type!=='penny')continue;
-
-      for(const side of [-1,1]){
-        for(const dxFactor of [.075,.10,.125]){
-          for(const dyFactor of [.105,.145,.185,.225]){
-            const target={
-              x:c.x+side*field.w*dxFactor,
-              y:c.y+field.h*dyFactor
-            };
-            if(target.x<field.x+c.r||target.x>field.x+field.w-c.r)continue;
-            if(target.y<field.y+c.r||target.y>field.y+field.h-c.r)continue;
-
-            const predicted=coins.map(o=>({...o,vx:0,vy:0}));
-            predicted[i]={...predicted[i],x:target.x,y:target.y};
-            const outward=(i===0&&side<0)||(i===2&&side>0);
-            const familyKey=`${i}:${side}`;
-            const patternKey=`${i}:${side}:${dxFactor.toFixed(3)}:${dyFactor.toFixed(3)}`;
-            let value=aiFormationScore(predicted,i,c.y)+(outward?3:-35);
-
-            if(familyKey!==aiLastKickoffFamily)value+=5;
-            if(patternKey!==aiLastKickoffPattern)value+=2;
-
-            candidates.push({index:i,c,target,familyKey,patternKey,value});
-          }
-        }
-      }
-    }
-
-    const familyChoices=[];
-    const familyMap=new Map();
-    for(const cand of candidates){
-      const bucket=familyMap.get(cand.familyKey)||[];
-      bucket.push(cand);
-      familyMap.set(cand.familyKey,bucket);
-    }
-    for(const [familyKey,bucket] of familyMap.entries()){
-      bucket.sort((a,b)=>b.value-a.value);
-      const repr={...bucket[0],familyKey};
-      repr.members=bucket;
-      familyChoices.push(repr);
-    }
-
-    const chosenFamily=aiVariedChoice(familyChoices,18,4,aiLastKickoffFamily)||familyChoices[0];
-    let choice=chosenFamily?aiVariedChoice(chosenFamily.members,12,6,aiLastKickoffPattern):null;
-    if(!choice){
-      choice={
-        index:0,c:coins[0],familyKey:'0:-1',patternKey:'fallback',
-        target:{x:coins[0].x-field.w*.08,y:coins[0].y+field.h*.15}
-      };
-    }
-    aiLastKickoffFamily=choice.familyKey;
-    aiLastKickoffPattern=choice.patternKey;
+    aiLastKickoffFamily='center-break';
+    aiLastKickoffPattern=`center:${Math.round(power*100)}:${angle>=0?'R':'L'}`;
     aiLastOpeningPattern='';
-
-    const dx=choice.target.x-choice.c.x,dy=choice.target.y-choice.c.y;
-    const dist=Math.hypot(dx,dy);
-    const power=aiPowerForDistance(dist,.18,.44);
-    const len=dist||1;
-
-    const error=(Math.random()*2-1)*.007;
-    const ca=Math.cos(error),sa=Math.sin(error);
-    const ux=(dx/len)*ca-(dy/len)*sa;
-    const uy=(dx/len)*sa+(dy/len)*ca;
-
-    aiLastCoin=choice.index;
+    aiLastCoin=index;
     aiShotCount++;
     aiPossessionShots++;
-    beginShot(choice.index,ux*shotSpeedForPower(power),uy*shotSpeedForPower(power));
+    beginShot(index,ux*speed,uy*speed);
   }
 
   function aiOpeningContinuationShot(){
@@ -182,14 +128,15 @@ mewhat more likely, but the AI intentionally
       const range=aiSafeCrossRange(c,gate);
       if(!range)continue;
 
-      for(const target of aiGoalTargets()){
+      for(const target of aiGoalTargets(c)){
         if(!aiRayFitsGate(c,target,gate))continue;
 
         const dx=target.x-c.x,dy=target.y-c.y;
         const dist=Math.hypot(dx,dy);
         const points=coinPointValue(c);
         const widthComfort=aiClamp(gate.opening/(c.r*3),0,1);
-        const value=points*115 + widthComfort*28 - dist/field.h*10;
+        const keeperComfort=aiClamp((target.keeperClearance||0)/Math.max(1,field.goalWidth*.45),0,1);
+        const value=points*115 + widthComfort*28 + keeperComfort*36 - dist/field.h*10;
 
         scoringShots.push({
           index:i,c,gate,target,
