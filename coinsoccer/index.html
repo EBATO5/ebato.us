@@ -18,7 +18,7 @@ strong{font-weight:500}
 <div id="wrap">
 <header>
 <div>
-<div class="title">⚽ Coin Soccer <span class="version">v0.5.2</span></div>
+<div class="title">⚽ Coin Soccer <span class="version">v0.5.3</span></div>
 <div class="legend" id="legend">Standard · Pennies = 1 · Dime = 2 · First to 3</div>
 </div>
 <div class="status">
@@ -49,7 +49,7 @@ strong{font-weight:500}
 <div id="startPanel" role="dialog" aria-modal="true" aria-labelledby="startTitle">
 <div class="startCard">
 <div class="startKicker">Choose Match</div>
-<h1 id="startTitle">⚽ Coin Soccer <span class="startVersion">v0.5.2</span></h1>
+<h1 id="startTitle">⚽ Coin Soccer <span class="startVersion">v0.5.3</span></h1>
 <p>How do you want to play?</p>
 <div class="startChoices">
 <button class="startChoice primaryChoice" id="startVsComputer" type="button"><strong>1. VS COMPUTER</strong><span>Play against the standard Coin Soccer AI.</span></button>
@@ -140,16 +140,42 @@ strong{font-weight:500}
 <p><strong>3.</strong> The kickoff shot cannot cause a turnover.</p>
 <p><strong>4.</strong> Tap <strong>Difficulty</strong> to choose the game rules: <strong>Easy</strong> uses three pennies worth 1 point each. <strong>Normal</strong> uses pennies worth 1 and a dime worth 2. <strong>Hard</strong> allows only the dime to score. Rule changes apply when the difficulty window closes.</p>
 <p><strong>5.</strong> Difficulty does <strong>not</strong> change the computer AI. VS Computer uses the established standard AI behavior.</p>
-<p><strong>6.</strong> After a goal, the player who conceded gets the next kickoff unless the goal ends the game.</p>
-<p><strong>7.</strong> After a completed game, the player who did <strong>not</strong> kick off that game starts the next one. All human players must press <strong>Play New Game</strong> before the next game begins.</p>
-<p><strong>8.</strong> <strong>Restart Game</strong> restarts the current game with the same kickoff player. <strong>Main Menu</strong> returns to match selection.</p>
-<p><strong>9.</strong> Human goalkeepers start in manual mode. Drag your keeper left/right and it stays where you leave it. Toggle <strong>Auto Goalie</strong> on if you want automatic patrol. The computer's own keeper remains automatic.</p>
-<p><strong>10.</strong> On desktop, right-click while pulling a coin to cancel the shot.</p>
+<p><strong>6.</strong> Opening any menu pauses the game completely until the menu closes.</p>
+<p><strong>7.</strong> After a goal, the player who conceded gets the next kickoff unless the goal ends the game.</p>
+<p><strong>8.</strong> After a completed game, the player who did <strong>not</strong> kick off that game starts the next one. All human players must press <strong>Play New Game</strong> before the next game begins.</p>
+<p><strong>9.</strong> <strong>Restart Game</strong> restarts the current game with the same kickoff player. <strong>Main Menu</strong> returns to match selection.</p>
+<p><strong>10.</strong> Human goalkeepers start in manual mode. Drag your keeper left/right and it stays where you leave it. Toggle <strong>Auto Goalie</strong> on if you want automatic patrol. The computer's own keeper remains automatic.</p>
+<p><strong>11.</strong> On desktop, right-click while pulling a coin to cancel the shot.</p>
 <p><strong>Online:</strong> Create a lobby, share the 6-character code, and both players always see their own goal at the bottom. Both players must ready up after a completed game. Each player controls their own Auto Goalie preference.</p>
 </div>
 </div>
 </div>
 
+<script>
+(() => {
+  const nativeRAF=window.requestAnimationFrame.bind(window);
+  const menuIds=['startPanel','rulesDifficultyPanel','onlinePanel','helpPanel','newGamePanel'];
+  const anyMenuOpen=()=>menuIds.some(id=>{
+    const el=document.getElementById(id);
+    return el&&!el.classList.contains('hidden');
+  });
+
+  // Hold every game animation frame while a menu is visible. The game callback
+  // itself is not invoked until all menus are closed, so AI thinking, shots,
+  // physics, and goalkeeper movement all freeze in place rather than advancing
+  // invisibly behind an overlay.
+  window.requestAnimationFrame=callback=>{
+    const waitForPlayableFrame=t=>{
+      if(anyMenuOpen()){
+        nativeRAF(waitForPlayableFrame);
+        return;
+      }
+      callback(t);
+    };
+    return nativeRAF(waitForPlayableFrame);
+  };
+})();
+</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.107.0"></script>
 <script src="app.js"></script>
 <script>
