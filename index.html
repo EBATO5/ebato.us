@@ -1,172 +1,39 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="EBATO — my home base for projects." />
-  <title>EBATO — Project Home Base</title>
-  <style>
-    :root {
-      --bg:#030912;
-      --panel:rgba(7,20,33,.84);
-      --cyan:#78f5ff;
-      --cyan-soft:#a6f8ff;
-      --orange:#ff9b45;
-      --green:#76f0ae;
-      --yellow:#ffd86b;
-      --muted:#86a9ba;
-      --line:rgba(120,245,255,.17);
-      --text:#eafcff;
-      --shadow:0 18px 70px rgba(0,0,0,.36),0 0 36px rgba(64,226,255,.08);
-    }
-
-    *{box-sizing:border-box}
-    html{scroll-behavior:smooth}
-    body{
-      margin:0;
-      min-height:100vh;
-      font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-      color:var(--text);
-      background:
-        radial-gradient(circle at 18% 10%,rgba(46,130,170,.18),transparent 26%),
-        radial-gradient(circle at 88% 18%,rgba(255,136,60,.08),transparent 22%),
-        linear-gradient(rgba(2,9,18,.89),rgba(2,7,15,.96)),
-        url("https://images.unsplash.com/photo-1462331940025-496dfbfc7564?auto=format&fit=crop&w=2000&q=80") center/cover fixed;
-      overflow-x:hidden;
-    }
-
-    body::before{
-      content:"";
-      position:fixed;
-      inset:0;
-      pointer-events:none;
-      background-image:
-        linear-gradient(rgba(120,245,255,.025) 1px,transparent 1px),
-        linear-gradient(90deg,rgba(120,245,255,.025) 1px,transparent 1px);
-      background-size:54px 54px;
-      mask-image:linear-gradient(to bottom,rgba(0,0,0,.8),transparent 84%);
-    }
-
-    a{color:inherit}
-    .shell{width:min(1120px,calc(100% - 32px));margin:0 auto;padding:26px 0 54px;position:relative;z-index:1}
-    .topbar{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:10px 2px 28px}
-    .brand{display:flex;align-items:center;gap:12px;text-decoration:none;font-weight:900;letter-spacing:.22em;font-size:.92rem}
-    .brand-mark{width:34px;height:34px;display:grid;place-items:center;border:1px solid rgba(120,245,255,.6);border-radius:10px;color:var(--cyan);box-shadow:inset 0 0 16px rgba(120,245,255,.08),0 0 18px rgba(120,245,255,.12)}
-    .github{text-decoration:none;color:var(--muted);font-size:.84rem;padding:9px 12px;border-radius:999px;border:1px solid var(--line)}
-    .github:hover{color:var(--cyan-soft);border-color:rgba(120,245,255,.45);background:rgba(120,245,255,.05)}
-
-    .hero,.panel{
-      background:linear-gradient(180deg,rgba(13,32,51,.78),rgba(5,17,29,.88));
-      border:1px solid var(--line);
-      box-shadow:var(--shadow);
-      backdrop-filter:blur(14px);
-    }
-
-    .hero{border-radius:30px;padding:clamp(30px,6vw,64px);min-height:330px;display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden}
-    .hero::after{content:"";position:absolute;width:300px;height:300px;right:-110px;top:-120px;border-radius:50%;border:1px solid rgba(120,245,255,.16);box-shadow:0 0 0 36px rgba(120,245,255,.025),0 0 0 76px rgba(120,245,255,.018)}
-    .eyebrow{color:var(--orange);text-transform:uppercase;letter-spacing:.22em;font-size:.72rem;font-weight:800;margin-bottom:16px}
-    h1{margin:0;max-width:760px;font-size:clamp(3rem,8vw,6.7rem);letter-spacing:-.065em;line-height:.88}
-    .hero p{margin:24px 0 0;max-width:680px;color:#a9c5d2;font-size:clamp(1rem,2vw,1.12rem);line-height:1.65}
-    .hero strong{color:var(--cyan-soft)}
-
-    .panel{border-radius:28px;padding:clamp(20px,3vw,30px);margin-top:18px}
-    .section-head{display:flex;align-items:end;justify-content:space-between;gap:18px;margin-bottom:20px}
-    .section-label{color:var(--muted);text-transform:uppercase;letter-spacing:.2em;font-size:.67rem;font-weight:800}
-    h2{margin:5px 0 0;font-size:clamp(1.35rem,3vw,2rem);letter-spacing:-.03em}
-    .section-note{color:var(--muted);font-size:.88rem}
-
-    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
-    .card{min-height:235px;border-radius:22px;border:1px solid rgba(120,245,255,.13);background:rgba(3,14,25,.58);padding:22px;display:flex;flex-direction:column;text-decoration:none;position:relative;overflow:hidden}
-    a.card{transition:transform .18s ease,border-color .18s ease,background .18s ease,box-shadow .18s ease}
-    a.card:hover,a.card:focus-visible{transform:translateY(-4px);border-color:rgba(120,245,255,.42);background:rgba(7,25,39,.8);box-shadow:0 16px 38px rgba(0,0,0,.28),0 0 28px rgba(120,245,255,.07);outline:none}
-    .card::after{content:"";position:absolute;right:-55px;bottom:-65px;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,rgba(120,245,255,.07),transparent 68%);pointer-events:none}
-    .card-top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:30px}
-    .category{color:var(--muted);text-transform:uppercase;letter-spacing:.18em;font-size:.67rem;font-weight:800}
-    .badge{border-radius:999px;padding:5px 8px;font-size:.62rem;font-weight:900;letter-spacing:.11em;text-transform:uppercase;border:1px solid currentColor}
-    .live{color:var(--green)}
-    .prototype{color:var(--orange)}
-    .soon{color:var(--yellow)}
-    .card h3{margin:0 0 10px;font-size:1.45rem;letter-spacing:-.025em}
-    .card p{margin:0;color:#8eacba;line-height:1.55;font-size:.93rem}
-    .action{margin-top:auto;padding-top:26px;color:var(--cyan);text-transform:uppercase;letter-spacing:.16em;font-size:.7rem;font-weight:900}
-    article.card .action{color:#6f909e}
-
-    footer{display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap;padding:28px 4px 0;color:#607e8c;font-size:.78rem}
-    footer a{text-decoration:none;color:#86a8b6}
-    footer a:hover{color:var(--cyan)}
-
-    @media(max-width:700px){
-      .shell{width:min(100% - 20px,1120px);padding-top:10px}
-      .topbar{padding-bottom:14px}
-      .hero,.panel{border-radius:22px}
-      .hero{min-height:290px;padding:30px 22px}
-      .grid{grid-template-columns:1fr}
-      .section-head{align-items:start;flex-direction:column}
-      .card{min-height:205px}
-    }
-
-    @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="description" content="EBATO — hologram-style home base for current projects." />
+<title>EBATO // Hologram Display</title>
+<style>
+:root{--bg:#02080f;--panel:rgba(4,20,31,.82);--cyan:#76f6ff;--cyan2:#39d7e7;--orange:#ff9b42;--orange2:#ffc173;--text:#ecffff;--muted:#8eb4bd;--line:rgba(118,246,255,.22)}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;min-height:100vh;color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:radial-gradient(circle at 15% 10%,rgba(118,246,255,.14),transparent 24%),radial-gradient(circle at 85% 12%,rgba(255,155,66,.12),transparent 22%),linear-gradient(180deg,#02070d,#04131e 48%,#02080f);overflow-x:hidden}
+body:before,body:after{content:"";position:fixed;inset:0;pointer-events:none;z-index:0}body:before{background-image:linear-gradient(rgba(118,246,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(118,246,255,.04) 1px,transparent 1px);background-size:48px 48px;mask-image:linear-gradient(to bottom,#000,transparent 92%)}body:after{background:repeating-linear-gradient(to bottom,rgba(255,255,255,.018) 0,rgba(255,255,255,.018) 1px,transparent 1px,transparent 4px);opacity:.4}
+.shell{width:min(1180px,calc(100% - 30px));margin:auto;padding:26px 0 50px;position:relative;z-index:1}.topbar{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:18px}.brand{display:flex;align-items:center;gap:12px;color:var(--text);text-decoration:none;font-weight:900;letter-spacing:.22em;font-size:.92rem}.brandmark{width:36px;height:36px;display:grid;place-items:center;border:1px solid rgba(118,246,255,.6);border-radius:10px;color:var(--cyan);background:#04131e;box-shadow:inset 0 0 18px rgba(118,246,255,.08),0 0 24px rgba(118,246,255,.2)}.nav{display:flex;gap:10px;flex-wrap:wrap}.nav a{color:var(--muted);text-decoration:none;padding:9px 13px;border:1px solid rgba(118,246,255,.15);border-radius:999px;background:rgba(4,18,29,.55);font-size:.83rem}.nav a:hover{color:var(--cyan);border-color:rgba(118,246,255,.38);box-shadow:0 0 20px rgba(118,246,255,.12)}
+.panel{position:relative;background:linear-gradient(180deg,rgba(7,26,40,.88),rgba(2,11,19,.94));border:1px solid var(--line);border-radius:26px;overflow:hidden;box-shadow:0 18px 60px rgba(0,0,0,.36),0 0 30px rgba(118,246,255,.1);backdrop-filter:blur(12px)}.panel:before{content:"";position:absolute;inset:0;background:linear-gradient(135deg,rgba(118,246,255,.06),transparent 40%,rgba(255,155,66,.05));pointer-events:none}.panel:after{content:"";position:absolute;inset:12px;border:1px solid rgba(118,246,255,.1);border-radius:18px;pointer-events:none}
+.hero{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(260px,.72fr);gap:18px}.hero-main{min-height:320px;padding:clamp(28px,5vw,54px);display:flex;flex-direction:column;justify-content:center}.eyebrow,.label{font-size:.7rem;font-weight:900;letter-spacing:.23em;text-transform:uppercase}.eyebrow{color:var(--orange);margin-bottom:16px;text-shadow:0 0 16px rgba(255,155,66,.35)}.label{color:var(--muted)}h1{margin:0;font-size:clamp(3rem,8vw,6.2rem);line-height:.88;letter-spacing:-.06em;text-transform:uppercase;text-shadow:0 0 24px rgba(118,246,255,.18)}.hero-copy{margin:20px 0 0;max-width:700px;color:#add0d6;font-size:clamp(1rem,1.9vw,1.1rem);line-height:1.7}.hero-copy strong{color:var(--cyan)}
+.status{padding:24px;display:flex;flex-direction:column;justify-content:space-between;min-height:320px}.signal{display:flex;align-items:center;gap:10px;margin:18px 0;color:var(--cyan);font-weight:900;letter-spacing:.08em}.dot{width:10px;height:10px;border-radius:50%;background:var(--orange);box-shadow:0 0 18px rgba(255,155,66,.9);animation:pulse 2s infinite}@keyframes pulse{50%{opacity:.45;transform:scale(.9)}}.status-copy{color:#9fc0c7;line-height:1.6;font-size:.94rem}.status-grid{display:grid;gap:10px;margin-top:22px;font-size:.8rem;color:#83a8b1}.status-grid div{display:flex;justify-content:space-between;gap:12px;border-top:1px solid rgba(118,246,255,.1);padding-top:10px}.status-grid b{color:var(--orange2)}
+.section{margin-top:18px;padding:24px}.section-head{display:flex;justify-content:space-between;align-items:end;gap:16px;margin-bottom:18px}.section-title{margin:6px 0 0;font-size:clamp(1.35rem,3vw,2rem);letter-spacing:-.03em}.section-note{color:var(--muted);font-size:.88rem}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.card{position:relative;display:flex;flex-direction:column;min-height:220px;padding:20px;border-radius:22px;border:1px solid rgba(118,246,255,.18);background:linear-gradient(180deg,rgba(5,21,33,.9),rgba(2,12,21,.96));color:var(--text);text-decoration:none;overflow:hidden;transition:.18s ease}.card:before{content:"";position:absolute;inset:12px;border:1px solid rgba(118,246,255,.1);border-radius:16px;pointer-events:none}.card:after{content:"";position:absolute;right:-35px;bottom:-35px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(255,155,66,.18),transparent 65%);pointer-events:none}.card.clickable:hover,.card.clickable:focus-visible{transform:translateY(-4px);border-color:rgba(118,246,255,.5);box-shadow:0 16px 36px rgba(0,0,0,.34),0 0 28px rgba(118,246,255,.13),0 0 24px rgba(255,155,66,.1);outline:none}.card-top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:22px}.category{color:var(--muted);font-size:.68rem;letter-spacing:.18em;text-transform:uppercase;font-weight:900}.badge{padding:5px 9px;border-radius:999px;font-size:.63rem;letter-spacing:.12em;text-transform:uppercase;font-weight:900;border:1px solid currentColor;background:rgba(0,0,0,.12)}.live{color:var(--cyan)}.prototype{color:var(--orange)}.soon{color:#ffd49a}.card h3{margin:0 0 10px;font-size:1.4rem;letter-spacing:-.03em}.card p{margin:0;color:#9abfc6;line-height:1.58;font-size:.92rem}.cta{margin-top:auto;padding-top:22px;color:var(--orange);text-transform:uppercase;letter-spacing:.17em;font-size:.72rem;font-weight:900}.footer{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;color:#688994;font-size:.8rem;padding:26px 6px 0}.footer a{color:#9dc0c7;text-decoration:none}.footer a:hover{color:var(--cyan)}
+@media(max-width:900px){.hero{grid-template-columns:1fr}.status{min-height:auto}}@media(max-width:700px){.grid{grid-template-columns:1fr}.section-head{flex-direction:column;align-items:start}.panel,.card{border-radius:20px}.hero-main{min-height:280px}}
+</style>
 </head>
 <body>
-  <div class="shell">
-    <header class="topbar">
-      <a class="brand" href="#top" aria-label="EBATO home"><span class="brand-mark">E</span> EBATO</a>
-      <a class="github" href="https://github.com/EBATO5" target="_blank" rel="noopener">GitHub ↗</a>
-    </header>
-
-    <main id="top">
-      <section class="hero">
-        <div class="eyebrow">Personal project home base</div>
-        <h1>Things I’m making.</h1>
-        <p>A small home base for the projects I want close at hand. <strong>If it’s here, it matters to me right now.</strong></p>
-      </section>
-
-      <section class="panel" aria-labelledby="projects-title">
-        <div class="section-head">
-          <div>
-            <div class="section-label">Projects</div>
-            <h2 id="projects-title">Mission Control</h2>
-          </div>
-          <div class="section-note">2 active · 2 coming soon</div>
-        </div>
-
-        <div class="grid">
-          <article class="card">
-            <div class="card-top"><span class="category">Game</span><span class="badge prototype">Prototype</span></div>
-            <h3>Coin Soccer</h3>
-            <p>A phone-first tabletop soccer game built around flicked coins, gate-making, goalkeepers, physics, AI, and multiplayer play.</p>
-            <div class="action">In development</div>
-          </article>
-
-          <a class="card" href="https://pkconnection.org" target="_blank" rel="noopener">
-            <div class="card-top"><span class="category">Community</span><span class="badge live">Live</span></div>
-            <h3>PK Connection</h3>
-            <p>A shared space for pastor’s kids built around belonging, openness, and conversations that don’t require an explanation first.</p>
-            <div class="action">Visit project →</div>
-          </a>
-
-          <article class="card">
-            <div class="card-top"><span class="category">Placeholder</span><span class="badge soon">Coming Soon</span></div>
-            <h3>CCCC</h3>
-            <p>Reserved for CCCC.</p>
-            <div class="action">Coming soon</div>
-          </article>
-
-          <article class="card">
-            <div class="card-top"><span class="category">Placeholder</span><span class="badge soon">Coming Soon</span></div>
-            <h3>Tillows.com</h3>
-            <p>Reserved for Tillows.com.</p>
-            <div class="action">Coming soon</div>
-          </article>
-        </div>
-      </section>
-    </main>
-
-    <footer>
-      <span>EBATO · somewhere between idea and prototype</span>
-      <span><a href="#top">Back to top ↑</a></span>
-    </footer>
-  </div>
+<div class="shell">
+<header class="topbar"><a class="brand" href="#top"><span class="brandmark">E</span>EBATO</a><nav class="nav"><a href="#projects">Project Deck</a><a href="https://github.com/EBATO5" target="_blank" rel="noopener">GitHub ↗</a></nav></header>
+<main id="top">
+<section class="hero">
+<div class="panel hero-main"><div class="eyebrow">Hologram Interface // Home Base</div><h1>Mission Control</h1><p class="hero-copy">A hologram-style launchpad for the things I’m building. <strong>Turquoise signals, orange highlights,</strong> and a clean deck for the projects that matter right now.</p></div>
+<aside class="panel status"><div><div class="label">System State</div><div class="signal"><span class="dot"></span>HOLO DISPLAY ACTIVE</div><div class="status-copy">Current deck includes one live community project, one active game prototype, and two reserved future slots.</div></div><div class="status-grid"><div><span>Palette</span><b>Turquoise / Orange</b></div><div><span>Visible projects</span><b>4</b></div><div><span>Primary base</span><b>ebato.us</b></div><div><span>Mode</span><b>Build → Refine</b></div></div></aside>
+</section>
+<section class="panel section" id="projects"><div class="section-head"><div><div class="label">Project Deck</div><h2 class="section-title">Current display</h2></div><div class="section-note">Only the projects and placeholders you asked to keep on the board.</div></div>
+<div class="grid">
+<article class="card"><div class="card-top"><span class="category">Game Prototype</span><span class="badge prototype">Prototype</span></div><h3>Coin Soccer</h3><p>A phone-first coin-flick soccer game built around gate-making, keepers, physics, and simple competitive fun.</p><div class="cta">Prototype in development</div></article>
+<a class="card clickable" href="https://pkconnection.org" target="_blank" rel="noopener"><div class="card-top"><span class="category">Community</span><span class="badge live">Live</span></div><h3>PK Connection</h3><p>A shared space for pastor’s kids centered on belonging, welcome, and the freedom to enter without over-explaining.</p><div class="cta">Open project →</div></a>
+<article class="card"><div class="card-top"><span class="category">Placeholder</span><span class="badge soon">Coming Soon</span></div><h3>CCCC</h3><p>A reserved slot in the deck, held in place until the project is ready to come online.</p><div class="cta">Awaiting signal</div></article>
+<article class="card"><div class="card-top"><span class="category">Placeholder</span><span class="badge soon">Coming Soon</span></div><h3>Tillows.com</h3><p>A reserved slot for Tillows.com, ready to be activated when you want it visible as a real destination.</p><div class="cta">Awaiting signal</div></article>
+</div></section>
+</main>
+<footer class="footer"><span>EBATO // hologram display // turquoise × orange</span><span><a href="#top">Back to top ↑</a></span></footer>
+</div>
 </body>
 </html>
