@@ -1,0 +1,88 @@
+<!doctype html>
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" name="viewport"/>
+<title>Coin Soccer</title>
+<link href="style.css" rel="stylesheet"/>
+</head>
+<body>
+<div id="wrap">
+<header>
+<div>
+<div class="title">⚽ Coin Soccer</div>
+<div class="legend" id="legend">Pennies = 1 point · Dime = 2 points</div>
+</div>
+<div class="status">
+<span id="turn">Player 1 attacking ↑</span><br/>
+<span class="score" id="score">P1 0 — 0 P2</span>
+</div>
+</header>
+<div id="stage">
+<canvas id="game"></canvas>
+<div id="hint">Tap a coin, drag backward, and release.</div>
+<div id="toast"></div>
+</div>
+<footer>
+<button id="mode">Mode: Standard</button>
+<button id="opponent">Opponent: Human</button>
+<button id="helpBtn">Help / Rules</button>
+<button class="primary" id="onlineBtn">Play Online</button>
+<button id="reset">Reset Match</button>
+<button id="resetPlay">Reset Formation</button>
+</footer>
+</div>
+<div class="hidden" id="onlinePanel">
+<div class="card">
+<div class="cardTop">
+<h2>Online Match</h2>
+<button class="closeBtn" id="closeOnline">×</button>
+</div>
+<div class="row">
+<button class="primary" id="createLobby">Create Lobby</button>
+</div>
+<div class="roomCode hidden" id="roomCodeBox">
+<small>Lobby code</small>
+<strong id="roomCodeText">------</strong>
+<div class="row">
+<button id="copyCode">Copy Code</button>
+</div>
+</div>
+<div class="row">
+<input autocomplete="off" class="joinInput" id="joinCode" maxlength="6" placeholder="CODE"/>
+<button id="joinLobby">Join Lobby</button>
+</div>
+<div class="onlineStatus" id="onlineStatus">Create a lobby or enter a friend's code.</div>
+<div class="row">
+<button class="warn hidden" id="leaveLobby">Leave Lobby</button>
+</div>
+<div class="onlineHelp">
+      Player 1 creates the room. Player 2 joins with the code. On both phones, your own goal is always shown at the bottom of the field.
+    </div>
+</div>
+</div>
+<div class="hidden" id="helpPanel">
+<div class="card">
+<div class="cardTop">
+<h2>How to Play</h2>
+<button class="closeBtn" id="closeHelp">×</button>
+</div>
+<div class="rules">
+<p><strong>Goal:</strong> Advance your three coins up the field and score.</p>
+<p><strong>1.</strong> Tap/click a coin, pull backward to set direction and power, then release.</p>
+<p><strong>2.</strong> The other two coins form your <strong>gate</strong>. Every non-kickoff shot must pass through that gate or possession turns over.</p>
+<p><strong>3.</strong> The kickoff shot cannot cause a turnover.</p>
+<p><strong>4.</strong> Any coin can score. A <strong>penny goal is worth 1 point</strong> and a <strong>dime goal is worth 2 points</strong>. In Easy Mode, all three coins are pennies, so every goal is worth 1 point.</p>
+<p><strong>5.</strong> After a goal, the player who conceded gets the next kickoff.</p>
+<p><strong>6.</strong> Your goalkeeper moves automatically. Grab and drag it left/right whenever you want manual control. Let go and auto movement resumes.</p>
+<p><strong>7.</strong> On desktop, right-click while pulling a coin to cancel the shot.</p>
+<p><strong>Online:</strong> Create a lobby, share the 6-character code, and both players always see their own goal at the bottom.</p>
+</div>
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.107.0"></script>
+<script src="app.js"></script>
+</body>
+</html>
