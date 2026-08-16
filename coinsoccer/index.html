@@ -1,6 +1,5 @@
 <!doctype html>
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
@@ -12,7 +11,7 @@
 <div id="wrap">
 <header>
 <div>
-<div class="title">⚽ Coin Soccer <span class="version">v0.3.0</span></div>
+<div class="title">⚽ Coin Soccer <span class="version">v0.4.0</span></div>
 <div class="legend" id="legend">Standard · Pennies = 1 · Dime = 2 · First to 3</div>
 </div>
 <div class="status">
@@ -27,18 +26,21 @@
 </div>
 <footer>
 <button id="mode">Difficulty: Standard</button>
-<button id="opponent">Opponent: Human</button>
+<button id="mainMenu">Main Menu</button>
 <button id="helpBtn">Help / Rules</button>
 <button class="primary" id="onlineBtn">Play Online</button>
-<button id="reset">Reset Match</button>
+<button id="restart">Restart Game</button>
 <button id="resetPlay">Reset Formation</button>
 </footer>
 </div>
 
+<!-- Kept as an internal mode-control hook; no longer shown in the interface. -->
+<button class="hidden" id="opponent" tabindex="-1">Opponent: Human</button>
+
 <div id="startPanel" role="dialog" aria-modal="true" aria-labelledby="startTitle">
 <div class="startCard">
 <div class="startKicker">Choose Match</div>
-<h1 id="startTitle">⚽ Coin Soccer <span class="startVersion">v0.3.0</span></h1>
+<h1 id="startTitle">⚽ Coin Soccer <span class="startVersion">v0.4.0</span></h1>
 <p>How do you want to play?</p>
 <div class="startChoices">
 <button class="startChoice primaryChoice" id="startVsComputer" type="button"><strong>1. VS COMPUTER</strong><span>Play against the Coin Soccer AI.</span></button>
@@ -48,35 +50,50 @@
 </div>
 </div>
 
+<div class="hidden" id="newGamePanel" role="dialog" aria-modal="true" aria-labelledby="newGameTitle">
+<div class="card gameOverCard">
+<div class="startKicker">Game Complete</div>
+<h2 id="newGameTitle">Game over</h2>
+<p id="readyStatus">Ready up for the next game.</p>
+<button class="primary readyButton" id="readySelf" type="button">Play New Game</button>
+<div class="hidden readyGrid" id="sameDeviceReady">
+<button class="primary" id="readyP1" type="button">Player 1 · Play New Game</button>
+<button class="primary" id="readyP2" type="button">Player 2 · Play New Game</button>
+</div>
+<p class="nextKickoffNote">The player who did not kick off the previous game kicks off the next one.</p>
+</div>
+</div>
+
 <div class="hidden" id="onlinePanel">
 <div class="card">
 <div class="cardTop">
 <h2>Online Match</h2>
 <button class="closeBtn" id="closeOnline">×</button>
 </div>
+<div class="matchmakingBlock">
+<div class="startKicker">Matchmaking</div>
+<button id="findMatch" type="button" disabled>Find Match — Coming Soon</button>
+<div class="onlineHelp">A public matchmaking queue can live here without changing the private lobby system.</div>
+</div>
+<div class="onlineDivider"><span>PRIVATE LOBBY</span></div>
 <div class="row">
 <button class="primary" id="createLobby">Create Lobby</button>
 </div>
 <div class="roomCode hidden" id="roomCodeBox">
 <small>Lobby code</small>
 <strong id="roomCodeText">------</strong>
-<div class="row">
-<button id="copyCode">Copy Code</button>
-</div>
+<div class="row"><button id="copyCode">Copy Code</button></div>
 </div>
 <div class="row">
 <input autocomplete="off" class="joinInput" id="joinCode" maxlength="6" placeholder="CODE"/>
 <button id="joinLobby">Join Lobby</button>
 </div>
 <div class="onlineStatus" id="onlineStatus">Create a lobby or enter a friend's code.</div>
-<div class="row">
-<button class="warn hidden" id="leaveLobby">Leave Lobby</button>
-</div>
-<div class="onlineHelp">
-      Player 1 creates the room. Player 2 joins with the code. On both phones, your own goal is always shown at the bottom of the field.
-    </div>
+<div class="row"><button class="warn hidden" id="leaveLobby">Leave Lobby</button></div>
+<div class="onlineHelp">Player 1 creates the room. Player 2 joins with the code. On both phones, your own goal is always shown at the bottom of the field.</div>
 </div>
 </div>
+
 <div class="hidden" id="helpPanel">
 <div class="card">
 <div class="cardTop">
@@ -89,43 +106,38 @@
 <p><strong>2.</strong> The other two coins form your <strong>gate</strong>. Every non-kickoff shot must pass through that gate or possession turns over.</p>
 <p><strong>3.</strong> The kickoff shot cannot cause a turnover.</p>
 <p><strong>4.</strong> <strong>Easy:</strong> all three coins are pennies and each goal is worth 1 point. <strong>Standard:</strong> pennies are worth 1 point and the dime is worth 2. <strong>Hard:</strong> only the dime can score; pennies can still be used for passes, gates, and collisions.</p>
-<p><strong>5.</strong> After a goal, the player who conceded gets the next kickoff unless the goal ends the match.</p>
-<p><strong>6.</strong> Your goalkeeper moves automatically. Grab and drag it left/right whenever you want manual control. Let go and auto movement resumes.</p>
-<p><strong>7.</strong> On desktop, right-click while pulling a coin to cancel the shot.</p>
-<p><strong>Online:</strong> Create a lobby, share the 6-character code, and both players always see their own goal at the bottom.</p>
+<p><strong>5.</strong> After a goal, the player who conceded gets the next kickoff unless the goal ends the game.</p>
+<p><strong>6.</strong> After a completed game, the player who did <strong>not</strong> kick off that game starts the next one. All human players must press <strong>Play New Game</strong> before the next game begins.</p>
+<p><strong>7.</strong> <strong>Restart Game</strong> restarts the current game with the same kickoff player. <strong>Main Menu</strong> returns to match selection.</p>
+<p><strong>8.</strong> Your goalkeeper moves automatically. Grab and drag it left/right whenever you want manual control. Let go and auto movement resumes.</p>
+<p><strong>9.</strong> On desktop, right-click while pulling a coin to cancel the shot.</p>
+<p><strong>Online:</strong> Create a lobby, share the 6-character code, and both players always see their own goal at the bottom. Both players must ready up after a completed game.</p>
 </div>
 </div>
 </div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.107.0"></script>
 <script src="app.js"></script>
 <script>
 (() => {
   const startPanel=document.getElementById('startPanel');
-  const opponentBtn=document.getElementById('opponent');
   const onlineBtn=document.getElementById('onlineBtn');
   const closeOnline=document.getElementById('closeOnline');
-
   const hideStart=()=>startPanel.classList.add('hidden');
   const showStart=()=>startPanel.classList.remove('hidden');
-  const setComputer=()=>{
-    if(opponentBtn.textContent.includes('Human'))opponentBtn.click();
-  };
-  const setHuman=()=>{
-    if(opponentBtn.textContent.includes('AI'))opponentBtn.click();
-  };
 
-  document.getElementById('startVsComputer').addEventListener('click',()=>{
-    setComputer();
+  document.getElementById('startVsComputer').addEventListener('click',async()=>{
+    await window.coinSoccerStartMatchMode('ai');
     hideStart();
   });
 
-  document.getElementById('startSameDevice').addEventListener('click',()=>{
-    setHuman();
+  document.getElementById('startSameDevice').addEventListener('click',async()=>{
+    await window.coinSoccerStartMatchMode('human');
     hideStart();
   });
 
-  document.getElementById('startOnline').addEventListener('click',()=>{
-    setHuman();
+  document.getElementById('startOnline').addEventListener('click',async()=>{
+    await window.coinSoccerStartMatchMode('human');
     hideStart();
     onlineBtn.click();
   });
