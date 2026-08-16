@@ -6,12 +6,17 @@
 <meta content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" name="viewport"/>
 <title>Coin Soccer</title>
 <link href="style.css" rel="stylesheet"/>
+<style>
+html,body{font-family:"Trebuchet MS","Arial Narrow",Arial,sans-serif;font-weight:700}
+.title,.score,.startCard h1,.startChoice strong,.startKicker,.card h2,button,.roomCode strong,.onlineDivider{font-family:Impact,Haettenschweiler,"Arial Narrow Bold","Arial Black",sans-serif;letter-spacing:.045em;text-transform:uppercase}
+.legend,.status,#hint,#toast,.rules,.onlineStatus,.onlineHelp,.startChoice span,.startCard p,.nextKickoffNote,#readyStatus,input{font-family:"Trebuchet MS","Arial Narrow",Arial,sans-serif;font-weight:700}
+</style>
 </head>
 <body>
 <div id="wrap">
 <header>
 <div>
-<div class="title">⚽ Coin Soccer <span class="version">v0.4.0</span></div>
+<div class="title">⚽ Coin Soccer <span class="version">v0.4.1</span></div>
 <div class="legend" id="legend">Standard · Pennies = 1 · Dime = 2 · First to 3</div>
 </div>
 <div class="status">
@@ -30,7 +35,6 @@
 <button id="helpBtn">Help / Rules</button>
 <button class="primary" id="onlineBtn">Play Online</button>
 <button id="restart">Restart Game</button>
-<button id="resetPlay">Reset Formation</button>
 </footer>
 </div>
 
@@ -40,7 +44,7 @@
 <div id="startPanel" role="dialog" aria-modal="true" aria-labelledby="startTitle">
 <div class="startCard">
 <div class="startKicker">Choose Match</div>
-<h1 id="startTitle">⚽ Coin Soccer <span class="startVersion">v0.4.0</span></h1>
+<h1 id="startTitle">⚽ Coin Soccer <span class="startVersion">v0.4.1</span></h1>
 <p>How do you want to play?</p>
 <div class="startChoices">
 <button class="startChoice primaryChoice" id="startVsComputer" type="button"><strong>1. VS COMPUTER</strong><span>Play against the Coin Soccer AI.</span></button>
