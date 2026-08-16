@@ -1,5 +1,18 @@
 [
   {
+    "id": "coin-soccer",
+    "name": "Coin Soccer",
+    "category": "games",
+    "categoryLabel": "Game",
+    "status": "prototype",
+    "statusLabel": "Prototype",
+    "description": "A phone-first tabletop soccer game built around flicked coins, gate-making, goalkeepers, physics, AI, and multiplayer play.",
+    "url": null,
+    "action": "In development",
+    "featured": true,
+    "search": "coin soccer flick pennies dime multiplayer physics ai goalkeeper mobile browser"
+  },
+  {
     "id": "pk-connection",
     "name": "PK Connection",
     "category": "community",
@@ -13,42 +26,29 @@
     "search": "pastor kids pk open door community belonging"
   },
   {
-    "id": "harvest-grove-64",
-    "name": "Harvest Grove 64",
-    "category": "games",
-    "categoryLabel": "Game",
-    "status": "private",
-    "statusLabel": "Private Repo",
-    "description": "A cozy farming and life-sim project chasing the rhythm, warmth, and immediacy of Harvest Moon 64 while growing into its own world.",
-    "url": "https://github.com/EBATO5/HarvestGrove64",
-    "action": "Open repository →",
-    "featured": true,
-    "search": "harvest grove farming life sim harvest moon hm64 rowan"
+    "id": "cccc",
+    "name": "CCCC",
+    "category": "upcoming",
+    "categoryLabel": "Placeholder",
+    "status": "wip",
+    "statusLabel": "Coming Soon",
+    "description": "A space reserved for CCCC.",
+    "url": null,
+    "action": "Coming soon",
+    "featured": false,
+    "search": "cccc upcoming placeholder"
   },
   {
-    "id": "hm64-research",
-    "name": "HM64 Research",
-    "category": "research",
-    "categoryLabel": "Research",
-    "status": "private",
-    "statusLabel": "Private Repo",
-    "description": "Technical research, recompilation work, and fidelity experiments supporting Harvest Grove and a deeper understanding of Harvest Moon 64.",
-    "url": "https://github.com/EBATO5/HarvestGrove-HM64-Research",
-    "action": "Open repository →",
+    "id": "tillows",
+    "name": "Tillows.com",
+    "category": "upcoming",
+    "categoryLabel": "Placeholder",
+    "status": "wip",
+    "statusLabel": "Coming Soon",
+    "description": "A space reserved for Tillows.com.",
+    "url": null,
+    "action": "Coming soon",
     "featured": false,
-    "search": "harvest moon 64 recomp research reverse engineering camera physics fidelity"
-  },
-  {
-    "id": "rancherama",
-    "name": "Rancherama",
-    "category": "games",
-    "categoryLabel": "Game",
-    "status": "private",
-    "statusLabel": "Private Repo",
-    "description": "An earlier farming-game prototype in the EBATO archive — part of the road that led toward the current Harvest Grove work.",
-    "url": "https://github.com/EBATO5/Rancherama",
-    "action": "Open repository →",
-    "featured": false,
-    "search": "rancherama ranch rogue farming game prototype"
+    "search": "tillows tillows.com upcoming placeholder"
   }
 ]
