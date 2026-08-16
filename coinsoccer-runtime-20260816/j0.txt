@@ -1,0 +1,235 @@
+
+(() => {
+  const SUPABASE_URL = 'https://zysmhrcesmelipcejpap.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_a4AIMCuTURlFJTOAu2Zv8w_n_ShAIJz';
+
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const turnEl = document.getElementById('turn');
+  const scoreEl = document.getElementById('score');
+  const hintEl = document.getElementById('hint');
+  const toastEl = document.getElementById('toast');
+
+  const onlinePanel = document.getElementById('onlinePanel');
+  const onlineStatusEl = document.getElementById('onlineStatus');
+  const roomCodeBox = document.getElementById('roomCodeBox');
+  const roomCodeText = document.getElementById('roomCodeText');
+  const joinCodeInput = document.getElementById('joinCode');
+
+  let W=0,H=0,DPR=1;
+  const field={x:0,y:0,w:0,h:0,goalDepth:0,goalWidth:0};
+
+  // Canonical world:
+  // P1 attacks upward. P2 attacks downward.
+  // In online P2's browser, only the Y axis is mirrored so P2 still sees their own goal at the bottom.
+  let coins=[];
+  let goalie=null;
+  let goalieDir=1;
+  let goalieSpeed=75;
+  let selected=-1;
+  let pointer=null;
+  let aim=null;
+  let running=false;
+  let attacker=0;
+  let score=[0,0];
+  let easyMode=false;
+
+  let opponentMode='human'; // human | ai | online
+  let aiThinking=false;
+  let aiTimer=0;
+  let aiLastCoin=-1;
+  let aiLastProgress=null;
+  let aiStallCount=0;
+  let aiShotCount=0;
+  let aiPossessionShots=0;
+  let aiGateAttempts=0;
+  let aiGateMakes=0;
+  let aiLastKickoffPattern='';
+
+
+  let gateSnapshot=null;
+  let shotCoinIndex=-1;
+  let crossedGate=false;
+  let shotActive=false;
+  let kickoffShot=true;
+  let lastTime=performance.now();
+
+  // Online state
+  let sb=null;
+  let onlineChannel=null;
+  let onlineRole=null; // 0 host/P1, 1 guest/P2
+  let lobbyCode='';
+  let onlineSubscribed=false;
+  let onlineConnected=false;
+  let acceptedGuestId=null;
+  let networkAccumulator=0;
+  let lastRemoteState=null;
+  let keeperSendAt=0;
+  let remoteKeeperHeld=false;
+  const clientId=(crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2));
+  const joinedAt=Date.now();
+
+  const COLORS={
+    penny:'#b87333', pennyEdge:'#7b431d',
+    dime:'#d8dde5', dimeEdge:'#848b95',
+    goalie1:'#67a6ff', goalie2:'#ff6a74'
+  };
+
+  function onlineActive(){ return opponentMode==='online' && onlineRole!==null; }
+  function isHost(){ return onlineActive() && onlineRole===0; }
+  function mirrorView(){ return onlineActive() && onlineRole===1; }
+  function viewY(y){ return mirrorView() ? field.y+field.h-(y-field.y) : y; }
+  function viewPoint(obj){ return {x:obj.x,y:viewY(obj.y)}; }
+
+  function maxPullDistance(){
+    // Give touch players a generous, consistent pull gesture that does not shrink
+    // just because the playable field is narrower than the screen.
+    return Math.min(150,Math.max(110,W*.34));
+  }
+
+  function maxShotSpeed(){
+    // A little stronger than the old mobile maximum, while keeping power predictable.
+    return 900;
+  }
+
+  // Tabletop-style sliding friction: remove a fixed amount of speed per second.
+  // 600 px/s² keeps a full-power shot's stopping distance close to the previous build,
+  // but unlike multiplicative damping it produces a nearly linear velocity-vs-time curve.
+  const COIN_FRICTION_DECEL=600;
+
+  function shotSpeedForPower(power){
+    // Constant friction makes stopping distance proportional to launch-speed squared.
+    // sqrt(power) keeps pull distance approximately proportional to shot distance,
+    // so the new friction feels different without wrecking the old power/range tuning.
+    return maxShotSpeed()*Math.sqrt(Math.max(0,Math.min(1,power)));
+  }
+
+  function advanceCoinWithLinearFriction(c,dt){
+    const speed=Math.hypot(c.vx,c.vy);
+    if(speed<=0){c.vx=0;c.vy=0;return}
+
+    const nextSpeed=Math.max(0,speed-COIN_FRICTION_DECEL*dt);
+    // Use average speed over the substep so distance stays accurate as the coin slows.
+    const travelSpeed=(speed+nextSpeed)*.5;
+    const nx=c.vx/speed,ny=c.vy/speed;
+    c.x+=nx*travelSpeed*dt;
+    c.y+=ny*travelSpeed*dt;
+    c.vx=nx*nextSpeed;
+    c.vy=ny*nextSpeed;
+  }
+
+  function coinPointValue(c){
+    return c&&c.type==='dime'?2:1;
+  }
+
+  function resize(){
+    const r=canvas.getBoundingClientRect();
+    DPR=Math.min(2,window.devicePixelRatio||1);
+    W=r.width; H=r.height;
+    canvas.width=Math.round(W*DPR);
+    canvas.height=Math.round(H*DPR);
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+
+    // Keep real empty canvas around the pitch as a pull-back / aiming gutter.
+    // This matters on phones, where a finger cannot travel past the screen edge.
+    const padX=Math.max(46,Math.min(74,W*.14));
+    const padY=Math.max(34,Math.min(58,H*.06));
+    field.x=padX;
+    field.y=padY;
+    field.w=W-padX*2;
+    field.h=H-padY*2;
+    field.goalDepth=Math.max(16,field.h*0.026);
+    field.goalWidth=Math.min(field.w*0.58,210);
+
+    if(coins.length===0) resetFormation();
+    else if(onlineActive() && onlineRole===1 && lastRemoteState) applyNetworkState(lastRemoteState);
+    else clampAll();
+  }
+
+  function baseRadius(){
+    return Math.max(12,Math.min(22,Math.min(field.w,field.h)*0.032));
+  }
+
+  function resetFormation(){
+    const r=baseRadius();
+    const dir=attacker===0?-1:1;
+    const pennyR=r*1.05;
+    const rearR=easyMode?pennyR:r*0.90;
+
+    const centerX=field.x+field.w*.5;
+    const backY=attacker===0?field.y+field.h*.84:field.y+field.h*.16;
+
+    const leftX=centerX-pennyR;
+    const rightX=centerX+pennyR;
+
+    const sideDistance=pennyR+rearR;
+    const verticalOffset=Math.sqrt(Math.max(0,sideDistance*sideDistance-pennyR*pennyR));
+    const frontY=backY+dir*verticalOffset;
+
+    coins=[
+      {type:'penny',x:leftX,y:frontY,vx:0,vy:0,r:pennyR},
+      {type:easyMode?'penny':'dime',x:centerX,y:backY,vx:0,vy:0,r:rearR},
+      {type:'penny',x:rightX,y:frontY,vx:0,vy:0,r:pennyR}
+    ];
+    resetGoalie();
+    clearShotState();
+    kickoffShot=true;
+    aiPossessionShots=0;
+  }
+
+  function resetGoalie(){
+    const gr=baseRadius()*.95;
+    const defendTop=attacker===0;
+    goalie={
+      x:field.x+field.w/2,
+      y:defendTop?field.y+8:field.y+field.h-8,
+      r:gr,
+      side:1-attacker
+    };
+    goalieDir=Math.random()<.5?-1:1;
+  }
+
+  function clearShotState(){
+    selected=-1;
+    pointer=null;
+    aim=null;
+    running=false;
+    shotActive=false;
+    crossedGate=false;
+    gateSnapshot=null;
+    shotCoinIndex=-1;
+    hintEl.textContent='Tap a coin, drag backward, and release.';
+  }
+
+  function toast(msg){
+    toastEl.textContent=msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastEl._t);
+    toastEl._t=setTimeout(()=>toastEl.classList.remove('show'),900);
+  }
+
+  function localPlayerLabel(){
+    return onlineRole===0?'Player 1':'Player 2';
+  }
+
+  function updateHUD(){
+    if(onlineActive()){
+      const mine=onlineRole;
+      const theirs=1-mine;
+      const myTurn=attacker===mine;
+      turnEl.textContent=onlineConnected
+        ? (myTurn?'Your turn ↑':'Opponent attacking ↓')
+        : `Lobby ${lobbyCode} · waiting`;
+      scoreEl.textContent=`You ${score[mine]} — ${score[theirs]} Opp`;
+    }else{
+      const who=(opponentMode==='ai'&&attacker===1)?'AI':`Player ${attacker+1}`;
+      turnEl.textContent=`${who} attacking ${attacker===0?'↑':'↓'}`;
+      scoreEl.textContent=`P1 ${score[0]} — ${score[1]} P2`;
+    }
+
+    document.getElementById('mode').textContent=easyMode?'Mode: Easy':'Mode: Standard';
+    document.getElementById('opponent').textContent=
+      opponentMode==='ai'?'Opponent: AI':opponentMode==='online'?'Opponent: Online':'Opponent: Human';
+  }
+
+    
