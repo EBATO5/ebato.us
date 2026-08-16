@@ -49,6 +49,7 @@
       background:radial-gradient(circle at center,rgba(13,61,77,.12),transparent 34%);
       transition:opacity .55s ease,visibility .55s ease;
     }
+    .boot-screen.reverse-reveal{transition-timing-function:cubic-bezier(.75,0,.75,.9)}
     .boot-screen::before,.boot-screen::after{
       content:"";position:absolute;left:50%;top:50%;border:1px solid rgba(125,247,255,.16);border-radius:50%;transform:translate(-50%,-50%);pointer-events:none
     }
@@ -110,7 +111,7 @@
       text-shadow:0 0 9px rgba(255,171,82,.55);
       transition:opacity .35s ease,transform .35s ease,background .2s ease,box-shadow .2s ease,color .2s ease;
     }
-    body.holo-on .collapse-button{opacity:1;transform:scale(1);pointer-events:auto;transition-delay:.95s, .95s, 0s, 0s, 0s}
+    body.holo-on .collapse-button{opacity:1;transform:scale(1);pointer-events:auto;transition-delay:.95s,.95s,0s,0s,0s}
     .collapse-button:hover,.collapse-button:focus-visible{
       outline:none;background:rgba(255,171,82,.1);box-shadow:inset 0 0 16px rgba(255,171,82,.1),0 0 18px rgba(255,171,82,.38);color:var(--orange-2)
     }
@@ -122,6 +123,46 @@
     body.holo-on .ticker{opacity:1;transform:none;transition-delay:.55s}
     body.holo-on .newsgrid{opacity:1;transform:none;transition-delay:.7s}
     body.holo-on .bottomstrip{opacity:1;transform:none;transition-delay:.86s}
+
+    /* Exact time-reverse of the startup sequence. */
+    body.holo-closing .collapse-button{
+      opacity:0;transform:scale(.72);pointer-events:none;
+      transition-delay:.06s,.06s,0s,0s,0s;
+      transition-timing-function:cubic-bezier(.75,0,.75,.9),cubic-bezier(.75,0,.75,.9),ease,ease,ease;
+    }
+    body.holo-closing .bottomstrip{
+      opacity:0;transform:translateY(-8px);transition-delay:0s;
+      transition-timing-function:cubic-bezier(.75,0,.75,.9)
+    }
+    body.holo-closing .newsgrid{
+      opacity:0;transform:translateY(-8px);transition-delay:.16s;
+      transition-timing-function:cubic-bezier(.75,0,.75,.9)
+    }
+    body.holo-closing .ticker{
+      opacity:0;transform:translateY(-8px);transition-delay:.31s;
+      transition-timing-function:cubic-bezier(.75,0,.75,.9)
+    }
+    body.holo-closing .masthead{
+      opacity:0;transform:translateY(-8px);transition-delay:.48s;
+      transition-timing-function:cubic-bezier(.75,0,.75,.9)
+    }
+    body.holo-closing .topbar,body.holo-closing .footer{
+      opacity:0;transform:translateY(-8px);transition-delay:.16s;
+      transition-timing-function:cubic-bezier(.75,0,.75,.9)
+    }
+    body.holo-closing .paper-stage{
+      max-height:6px;opacity:.38;transform:scaleX(.16);
+      filter:brightness(2.25) drop-shadow(0 0 12px rgba(125,247,255,.75));
+      transition-delay:.21s,.56s,1.01s,.46s;
+      transition-timing-function:cubic-bezier(.8,0,.82,.22),cubic-bezier(.8,0,.82,.22),cubic-bezier(.75,0,.75,.9),cubic-bezier(.75,0,.75,.9);
+      pointer-events:none
+    }
+    body.holo-closing .paper{
+      transform:perspective(1200px) rotateX(78deg) scaleY(.025);opacity:.15;
+      transition-delay:.31s,.79s;
+      transition-timing-function:cubic-bezier(.82,0,.88,.18),cubic-bezier(.75,0,.75,.9)
+    }
+    body.holo-closing .boot-screen{pointer-events:none}
 
     .masthead{display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:18px;padding:18px 24px;border-bottom:1px solid var(--cyan-line)}
     .edition,.datecode{font-size:.68rem;letter-spacing:.19em;text-transform:uppercase;color:var(--orange)}
@@ -291,13 +332,25 @@
       const panel = document.getElementById('holoPanel');
       const collapseButton = document.getElementById('collapseButton');
       const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const reverseDuration = reduceMotion ? 0 : 1360;
+      const bootRevealAt = reduceMotion ? 0 : 810;
       let started = false;
-      let resetTimer = null;
+      let closing = false;
+      let bootTimer = null;
+      let finishTimer = null;
+
+      const clearTimers = () => {
+        if (bootTimer) window.clearTimeout(bootTimer);
+        if (finishTimer) window.clearTimeout(finishTimer);
+        bootTimer = null;
+        finishTimer = null;
+      };
 
       const start = () => {
-        if (started) return;
-        if (resetTimer) window.clearTimeout(resetTimer);
+        if (started || closing) return;
+        clearTimers();
         started = true;
+        boot.classList.remove('reverse-reveal');
         button.setAttribute('aria-expanded', 'true');
         panel.setAttribute('aria-hidden', 'false');
         body.classList.remove('holo-off');
@@ -306,19 +359,28 @@
       };
 
       const collapse = () => {
-        if (!started) return;
-        started = false;
+        if (!started || closing) return;
+        closing = true;
         button.setAttribute('aria-expanded', 'false');
-        panel.setAttribute('aria-hidden', 'true');
-        body.classList.remove('holo-on');
-        body.classList.add('holo-off');
+        collapseButton.disabled = true;
+        boot.classList.add('reverse-reveal');
+        body.classList.add('holo-closing');
 
-        const delay = reduceMotion ? 0 : 1050;
-        resetTimer = window.setTimeout(() => {
+        bootTimer = window.setTimeout(() => {
           boot.classList.remove('off');
+          bootTimer = null;
+        }, bootRevealAt);
+
+        finishTimer = window.setTimeout(() => {
+          body.classList.remove('holo-on', 'holo-closing');
+          body.classList.add('holo-off');
+          panel.setAttribute('aria-hidden', 'true');
+          collapseButton.disabled = false;
+          started = false;
+          closing = false;
+          finishTimer = null;
           button.focus({preventScroll:true});
-          resetTimer = null;
-        }, delay);
+        }, reverseDuration);
       };
 
       button.addEventListener('click', start);
