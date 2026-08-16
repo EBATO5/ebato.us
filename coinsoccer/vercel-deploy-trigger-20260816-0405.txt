@@ -1,1 +1,2 @@
 Trigger Vercel Git deployment for Coin Soccer after connecting EBATO5/ebato.us with Root Directory coinsoccer.
+Latest release: v0.5.3 — pause gameplay while menus are open; show difficulty choices in one row of three columns.
