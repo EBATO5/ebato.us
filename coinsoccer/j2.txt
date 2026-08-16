@@ -1,0 +1,290 @@
+ if(!crossedGate){
+        if(kickoffShot){
+          kickoffShot=false;
+          hintEl.textContent='Kickoff shot complete. Choose the next coin.';
+          sendNetworkState(true);
+        }else{
+          switchPossession('Turnover — missed gate');
+        }
+      }else{
+        kickoffShot=false;
+        hintEl.textContent='Legal pass. Choose the next coin.';
+        sendNetworkState(true);
+      }
+    }
+  }
+
+  function clampAll(){
+    for(const c of coins){
+      c.x=Math.max(field.x-field.goalDepth+c.r,Math.min(field.x+field.w+field.goalDepth-c.r,c.x));
+      c.y=Math.max(field.y-field.goalDepth+c.r,Math.min(field.y+field.h+field.goalDepth-c.r,c.y));
+    }
+    if(goalie){
+      goalie.y=attacker===0?field.y+8:field.y+field.h-8;
+      const left=field.x+(field.w-field.goalWidth)/2+goalie.r;
+      const right=field.x+(field.w+field.goalWidth)/2-goalie.r;
+      goalie.x=Math.max(left,Math.min(right,goalie.x));
+    }
+  }
+
+  // ---------- AI ----------
+  // Standard AI philosophy:
+  // - A legal gate is the first priority. Target gate completion is ~90%.
+  // - Every shot is judged by the FORMATION it leaves behind, not only immediate distance.
+  // - Forward progress matters, but a backward pass is good when it creates a much better next gate.
+  // - Prefer wide, clean gates with one coin positioned to use them on the following turn.
+
+  const AI_GATE_TARGET=.90;
+
+  function aiClamp(v,min,max){ return Math.max(min,Math.min(max,v)); }
+
+  function aiGateForState(state,index){
+    const others=[0,1,2].filter(j=>j!==index);
+    const a=state[others[0]],b=state[others[1]];
+    const dx=b.x-a.x,dy=b.y-a.y;
+    const centerDist=Math.hypot(dx,dy);
+    return {
+      a,b,
+      mx:(a.x+b.x)/2,
+      my:(a.y+b.y)/2,
+      dx,dy,
+      centerDist,
+      opening:centerDist-a.r-b.r
+    };
+  }
+
+  function aiGateFor(index){
+    return aiGateForState(coins,index);
+  }
+
+  function aiLineIntersection(p1,p2,q1,q2){
+    const rx=p2.x-p1.x, ry=p2.y-p1.y;
+    const sx=q2.x-q1.x, sy=q2.y-q1.y;
+    const den=rx*sy-ry*sx;
+    if(Math.abs(den)<0.0001)return null;
+
+    const qpx=q1.x-p1.x, qpy=q1.y-p1.y;
+    const t=(qpx*sy-qpy*sx)/den;
+    const u=(qpx*ry-qpy*rx)/den;
+    return {t,u,x:p1.x+t*rx,y:p1.y+t*ry};
+  }
+
+  function aiRayFitsGate(c,target,gate){
+    const hit=aiLineIntersection(
+      {x:c.x,y:c.y},
+      target,
+      {x:gate.a.x,y:gate.a.y},
+      {x:gate.b.x,y:gate.b.y}
+    );
+    if(!hit||hit.t<=0||hit.t>=1||hit.u<=0||hit.u>=1)return false;
+
+    const da=Math.hypot(hit.x-gate.a.x,hit.y-gate.a.y);
+    const db=Math.hypot(hit.x-gate.b.x,hit.y-gate.b.y);
+    return da>c.r+gate.a.r*.92 && db>c.r+gate.b.r*.92;
+  }
+
+  function aiSafeCrossRange(c,gate){
+    if(gate.centerDist<=0)return null;
+    const margin=3;
+    const minFromA=gate.a.r+c.r+margin;
+    const minFromB=gate.b.r+c.r+margin;
+    const tMin=minFromA/gate.centerDist;
+    const tMax=1-minFromB/gate.centerDist;
+    if(tMin>=tMax)return null;
+    return {tMin,tMax};
+  }
+
+  function aiGoalTargets(){
+    const left=field.x+(field.w-field.goalWidth)/2+baseRadius()*.55;
+    const right=field.x+(field.w+field.goalWidth)/2-baseRadius()*.55;
+    const center=field.x+field.w/2;
+    const y=field.y+field.h+field.goalDepth*.72;
+
+    if(goalie&&goalie.x<center){
+      return [
+        {x:right-field.goalWidth*.07,y},
+        {x:center+field.goalWidth*.10,y},
+        {x:center,y},
+        {x:left+field.goalWidth*.07,y}
+      ];
+    }
+    return [
+      {x:left+field.goalWidth*.07,y},
+      {x:center-field.goalWidth*.10,y},
+      {x:center,y},
+      {x:right-field.goalWidth*.07,y}
+    ];
+  }
+
+  function aiPowerForDistance(distance,minPower=.18,maxPower=.82){
+    const maxSpeed=maxShotSpeed();
+    // With constant deceleration, stopping distance is v²/(2a). Since shot launch
+    // speed uses sqrt(power), distance stays nearly linear with the pull/power value.
+    const neededSpeed=Math.sqrt(Math.max(0,2*COIN_FRICTION_DECEL*distance));
+    // Keep the simulated landing point close to the planner's target. The old 1.08
+    // buffer systematically overshot formations under linear friction.
+    const neededPower=Math.pow(neededSpeed/Math.max(1,maxSpeed),2)*1.01;
+    return aiClamp(neededPower,minPower,maxPower);
+  }
+
+  function aiTeamProgress(state){
+    return state.reduce((sum,c)=>sum+c.y,0)/state.length;
+  }
+
+  function aiNextGateQuality(state,index){
+    const c=state[index];
+    const gate=aiGateForState(state,index);
+    const safe=aiSafeCrossRange(c,gate);
+    if(!safe)return -80;
+
+    const widthRatio=gate.opening/Math.max(1,c.r);
+    const widthQuality=aiClamp((widthRatio-1.6)/2.0,0,1);
+
+    const distance=Math.hypot(c.x-gate.mx,c.y-gate.my);
+    const idealDistance=field.h*.16;
+    const distanceQuality=1-aiClamp(Math.abs(distance-idealDistance)/(field.h*.22),0,1);
+
+    const directional=(gate.my-c.y)/field.h;
+    const forwardBonus=aiClamp(directional*18,-7,14);
+    const territory=aiClamp((gate.my-field.y)/field.h,0,1);
+
+    let score=widthQuality*68 + distanceQuality*24 + territory*16 + forwardBonus;
+    if(gate.my>field.y+field.h*.68){
+      score+=coinPointValue(c)*9;
+    }
+    return score;
+  }
+
+  function aiFormationScore(state,movedIndex,oldY){
+    let best=-1e9,second=-1e9;
+
+    for(let i=0;i<state.length;i++){
+      const q=aiNextGateQuality(state,i);
+      if(q>best){second=best;best=q}
+      else if(q>second){second=q}
+    }
+
+    const progress=(aiTeamProgress(state)-field.y)/field.h;
+    const movedDelta=(state[movedIndex].y-oldY)/field.h;
+
+    let spacingPenalty=0;
+    for(let i=0;i<state.length;i++){
+      const c=state[i];
+      const wall=Math.min(c.x-field.x,field.x+field.w-c.x);
+      if(wall<c.r*1.25)spacingPenalty+=(c.r*1.25-wall)*1.2;
+
+      for(let j=i+1;j<state.length;j++){
+        const d=Math.hypot(c.x-state[j].x,c.y-state[j].y);
+        const min=c.r+state[j].r+4;
+        if(d<min)spacingPenalty+=(min-d)*3;
+      }
+    }
+
+    let value=best*1.55 + Math.max(-20,second)*.22;
+    value+=progress*48;
+    value+=movedDelta*24;
+    value-=spacingPenalty;
+
+    if(movedIndex===aiLastCoin)value-=5;
+    return value;
+  }
+
+  function aiCandidateTargets(index){
+    const c=coins[index];
+    const gate=aiGateFor(index);
+    const range=aiSafeCrossRange(c,gate);
+    if(!range)return [];
+
+    const span=range.tMax-range.tMin;
+    const crossTs=[
+      (range.tMin+range.tMax)/2,
+      range.tMin+span*.32,
+      range.tMin+span*.68
+    ];
+
+    const beyonds=[
+      field.h*.070,
+      field.h*.105,
+      field.h*.145,
+      field.h*.195,
+      field.h*.245
+    ];
+
+    const out=[];
+    for(const t of crossTs){
+      const cross={
+        x:gate.a.x+gate.dx*t,
+        y:gate.a.y+gate.dy*t
+      };
+
+      let dx=cross.x-c.x,dy=cross.y-c.y;
+      const toGate=Math.hypot(dx,dy);
+      if(toGate<8)continue;
+      dx/=toGate;dy/=toGate;
+
+      for(const beyond of beyonds){
+        const target={
+          x:cross.x+dx*beyond,
+          y:cross.y+dy*beyond
+        };
+
+        if(target.x<c.r+field.x+2 || target.x>field.x+field.w-c.r-2)continue;
+        if(target.y<c.r+field.y+2 || target.y>field.y+field.h-c.r-2)continue;
+        if(!aiRayFitsGate(c,target,gate))continue;
+
+        const predicted=coins.map(o=>({...o,vx:0,vy:0}));
+        predicted[index]={...predicted[index],x:target.x,y:target.y};
+
+        out.push({
+          index,
+          c,
+          gate,
+          target,
+          cross,
+          value:aiFormationScore(predicted,index,c.y)
+        });
+      }
+    }
+    return out;
+  }
+
+  function aiAdaptiveGateSkill(){
+    if(aiGateAttempts<8)return AI_GATE_TARGET;
+    const actual=aiGateMakes/Math.max(1,aiGateAttempts);
+    return aiClamp(AI_GATE_TARGET+(AI_GATE_TARGET-actual)*.35,.84,.96);
+  }
+
+  function aiAimAndShoot(index,target,gate,power,openingPrecision=false){
+    const c=coins[index];
+    let dx=target.x-c.x,dy=target.y-c.y;
+    const len=Math.hypot(dx,dy)||1;
+    dx/=len;dy/=len;
+
+    const skilled=openingPrecision || Math.random()<aiAdaptiveGateSkill();
+    const error=openingPrecision
+      ? (Math.random()*2-1)*.0015
+      : skilled
+        ? (Math.random()*2-1)*.0045
+        : (Math.random()<.5?-1:1)*(.028+Math.random()*.050);
+
+    const ca=Math.cos(error),sa=Math.sin(error);
+    const ux=dx*ca-dy*sa;
+    const uy=dx*sa+dy*ca;
+
+    aiLastCoin=index;
+    aiShotCount++;
+    aiPossessionShots++;
+    beginShot(index,ux*shotSpeedForPower(power),uy*shotSpeedForPower(power));
+  }
+
+  function aiVariedChoice(choices,valueBand=18,maxPool=8,avoidKey=''){
+    if(!choices.length)return null;
+    choices.sort((a,b)=>b.value-a.value);
+    const best=choices[0].value;
+    let pool=choices.filter(c=>c.value>=best-valueBand).slice(0,maxPool);
+    if(avoidKey&&pool.length>1){
+      const different=pool.filter(c=>c.patternKey!==avoidKey);
+      if(different.length)pool=different;
+    }
+
+    // Better candidates are still so
