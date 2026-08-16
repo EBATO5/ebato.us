@@ -38,11 +38,12 @@ replaceRequired(
 'goal-depth'
 );
 
-// v0.3.0 + v0.4.0 match state.
+// v0.3.0 + v0.4.0 match state, plus manual-first human goalkeeper preference.
 replaceRequired(
 `  let easyMode=false;`,
 `  let easyMode=false;
   let hardMode=false;
+  let autoGoalie=[false,false];
   let matchStarter=0;
   let matchOver=false;
   let nextGameReady=[false,false];`,
@@ -74,10 +75,39 @@ replaceRequired(
 'difficulty HUD'
 );
 
+// Keep the visible human Auto Goalie toggle synchronized with the keeper that
+// belongs to the local player/current defender. AI keeper behavior is untouched.
+replaceRequired(
+`    document.getElementById('onlineBtn').textContent=onlineActive()
+      ? \`Online: \${lobbyCode}\`
+      : 'Play Online';
+  }`,
+`    document.getElementById('onlineBtn').textContent=onlineActive()
+      ? \`Online: \${lobbyCode}\`
+      : 'Play Online';
+    updateAutoGoalieControl();
+  }`,
+'auto goalie HUD hook'
+);
+
 // Match lifecycle / ready-up helpers.
 replaceRequired(
 `  function switchPossession(reason='Turnover'){`,
-`  function updateNewGamePanel(){
+`  function localAutoGoalieSide(){
+    if(onlineActive()&&onlineRole!==null)return onlineRole;
+    if(opponentMode==='ai')return 0;
+    return goalie?goalie.side:Math.max(0,Math.min(1,1-attacker));
+  }
+
+  function updateAutoGoalieControl(){
+    const btn=document.getElementById('autoGoalie');
+    if(!btn)return;
+    const side=localAutoGoalieSide();
+    btn.disabled=onlineActive()&&!onlineConnected;
+    btn.textContent=\`Auto Goalie: \${autoGoalie[side]?'On':'Off'}\`;
+  }
+
+  function updateNewGamePanel(){
     const panel=document.getElementById('newGamePanel');
     if(!panel)return;
     if(!matchOver){panel.classList.add('hidden');return;}
@@ -178,6 +208,7 @@ replaceRequired(
   window.coinSoccerStartMatchMode=async mode=>{
     if(onlineActive())await leaveOnline(false);
     opponentMode=mode==='ai'?'ai':'human';
+    autoGoalie=[false,false];
     beginMatchAtStarter(0);
   };
 
@@ -220,7 +251,7 @@ replaceRequired(
 'game-over panel trigger'
 );
 
-// Keep difficulty and ready-up/match-starter state synchronized online.
+// Keep difficulty, ready-up, match-starter, and human goalie preferences synchronized online.
 replaceRequired(
 `      score:[...score],
       easyMode,
@@ -231,6 +262,7 @@ replaceRequired(
       matchStarter,
       matchOver,
       nextGameReady:[...nextGameReady],
+      autoGoalie:[...autoGoalie],
       running,`,
 'network match state'
 );
@@ -242,6 +274,7 @@ replaceRequired(
     matchStarter=Number.isInteger(s.matchStarter)?s.matchStarter:matchStarter;
     matchOver=!!s.matchOver;
     nextGameReady=Array.isArray(s.nextGameReady)?[!!s.nextGameReady[0],!!s.nextGameReady[1]]:[false,false];
+    autoGoalie=Array.isArray(s.autoGoalie)?[!!s.autoGoalie[0],!!s.autoGoalie[1]]:[false,false];
     running=!!s.running;`,
 'network match apply'
 );
@@ -258,7 +291,7 @@ replaceRequired(
 'network ready panel apply'
 );
 
-// Guest ready signal is collected by the authoritative host.
+// Guest ready signal and guest goalie preference are collected by the authoritative host.
 replaceRequired(
 `      .on('broadcast',{event:'keeper_hold'},({payload})=>{
         if(!isHost()||!payload||payload.player!==1)return;
@@ -274,8 +307,14 @@ replaceRequired(
         updateNewGamePanel();
         sendNetworkState(true);
         maybeStartReadyNextGame();
+      })
+      .on('broadcast',{event:'auto_goalie'},({payload})=>{
+        if(!isHost()||!payload||payload.player!==1)return;
+        autoGoalie[1]=!!payload.enabled;
+        updateHUD();
+        sendNetworkState(true);
       })`,
-'online ready event'
+'online ready and goalie events'
 );
 
 // Host-created online sessions always begin with Player 1; subsequent completed
@@ -297,7 +336,8 @@ replaceRequired(
 'online initial starter'
 );
 
-// AI should not plan penny shots as scores in Hard.
+// AI should not plan penny shots as scores in Hard. No AI difficulty tuning:
+// this is the exact approved Standard AI behavior from the previous build.
 replaceRequired(
 `    const scoringShots=[];
     for(let i=0;i<coins.length;i++){
@@ -311,7 +351,27 @@ replaceRequired(
 'AI hard scoring eligibility'
 );
 
-// Difficulty cycle preserves the current match's kickoff owner when resetting.
+// Human keepers are manual by default. The computer's own keeper retains the
+// exact automatic behavior it had before v0.5.0.
+replaceRequired(
+`  function shouldAutoPatrol(){
+    if(!goalie)return false;
+    if(pointer && pointer.mode==='goalie' && canControlKeeperLocal())return false;
+    if(onlineActive() && isHost() && goalie.side===1 && remoteKeeperHeld)return false;
+    return true;
+  }`,
+`  function shouldAutoPatrol(){
+    if(!goalie)return false;
+    if(pointer && pointer.mode==='goalie' && canControlKeeperLocal())return false;
+    if(onlineActive() && isHost() && goalie.side===1 && remoteKeeperHeld)return false;
+    if(opponentMode==='ai'&&goalie.side===1)return true;
+    return !!autoGoalie[goalie.side];
+  }`,
+'manual-first goalie patrol'
+);
+
+// Difficulty still changes GAME RULES. The visible popup uses this original
+// three-state rule cycle programmatically; the AI itself is never retuned.
 replaceRequired(
 `  document.getElementById('mode').addEventListener('click',()=>{
     if(onlineActive()&&!isHost()){
@@ -332,7 +392,7 @@ replaceRequired(
     else if(easyMode){easyMode=false;hardMode=true;}
     else hardMode=false;
     beginMatchAtStarter(matchStarter);
-    toast(easyMode?'Easy: all pennies can score':hardMode?'Hard: only the dime can score':'Standard: pennies 1, dime 2');
+    toast(easyMode?'Easy: all pennies can score':hardMode?'Hard: only the dime can score':'Normal: pennies 1, dime 2');
   });`,
 'difficulty button handler'
 );
@@ -359,8 +419,19 @@ replaceRequired(
     readyNextGame(onlineActive()?onlineRole:0);
   });
   document.getElementById('readyP1').addEventListener('click',()=>readyNextGame(0));
-  document.getElementById('readyP2').addEventListener('click',()=>readyNextGame(1));`,
-'restart and ready handlers'
+  document.getElementById('readyP2').addEventListener('click',()=>readyNextGame(1));
+
+  document.getElementById('autoGoalie').addEventListener('click',()=>{
+    const side=localAutoGoalieSide();
+    autoGoalie[side]=!autoGoalie[side];
+    updateHUD();
+    if(onlineActive()){
+      if(isHost())sendNetworkState(true);
+      else sendBroadcast('auto_goalie',{player:side,enabled:autoGoalie[side]});
+    }
+    toast(\`Auto Goalie: \${autoGoalie[side]?'On':'Off'}\`);
+  });`,
+'restart ready and goalie handlers'
 );
 
 // v0.4.1: Reset Formation was removed from the interface; remove its legacy
@@ -374,259 +445,16 @@ replaceRequired(
 'reset formation handler'
 );
 
-// v0.5.0: AI difficulty is separate from the Easy/Standard/Hard scoring rules.
-// Normal is exactly the established AI tuning; Easy and Hard only change its
-// execution accuracy and computer-goalie speed.
+// Keep the canvas backing size synchronized with its CSS box. This prevents
+// UI reflow from stretching true circles into ovals or distorting pointer aim.
 replaceRequired(
-`  let hardMode=false;
-  let matchStarter=0;
-  let matchOver=false;
-  let nextGameReady=[false,false];`,
-`  let hardMode=false;
-  let aiDifficulty=1; // 0 Easy, 1 Normal, 2 Hard
-  let autoGoalie=[false,false];
-  let matchStarter=0;
-  let matchOver=false;
-  let nextGameReady=[false,false];`,
-'AI difficulty and goalie state'
-);
-
-replaceRequired(
-`    document.getElementById('mode').textContent=easyMode
-      ? 'Difficulty: Easy'
-      : hardMode
-        ? 'Difficulty: Hard'
-        : 'Difficulty: Standard';`,
-`    document.getElementById('mode').textContent=easyMode
-      ? 'Rules: Easy'
-      : hardMode
-        ? 'Rules: Hard'
-        : 'Rules: Standard';`,
-'rules label'
-);
-
-replaceRequired(
-`    document.getElementById('onlineBtn').textContent=onlineActive()
-      ? \`Online: \${lobbyCode}\`
-      : 'Play Online';
+`  window.addEventListener('resize',resize,{passive:true});`,
+`  window.addEventListener('resize',resize,{passive:true});
+  if(window.ResizeObserver){
+    const canvasResizeObserver=new ResizeObserver(()=>resize());
+    canvasResizeObserver.observe(canvas);
   }`,
-`    document.getElementById('onlineBtn').textContent=onlineActive()
-      ? \`Online: \${lobbyCode}\`
-      : 'Play Online';
-    updateGameplayControls();
-  }`,
-'gameplay control HUD hook'
-);
-
-replaceRequired(
-`  function updateNewGamePanel(){`,
-`  function aiDifficultyName(){
-    return aiDifficulty===0?'Easy':aiDifficulty===2?'Hard':'Normal';
-  }
-
-  function localAutoGoalieSide(){
-    if(onlineActive()&&onlineRole!==null)return onlineRole;
-    if(opponentMode==='ai')return 0;
-    return goalie?goalie.side:Math.max(0,Math.min(1,1-attacker));
-  }
-
-  function updateGameplayControls(){
-    const aiControl=document.getElementById('aiDifficultyControl');
-    const aiSlider=document.getElementById('aiDifficulty');
-    const aiLabel=document.getElementById('aiDifficultyLabel');
-    if(aiControl)aiControl.classList.toggle('hidden',opponentMode!=='ai');
-    if(aiSlider)aiSlider.value=String(aiDifficulty);
-    if(aiLabel)aiLabel.textContent=aiDifficultyName();
-
-    const goalieBtn=document.getElementById('autoGoalie');
-    if(goalieBtn){
-      const side=localAutoGoalieSide();
-      const on=!!autoGoalie[side];
-      goalieBtn.disabled=onlineActive()&&!onlineConnected;
-      goalieBtn.textContent=opponentMode==='human'
-        ? \`Auto Goalie P\${side+1}: \${on?'On':'Off'}\`
-        : \`Auto Goalie: \${on?'On':'Off'}\`;
-    }
-  }
-
-  function updateNewGamePanel(){`,
-'AI and goalie control helpers'
-);
-
-replaceRequired(
-`  window.coinSoccerStartMatchMode=async mode=>{
-    if(onlineActive())await leaveOnline(false);
-    opponentMode=mode==='ai'?'ai':'human';
-    beginMatchAtStarter(0);
-  };`,
-`  window.coinSoccerStartMatchMode=async mode=>{
-    if(onlineActive())await leaveOnline(false);
-    opponentMode=mode==='ai'?'ai':'human';
-    aiDifficulty=1;
-    autoGoalie=[false,false];
-    beginMatchAtStarter(0);
-  };`,
-'default AI and goalie settings'
-);
-
-replaceRequired(
-`  const AI_GATE_TARGET=.90;`,
-`  const AI_GATE_TARGET=.90;
-
-  function aiBaseGateTarget(){
-    return aiDifficulty===0?.78:aiDifficulty===2?.97:AI_GATE_TARGET;
-  }`,
-'AI difficulty gate target'
-);
-
-replaceRequired(
-`  function aiAdaptiveGateSkill(){
-    if(aiGateAttempts<8)return AI_GATE_TARGET;
-    const actual=aiGateMakes/Math.max(1,aiGateAttempts);
-    return aiClamp(AI_GATE_TARGET+(AI_GATE_TARGET-actual)*.35,.84,.96);
-  }`,
-`  function aiAdaptiveGateSkill(){
-    const target=aiBaseGateTarget();
-    if(aiGateAttempts<8)return target;
-    const actual=aiGateMakes/Math.max(1,aiGateAttempts);
-    const low=aiDifficulty===0?.70:aiDifficulty===2?.93:.84;
-    const high=aiDifficulty===0?.87:aiDifficulty===2?.995:.96;
-    return aiClamp(target+(target-actual)*.35,low,high);
-  }`,
-'AI adaptive difficulty'
-);
-
-replaceRequired(
-`    const skilled=openingPrecision || Math.random()<aiAdaptiveGateSkill();
-    const error=openingPrecision
-      ? (Math.random()*2-1)*.0015
-      : skilled
-        ? (Math.random()*2-1)*.0045
-        : (Math.random()<.5?-1:1)*(.028+Math.random()*.050);`,
-`    const skilled=openingPrecision || Math.random()<aiAdaptiveGateSkill();
-    let error;
-    if(openingPrecision){
-      error=(Math.random()*2-1)*.0015;
-    }else if(aiDifficulty===0){
-      error=skilled
-        ? (Math.random()*2-1)*.010
-        : (Math.random()<.5?-1:1)*(.045+Math.random()*.065);
-    }else if(aiDifficulty===2){
-      error=skilled
-        ? (Math.random()*2-1)*.0022
-        : (Math.random()<.5?-1:1)*(.012+Math.random()*.025);
-    }else{
-      // Normal preserves the exact established v0.1.3-era shot execution.
-      error=skilled
-        ? (Math.random()*2-1)*.0045
-        : (Math.random()<.5?-1:1)*(.028+Math.random()*.050);
-    }`,
-'AI aim difficulty'
-);
-
-replaceRequired(
-`  function currentGoalieSpeed(){
-    // One baseline AI for now. Easier variants can be derived from this later.
-    if(opponentMode==='ai'&&goalie&&goalie.side===1)return 78;
-    return goalieSpeed;
-  }`,
-`  function currentGoalieSpeed(){
-    if(opponentMode==='ai'&&goalie&&goalie.side===1){
-      return aiDifficulty===0?62:aiDifficulty===2?96:78;
-    }
-    return goalieSpeed;
-  }`,
-'AI goalie difficulty speed'
-);
-
-replaceRequired(
-`  function shouldAutoPatrol(){
-    if(!goalie)return false;
-    if(pointer && pointer.mode==='goalie' && canControlKeeperLocal())return false;
-    if(onlineActive() && isHost() && goalie.side===1 && remoteKeeperHeld)return false;
-    return true;
-  }`,
-`  function shouldAutoPatrol(){
-    if(!goalie)return false;
-    if(pointer && pointer.mode==='goalie' && canControlKeeperLocal())return false;
-    if(onlineActive() && isHost() && goalie.side===1 && remoteKeeperHeld)return false;
-    // The computer always manages its own keeper. Human keepers default to
-    // manual/stationary and only patrol when that player enables Auto Goalie.
-    if(opponentMode==='ai'&&goalie.side===1)return true;
-    return !!autoGoalie[goalie.side];
-  }`,
-'manual-first goalie patrol'
-);
-
-// Synchronize each human player's Auto Goalie preference online.
-replaceRequired(
-`      nextGameReady:[...nextGameReady],
-      running,`,
-`      nextGameReady:[...nextGameReady],
-      autoGoalie:[...autoGoalie],
-      running,`,
-'network goalie state'
-);
-replaceRequired(
-`    nextGameReady=Array.isArray(s.nextGameReady)?[!!s.nextGameReady[0],!!s.nextGameReady[1]]:[false,false];
-    running=!!s.running;`,
-`    nextGameReady=Array.isArray(s.nextGameReady)?[!!s.nextGameReady[0],!!s.nextGameReady[1]]:[false,false];
-    autoGoalie=Array.isArray(s.autoGoalie)?[!!s.autoGoalie[0],!!s.autoGoalie[1]]:[false,false];
-    running=!!s.running;`,
-'network goalie apply'
-);
-
-replaceRequired(
-`      .on('broadcast',{event:'ready_next'},({payload})=>{
-        if(!isHost()||!matchOver||!payload||payload.player!==1)return;
-        nextGameReady[1]=true;
-        updateNewGamePanel();
-        sendNetworkState(true);
-        maybeStartReadyNextGame();
-      })`,
-`      .on('broadcast',{event:'ready_next'},({payload})=>{
-        if(!isHost()||!matchOver||!payload||payload.player!==1)return;
-        nextGameReady[1]=true;
-        updateNewGamePanel();
-        sendNetworkState(true);
-        maybeStartReadyNextGame();
-      })
-      .on('broadcast',{event:'auto_goalie'},({payload})=>{
-        if(!isHost()||!payload||payload.player!==1)return;
-        autoGoalie[1]=!!payload.enabled;
-        updateHUD();
-        sendNetworkState(true);
-      })`,
-'online goalie preference event'
-);
-
-// Range input supports both clicking and dragging between Easy / Normal / Hard.
-replaceRequired(
-`  document.getElementById('mode').addEventListener('click',()=>{`,
-`  const aiDifficultyInput=document.getElementById('aiDifficulty');
-  if(aiDifficultyInput){
-    aiDifficultyInput.addEventListener('input',()=>{
-      aiDifficulty=Math.max(0,Math.min(2,Number(aiDifficultyInput.value)||0));
-      updateHUD();
-    });
-    aiDifficultyInput.addEventListener('change',()=>{
-      toast(\`AI Difficulty: \${aiDifficultyName()}\`);
-    });
-  }
-
-  document.getElementById('autoGoalie').addEventListener('click',()=>{
-    const side=localAutoGoalieSide();
-    autoGoalie[side]=!autoGoalie[side];
-    updateHUD();
-    if(onlineActive()){
-      if(isHost())sendNetworkState(true);
-      else sendBroadcast('auto_goalie',{player:side,enabled:autoGoalie[side]});
-    }
-    toast(\`Auto Goalie: \${autoGoalie[side]?'On':'Off'}\`);
-  });
-
-  document.getElementById('mode').addEventListener('click',()=>{`,
-'AI slider and goalie toggle handlers'
+'canvas resize observer'
 );
 
 await writeFile('dist/app.js', source, 'utf8');
