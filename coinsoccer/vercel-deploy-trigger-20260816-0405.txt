@@ -1,0 +1,1 @@
+Trigger Vercel Git deployment for Coin Soccer after connecting EBATO5/ebato.us with Root Directory coinsoccer.
