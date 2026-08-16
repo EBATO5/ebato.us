@@ -3,457 +3,544 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Space Holo Landing Page</title>
+  <meta name="description" content="EBATO — a home base for games, tools, communities, experiments, and everything currently being built." />
+  <title>EBATO — Project Home Base</title>
   <style>
     :root {
-      --cyan: #7ef9ff;
-      --cyan-strong: #3af2ff;
-      --orange: #ff8a1f;
-      --orange-strong: #ff6a00;
-      --text: #8ff7ff;
-      --text-soft: #ffd0a1;
-      --muted: #86dce4;
-      --panel-strong: rgba(10, 25, 45, 0.82);
-      --shadow: 0 0 24px rgba(58, 242, 255, 0.22), 0 0 80px rgba(58, 242, 255, 0.1);
+      --bg: #030912;
+      --panel: rgba(7, 20, 33, 0.84);
+      --panel-soft: rgba(8, 25, 40, 0.62);
+      --cyan: #78f5ff;
+      --cyan-soft: #a6f8ff;
+      --orange: #ff9b45;
+      --green: #76f0ae;
+      --yellow: #ffd86b;
+      --muted: #86a9ba;
+      --line: rgba(120,245,255,.17);
+      --text: #eafcff;
+      --shadow: 0 18px 70px rgba(0,0,0,.36), 0 0 36px rgba(64,226,255,.08);
     }
 
     * { box-sizing: border-box; }
-
-    html, body {
-      min-height: 100%;
+    html { scroll-behavior: smooth; }
+    body {
       margin: 0;
-      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       color: var(--text);
       background:
-        radial-gradient(circle at 20% 20%, rgba(96, 169, 255, 0.18), transparent 18%),
-        radial-gradient(circle at 80% 30%, rgba(126, 249, 255, 0.12), transparent 16%),
-        radial-gradient(circle at 50% 80%, rgba(77, 119, 255, 0.15), transparent 22%),
-        linear-gradient(180deg, rgba(2, 10, 22, 0.38) 0%, rgba(1, 6, 14, 0.52) 40%, rgba(1, 3, 8, 0.75) 100%),
-        url("https://images.unsplash.com/photo-1462331940025-496dfbfc7564?auto=format&fit=crop&w=1800&q=80");
-      background-size: cover;
-      background-position: center;
-      background-attachment: fixed;
+        radial-gradient(circle at 18% 10%, rgba(46,130,170,.18), transparent 26%),
+        radial-gradient(circle at 88% 18%, rgba(255,136,60,.08), transparent 22%),
+        linear-gradient(rgba(2,9,18,.89), rgba(2,7,15,.96)),
+        url("https://images.unsplash.com/photo-1462331940025-496dfbfc7564?auto=format&fit=crop&w=2000&q=80") center/cover fixed;
       overflow-x: hidden;
-      overflow-y: auto;
     }
 
-    body::before,
-    body::after {
+    body::before {
       content: "";
       position: fixed;
       inset: 0;
       pointer-events: none;
-    }
-
-    body::before {
       background-image:
-        radial-gradient(2px 2px at 10% 20%, rgba(255,255,255,.85) 40%, transparent 50%),
-        radial-gradient(1.5px 1.5px at 20% 70%, rgba(255,255,255,.65) 40%, transparent 50%),
-        radial-gradient(1.6px 1.6px at 80% 40%, rgba(255,255,255,.75) 40%, transparent 50%),
-        radial-gradient(1.2px 1.2px at 68% 86%, rgba(255,255,255,.65) 40%, transparent 50%),
-        radial-gradient(1.4px 1.4px at 90% 18%, rgba(255,255,255,.8) 40%, transparent 50%),
-        radial-gradient(1.8px 1.8px at 56% 34%, rgba(255,255,255,.55) 40%, transparent 50%),
-        radial-gradient(1.2px 1.2px at 34% 44%, rgba(255,255,255,.72) 40%, transparent 50%),
-        radial-gradient(1.5px 1.5px at 45% 15%, rgba(255,255,255,.7) 40%, transparent 50%),
-        radial-gradient(1.4px 1.4px at 73% 63%, rgba(255,255,255,.72) 40%, transparent 50%),
-        radial-gradient(1.3px 1.3px at 15% 88%, rgba(255,255,255,.65) 40%, transparent 50%);
-      opacity: 0.9;
-      animation: twinkle 8s linear infinite alternate;
+        linear-gradient(rgba(120,245,255,.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(120,245,255,.025) 1px, transparent 1px);
+      background-size: 54px 54px;
+      mask-image: linear-gradient(to bottom, rgba(0,0,0,.8), transparent 84%);
     }
 
-    body::after {
-      background:
-        radial-gradient(circle at center, transparent 0 42%, rgba(126,249,255,0.045) 55%, transparent 70%),
-        repeating-linear-gradient(
-          180deg,
-          rgba(126,249,255,0.05) 0px,
-          rgba(126,249,255,0.05) 1px,
-          transparent 2px,
-          transparent 6px
-        );
-      mix-blend-mode: screen;
-      opacity: .7;
-    }
+    a { color: inherit; }
+    button, input { font: inherit; }
 
-    body.transmission-open::after {
-      opacity: .7;
-    }
-
-    @keyframes twinkle {
-      0% { opacity: .7; transform: translateY(0px); }
-      100% { opacity: 1; transform: translateY(-4px); }
-    }
-
-    @keyframes pulse {
-      0%, 100% { box-shadow: 0 0 18px rgba(58,242,255,.18), 0 0 45px rgba(58,242,255,.08); }
-      50% { box-shadow: 0 0 28px rgba(58,242,255,.34), 0 0 70px rgba(58,242,255,.16); }
-    }
-
-    @keyframes sweep {
-      0% { transform: translateX(-100%); }
-      100% { transform: translateX(100%); }
-    }
-
-    .wrap {
-      min-height: 100vh;
-      display: grid;
-      place-items: center;
-      padding: 24px 56px;
+    .shell {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 26px 0 56px;
       position: relative;
-      isolation: isolate;
+      z-index: 1;
     }
 
-    .orb {
-      position: absolute;
-      border-radius: 50%;
-      filter: blur(30px);
-      opacity: .28;
-      pointer-events: none;
-    }
-
-    .orb.one {
-      width: 280px;
-      height: 280px;
-      background: rgba(58, 242, 255, 0.18);
-      top: 9%;
-      left: 8%;
-    }
-
-    .orb.two {
-      width: 220px;
-      height: 220px;
-      background: rgba(255, 142, 60, 0.14);
-      right: 10%;
-      bottom: 12%;
-    }
-
-    .console {
-      width: min(1240px, 100%);
-      position: relative;
-    }
-
-    .landing-start {
-      min-height: calc(100vh - 48px);
+    .topbar {
       display: flex;
       align-items: center;
-      justify-content: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 10px 2px 28px;
     }
 
-    .start-btn {
-      appearance: none;
-      display: inline-flex;
+    .brand {
+      display: flex;
       align-items: center;
-      justify-content: center;
-      min-width: 240px;
-      border: 1px solid rgba(126,249,255,.65);
-      background:
-        linear-gradient(180deg, rgba(126,249,255,.18), rgba(126,249,255,.05)),
-        rgba(3,14,24,.8);
-      color: var(--orange);
+      gap: 12px;
+      text-decoration: none;
+      font-weight: 900;
+      letter-spacing: .22em;
+      font-size: .92rem;
+    }
+
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(120,245,255,.6);
+      border-radius: 10px;
+      color: var(--cyan);
+      box-shadow: inset 0 0 16px rgba(120,245,255,.08), 0 0 18px rgba(120,245,255,.12);
+    }
+
+    .top-links { display: flex; gap: 8px; }
+    .top-links a {
+      text-decoration: none;
+      color: var(--muted);
+      font-size: .86rem;
+      padding: 9px 12px;
       border-radius: 999px;
-      padding: 18px 36px;
-      font-size: 1.05rem;
-      letter-spacing: .18em;
-      text-transform: uppercase;
-      cursor: pointer;
-      box-shadow: 0 0 30px rgba(58,242,255,.35), inset 0 0 20px rgba(126,249,255,.15);
-      animation: pulse 3.5s ease-in-out infinite;
-      transition: transform .2s ease, background .2s ease, border-color .2s ease, box-shadow .2s ease;
+      border: 1px solid transparent;
+    }
+    .top-links a:hover { color: var(--cyan-soft); border-color: var(--line); background: rgba(120,245,255,.04); }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.5fr) minmax(260px, .5fr);
+      gap: 18px;
+      margin-bottom: 18px;
     }
 
-    .start-btn:hover,
-    .start-btn:focus-visible {
-      transform: scale(1.06);
-      border-color: rgba(255,138,31,.9);
-      background:
-        linear-gradient(180deg, rgba(255,176,102,.18), rgba(126,249,255,.08)),
-        rgba(3,14,24,.95);
-      box-shadow: 0 0 40px rgba(58,242,255,.55), inset 0 0 25px rgba(255,138,31,.25);
-      outline: none;
+    .hero-main, .status-panel, .section-panel {
+      background: linear-gradient(180deg, rgba(13,32,51,.78), rgba(5,17,29,.88));
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
     }
 
-    .newspaper {
-      display: none;
-      margin-top: 24px;
-    }
-
-    .newspaper.open {
-      display: block;
-    }
-
-    .news-panel {
-      padding: 18px;
-      border-radius: 28px;
-      background:
-        linear-gradient(180deg, rgba(14, 35, 58, 0.6), rgba(5, 18, 33, 0.78)),
-        var(--panel-strong);
-      border: 1px solid rgba(126,249,255,.28);
-      box-shadow:
-        0 0 0 1px rgba(126,249,255,.08),
-        0 0 28px rgba(58,242,255,.22),
-        0 0 90px rgba(58,242,255,.14),
-        inset 0 0 24px rgba(126,249,255,.04);
+    .hero-main {
+      min-height: 330px;
+      border-radius: 30px;
+      padding: clamp(28px, 5vw, 54px);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
       position: relative;
       overflow: hidden;
     }
 
-    .news-panel::before {
+    .hero-main::after {
       content: "";
       position: absolute;
-      inset: 0;
-      background:
-        linear-gradient(115deg, transparent 0 20%, rgba(126,249,255,.08) 34%, transparent 46%),
-        linear-gradient(180deg, transparent, rgba(255,176,102,.03));
-      animation: sweep 4.5s linear infinite;
-      pointer-events: none;
+      width: 280px;
+      height: 280px;
+      right: -110px;
+      top: -110px;
+      border-radius: 50%;
+      border: 1px solid rgba(120,245,255,.16);
+      box-shadow: 0 0 0 34px rgba(120,245,255,.025), 0 0 0 72px rgba(120,245,255,.018);
     }
 
-    .paper-head {
+    .eyebrow {
+      color: var(--orange);
+      text-transform: uppercase;
+      letter-spacing: .22em;
+      font-size: .72rem;
+      font-weight: 800;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      margin: 0;
+      max-width: 760px;
+      font-size: clamp(2.8rem, 8vw, 6.6rem);
+      letter-spacing: -.065em;
+      line-height: .86;
+    }
+
+    .hero-copy {
+      margin: 24px 0 0;
+      max-width: 690px;
+      color: #a9c5d2;
+      font-size: clamp(1rem, 2vw, 1.12rem);
+      line-height: 1.65;
+    }
+
+    .hero-copy strong { color: var(--cyan-soft); font-weight: 700; }
+
+    .status-panel {
+      border-radius: 30px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .panel-label {
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .2em;
+      font-size: .67rem;
+      font-weight: 800;
+    }
+
+    .signal {
       display: flex;
       align-items: center;
-      gap: 16px;
-      margin-bottom: 18px;
-      padding-bottom: 14px;
-      border-bottom: 1px solid rgba(126,249,255,.18);
+      gap: 10px;
+      margin: 18px 0;
+      color: var(--green);
+      font-weight: 800;
     }
 
-    .close-btn {
-      appearance: none;
-      border: 1px solid rgba(255,138,31,.65);
-      background: rgba(8, 18, 30, 0.82);
-      color: var(--orange);
-      width: 40px;
-      height: 40px;
-      border-radius: 999px;
-      font-size: 1.5rem;
-      line-height: 1;
-      cursor: pointer;
-      box-shadow: 0 0 16px rgba(255,106,0,.18);
-      transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
-      margin-left: auto;
-      flex: 0 0 auto;
-      position: relative;
-      z-index: 2;
+    .signal-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 16px var(--green);
+      animation: blink 2.3s infinite;
     }
 
-    .close-btn:hover,
-    .close-btn:focus-visible {
-      transform: scale(1.06);
-      border-color: rgba(255,138,31,.95);
-      box-shadow: 0 0 24px rgba(255,106,0,.28);
-      outline: none;
+    @keyframes blink { 50% { opacity: .42; } }
+
+    .status-copy { color: #9bb5c2; line-height: 1.55; font-size: .92rem; }
+    .status-meta { margin-top: 22px; display: grid; gap: 9px; color: #7593a2; font-size: .78rem; }
+    .status-meta span { display: flex; justify-content: space-between; gap: 12px; padding-top: 9px; border-top: 1px solid rgba(120,245,255,.09); }
+    .status-meta b { color: #bdd4dd; font-weight: 650; }
+
+    .section-panel {
+      border-radius: 28px;
+      padding: clamp(20px, 3vw, 30px);
+      margin-top: 18px;
     }
 
-    .paper-title {
-      margin: 0;
-      font-size: clamp(1.15rem, 2vw, 1.5rem);
-      letter-spacing: .16em;
-      text-transform: uppercase;
-      color: var(--text-soft);
+    .section-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 20px;
     }
 
-    .paper-meta {
-      color: var(--orange);
-      font-size: .85rem;
-      text-transform: uppercase;
-      letter-spacing: .16em;
-      white-space: nowrap;
-    }
+    .section-title { margin: 5px 0 0; font-size: clamp(1.3rem, 3vw, 2rem); letter-spacing: -.03em; }
+    .section-note { color: var(--muted); font-size: .88rem; }
 
-    .link-grid {
+    .featured-grid {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 14px;
     }
 
-    .link-card {
-      display: block;
-      text-decoration: none;
-      color: inherit;
+    .project-card {
+      min-height: 220px;
       border-radius: 22px;
-      border: 1px solid rgba(126,249,255,.2);
-      background: rgba(7, 22, 36, .72);
-      padding: 16px;
-      transition: transform .2s ease, border-color .2s ease, background .2s ease, box-shadow .2s ease;
-      min-height: 140px;
+      border: 1px solid rgba(120,245,255,.13);
+      background: rgba(3,14,25,.55);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      text-decoration: none;
+      transition: transform .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease;
       position: relative;
       overflow: hidden;
     }
 
-    .link-card:hover,
-    .link-card:focus-visible {
+    .project-card:hover, .project-card:focus-visible {
       transform: translateY(-4px);
-      border-color: rgba(255,176,102,.5);
-      background: rgba(9, 28, 44, .88);
-      box-shadow: 0 0 24px rgba(58,242,255,.12);
+      border-color: rgba(120,245,255,.42);
+      background: rgba(7,25,39,.78);
+      box-shadow: 0 16px 38px rgba(0,0,0,.28), 0 0 28px rgba(120,245,255,.07);
       outline: none;
     }
 
-    .link-card::after {
+    .project-card::after {
       content: "";
       position: absolute;
-      inset: auto -30% -40% auto;
-      width: 140px;
-      height: 140px;
+      right: -55px;
+      bottom: -65px;
+      width: 160px;
+      height: 160px;
       border-radius: 50%;
-      background: radial-gradient(circle, rgba(255,176,102,.14), transparent 70%);
+      background: radial-gradient(circle, rgba(120,245,255,.07), transparent 68%);
       pointer-events: none;
     }
 
-    .link-kicker {
-      font-size: .74rem;
-      letter-spacing: .18em;
-      text-transform: uppercase;
+    .card-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 25px; }
+    .category { color: var(--muted); text-transform: uppercase; letter-spacing: .18em; font-size: .67rem; font-weight: 800; }
+    .badge { border-radius: 999px; padding: 5px 8px; font-size: .62rem; font-weight: 900; letter-spacing: .11em; text-transform: uppercase; border: 1px solid currentColor; }
+    .badge.live { color: var(--green); }
+    .badge.wip { color: var(--yellow); }
+    .badge.prototype { color: var(--orange); }
+    .badge.private { color: #c7a8ff; }
+
+    .project-name { margin: 0 0 9px; font-size: 1.32rem; letter-spacing: -.025em; }
+    .project-desc { color: #8eacba; line-height: 1.5; font-size: .91rem; margin: 0; }
+    .project-open { margin-top: auto; padding-top: 24px; color: var(--cyan); text-transform: uppercase; letter-spacing: .16em; font-size: .7rem; font-weight: 900; }
+
+    .tools {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .search {
+      flex: 1 1 240px;
+      background: rgba(2,12,21,.66);
+      border: 1px solid var(--line);
+      color: var(--text);
+      padding: 11px 14px;
+      border-radius: 13px;
+      outline: none;
+    }
+    .search:focus { border-color: rgba(120,245,255,.5); box-shadow: 0 0 0 3px rgba(120,245,255,.07); }
+    .search::placeholder { color: #62808e; }
+
+    .filter {
+      appearance: none;
+      border: 1px solid var(--line);
+      color: var(--muted);
+      background: rgba(2,12,21,.55);
+      border-radius: 999px;
+      padding: 9px 12px;
+      cursor: pointer;
+      font-size: .78rem;
+    }
+    .filter.active, .filter:hover { color: var(--cyan-soft); border-color: rgba(120,245,255,.4); background: rgba(120,245,255,.06); }
+
+    .all-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .all-grid .project-card { min-height: 188px; }
+    .hidden { display: none !important; }
+
+    .philosophy {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 22px;
+      align-items: center;
+    }
+    .big-icon {
+      width: 70px; height: 70px; border-radius: 20px;
+      display: grid; place-items: center;
+      border: 1px solid rgba(255,155,69,.28);
       color: var(--orange);
-      margin-bottom: 10px;
+      font-size: 1.5rem;
+      background: rgba(255,155,69,.04);
     }
+    .philosophy p { margin: 7px 0 0; color: #96b3c0; line-height: 1.6; max-width: 800px; }
 
-    .link-name {
-      font-size: 1.08rem;
-      font-weight: 700;
-      margin-bottom: 8px;
-      color: var(--text-soft);
+    footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      flex-wrap: wrap;
+      padding: 28px 4px 0;
+      color: #607e8c;
+      font-size: .78rem;
     }
-
-    .link-desc {
-      font-size: .94rem;
-      color: var(--muted);
-      line-height: 1.5;
-    }
-
-    .footer-note {
-      margin-top: 14px;
-      color: var(--muted);
-      font-size: .9rem;
-    }
+    footer a { text-decoration: none; color: #86a8b6; }
+    footer a:hover { color: var(--cyan); }
 
     @media (max-width: 900px) {
-      .link-grid {
-        grid-template-columns: 1fr 1fr;
-      }
+      .hero { grid-template-columns: 1fr; }
+      .status-panel { min-height: 220px; }
+      .featured-grid { grid-template-columns: 1fr 1fr; }
     }
 
     @media (max-width: 640px) {
-      .wrap {
-        padding: 16px;
-      }
+      .shell { width: min(100% - 20px, 1180px); padding-top: 10px; }
+      .topbar { padding-bottom: 14px; }
+      .top-links a:not(:last-child) { display: none; }
+      .hero-main, .status-panel, .section-panel { border-radius: 22px; }
+      .hero-main { min-height: 290px; padding: 28px 22px; }
+      .featured-grid, .all-grid { grid-template-columns: 1fr; }
+      .section-head { align-items: start; flex-direction: column; }
+      .project-card { min-height: 190px; }
+      .philosophy { grid-template-columns: 1fr; }
+      .big-icon { width: 54px; height: 54px; border-radius: 16px; }
+    }
 
-      .news-panel {
-        padding: 16px;
-        border-radius: 24px;
-      }
-
-      .paper-head {
-        flex-wrap: wrap;
-        align-items: center;
-      }
-
-      .paper-meta {
-        width: 100%;
-        order: 3;
-      }
-
-      .link-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .start-btn {
-        min-width: 0;
-        width: 100%;
-      }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation: none !important; transition: none !important; }
     }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="orb one"></div>
-    <div class="orb two"></div>
+  <div class="shell">
+    <header class="topbar">
+      <a class="brand" href="#top" aria-label="EBATO home"><span class="brand-mark">E</span> EBATO</a>
+      <nav class="top-links" aria-label="Primary">
+        <a href="#active">Active</a>
+        <a href="#projects">Projects</a>
+        <a href="https://github.com/EBATO5" target="_blank" rel="noopener">GitHub ↗</a>
+      </nav>
+    </header>
 
-    <main class="console">
-      <div id="landingStart" class="landing-start">
-        <button id="floatingOpenButton" class="start-btn" type="button" aria-controls="newsPanel" aria-expanded="false">
-          Start Transmission
-        </button>
-      </div>
+    <main id="top">
+      <section class="hero">
+        <div class="hero-main">
+          <div class="eyebrow">Personal project home base</div>
+          <h1>Things I’m making.</h1>
+          <p class="hero-copy">Games, communities, tools, experiments, and ideas that got far enough to become <strong>real things.</strong> This is where I come back to find them.</p>
+        </div>
 
-      <section id="newsPanel" class="newspaper" aria-label="Quick links">
-        <div class="news-panel">
-          <div class="paper-head">
-            <h2 class="paper-title">Daily Transmission</h2>
-            <div class="paper-meta">Edition 01 • Deep Space</div>
-            <button id="closeButton" class="close-btn" type="button" aria-label="Close transmission">×</button>
+        <aside class="status-panel" aria-label="System status">
+          <div>
+            <div class="panel-label">Mission Control</div>
+            <div class="signal"><span class="signal-dot"></span> ONLINE</div>
+            <div class="status-copy">A living index of EBATO projects — finished, unfinished, experimental, useful, ridiculous, or somewhere in between.</div>
           </div>
-
-          <div class="link-grid">
-            <a class="link-card" href="#">
-              <div class="link-kicker">Project</div>
-              <div class="link-name">Time-Loss Tool</div>
-              <div class="link-desc">Track pauses, stoppages, and active session time from a clean control panel.</div>
-            </a>
-
-            <a class="link-card" href="#">
-              <div class="link-kicker">Project</div>
-              <div class="link-name">Noise Meter</div>
-              <div class="link-desc">Open a mic-based view with live loudness feedback and threshold controls.</div>
-            </a>
-
-            <a class="link-card" href="#">
-              <div class="link-kicker">Project</div>
-              <div class="link-name">Ranch Rogue</div>
-              <div class="link-desc">Step into your project archive and jump back into the latest prototype.</div>
-            </a>
-
-            <a class="link-card" href="#">
-              <div class="link-kicker">Hub</div>
-              <div class="link-name">About</div>
-              <div class="link-desc">Introduce the site, your work, or the main idea behind your personal portal.</div>
-            </a>
-
-            <a class="link-card" href="#">
-              <div class="link-kicker">Hub</div>
-              <div class="link-name">Library</div>
-              <div class="link-desc">Use this slot for resources, notes, media, or any curated collection you want visible.</div>
-            </a>
-
-            <a class="link-card" href="#">
-              <div class="link-kicker">Contact</div>
-              <div class="link-name">Signal</div>
-              <div class="link-desc">A final destination for your email, socials, contact form, or other external links.</div>
-            </a>
+          <div class="status-meta">
+            <span><b>Base</b> ebato.us</span>
+            <span><b>Mode</b> Build → Test → Repeat</span>
+            <span><b>Archive</b> GitHub</span>
           </div>
+        </aside>
+      </section>
 
-          <div class="footer-note">Replace each card link and label with your real destinations.</div>
+      <section class="section-panel" id="active">
+        <div class="section-head">
+          <div>
+            <div class="panel-label">Now Building</div>
+            <h2 class="section-title">Active projects</h2>
+          </div>
+          <div class="section-note">The things closest to the workbench.</div>
+        </div>
+
+        <div class="featured-grid">
+          <a class="project-card" href="https://pkconnection.org" target="_blank" rel="noopener" data-category="community" data-name="PK Connection">
+            <div class="card-top"><span class="category">Community</span><span class="badge live">Live</span></div>
+            <h3 class="project-name">PK Connection</h3>
+            <p class="project-desc">A shared space for pastor’s kids built around belonging, openness, and conversations that don’t require an explanation first.</p>
+            <div class="project-open">Open project →</div>
+          </a>
+
+          <a class="project-card" href="https://github.com/EBATO5/HarvestGrove64" target="_blank" rel="noopener" data-category="games" data-name="Harvest Grove 64">
+            <div class="card-top"><span class="category">Game</span><span class="badge private">Private Repo</span></div>
+            <h3 class="project-name">Harvest Grove 64</h3>
+            <p class="project-desc">A cozy farming and life-sim project chasing the rhythm, warmth, and immediacy of Harvest Moon 64 while growing into its own world.</p>
+            <div class="project-open">Open repository →</div>
+          </a>
+
+          <article class="project-card" data-category="games" data-name="Coin Soccer">
+            <div class="card-top"><span class="category">Game</span><span class="badge prototype">Prototype</span></div>
+            <h3 class="project-name">Coin Soccer</h3>
+            <p class="project-desc">A phone-first tabletop-inspired soccer game with flicked coins, moving keepers, AI difficulty, and multiplayer ambitions.</p>
+            <div class="project-open">In development</div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section-panel" id="projects">
+        <div class="section-head">
+          <div>
+            <div class="panel-label">Project Archive</div>
+            <h2 class="section-title">All projects</h2>
+          </div>
+          <div class="section-note" id="projectCount">6 projects indexed</div>
+        </div>
+
+        <div class="tools">
+          <input class="search" id="search" type="search" placeholder="Search projects…" aria-label="Search projects" />
+          <button class="filter active" data-filter="all" type="button">All</button>
+          <button class="filter" data-filter="games" type="button">Games</button>
+          <button class="filter" data-filter="community" type="button">Community</button>
+          <button class="filter" data-filter="tools" type="button">Tools</button>
+          <button class="filter" data-filter="experiments" type="button">Experiments</button>
+        </div>
+
+        <div class="all-grid" id="allGrid">
+          <a class="project-card" href="https://pkconnection.org" target="_blank" rel="noopener" data-category="community" data-name="PK Connection pastor kids community open door">
+            <div class="card-top"><span class="category">Community</span><span class="badge live">Live</span></div>
+            <h3 class="project-name">PK Connection</h3>
+            <p class="project-desc">Community platform for pastor’s kids.</p>
+            <div class="project-open">Visit →</div>
+          </a>
+
+          <a class="project-card" href="https://github.com/EBATO5/HarvestGrove64" target="_blank" rel="noopener" data-category="games" data-name="Harvest Grove 64 farming life sim game">
+            <div class="card-top"><span class="category">Game</span><span class="badge private">Private Repo</span></div>
+            <h3 class="project-name">Harvest Grove 64</h3>
+            <p class="project-desc">Farming and life simulation project inspired by the feel of HM64.</p>
+            <div class="project-open">Repository →</div>
+          </a>
+
+          <a class="project-card" href="https://github.com/EBATO5/HarvestGrove-HM64-Research" target="_blank" rel="noopener" data-category="experiments" data-name="Harvest Grove HM64 Research reverse engineering research">
+            <div class="card-top"><span class="category">Research</span><span class="badge private">Private Repo</span></div>
+            <h3 class="project-name">HM64 Research</h3>
+            <p class="project-desc">Technical research and reference work supporting Harvest Grove.</p>
+            <div class="project-open">Repository →</div>
+          </a>
+
+          <a class="project-card" href="https://github.com/EBATO5/Rancherama" target="_blank" rel="noopener" data-category="games" data-name="Rancherama Ranch Rogue game">
+            <div class="card-top"><span class="category">Game</span><span class="badge private">Private Repo</span></div>
+            <h3 class="project-name">Rancherama</h3>
+            <p class="project-desc">An earlier game prototype living in the EBATO archive.</p>
+            <div class="project-open">Repository →</div>
+          </a>
+
+          <article class="project-card" data-category="games" data-name="Coin Soccer multiplayer phone game flick coins">
+            <div class="card-top"><span class="category">Game</span><span class="badge prototype">Prototype</span></div>
+            <h3 class="project-name">Coin Soccer</h3>
+            <p class="project-desc">Phone-first flick soccer with coins, goalkeepers, AI, and multiplayer design.</p>
+            <div class="project-open">In development</div>
+          </article>
+
+          <article class="project-card" data-category="tools" data-name="EBATO Home Base project dashboard website launcher">
+            <div class="card-top"><span class="category">Tool</span><span class="badge live">Live</span></div>
+            <h3 class="project-name">EBATO Home Base</h3>
+            <p class="project-desc">This site — a launchpad for finding everything else.</p>
+            <div class="project-open">You are here</div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section-panel philosophy">
+        <div class="big-icon">✦</div>
+        <div>
+          <div class="panel-label">Why EBATO Exists</div>
+          <h2 class="section-title">Make the idea tangible.</h2>
+          <p>Not every project needs to become a company, a polished product, or even get finished. Sometimes the point is simply to make the thing real enough to play with, learn from, share, and come back to later.</p>
         </div>
       </section>
     </main>
+
+    <footer>
+      <span>EBATO · somewhere between idea and prototype</span>
+      <span><a href="https://github.com/EBATO5" target="_blank" rel="noopener">GitHub</a> · <a href="#top">Back to top ↑</a></span>
+    </footer>
   </div>
 
   <script>
-    const panel = document.getElementById('newsPanel');
-    const closeButton = document.getElementById('closeButton');
-    const floatingOpenButton = document.getElementById('floatingOpenButton');
-    const landingStart = document.getElementById('landingStart');
+    const search = document.getElementById('search');
+    const filters = [...document.querySelectorAll('.filter')];
+    const cards = [...document.querySelectorAll('#allGrid .project-card')];
+    const projectCount = document.getElementById('projectCount');
+    let currentFilter = 'all';
 
-    function openPanel() {
-      panel.classList.add('open');
-      landingStart.style.display = 'none';
-      floatingOpenButton.setAttribute('aria-expanded', 'true');
-      document.body.classList.add('transmission-open');
-      requestAnimationFrame(() => {
-        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    function refreshProjects() {
+      const query = search.value.trim().toLowerCase();
+      let visible = 0;
+
+      cards.forEach(card => {
+        const category = card.dataset.category || '';
+        const name = (card.dataset.name || card.textContent).toLowerCase();
+        const categoryMatch = currentFilter === 'all' || category === currentFilter;
+        const searchMatch = !query || name.includes(query);
+        const show = categoryMatch && searchMatch;
+        card.classList.toggle('hidden', !show);
+        if (show) visible++;
       });
+
+      projectCount.textContent = `${visible} project${visible === 1 ? '' : 's'} shown`;
     }
 
-    function closePanel() {
-      panel.classList.remove('open');
-      landingStart.style.display = 'flex';
-      floatingOpenButton.setAttribute('aria-expanded', 'false');
-      document.body.classList.remove('transmission-open');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+    filters.forEach(button => {
+      button.addEventListener('click', () => {
+        currentFilter = button.dataset.filter;
+        filters.forEach(item => item.classList.toggle('active', item === button));
+        refreshProjects();
+      });
+    });
 
-    floatingOpenButton.addEventListener('click', openPanel);
-    closeButton.addEventListener('click', closePanel);
+    search.addEventListener('input', refreshProjects);
+    refreshProjects();
   </script>
 </body>
 </html>
