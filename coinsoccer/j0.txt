@@ -229,9 +229,15 @@
       scoreEl.textContent=`P1 ${score[0]} — ${score[1]} P2`;
     }
 
+    const winner=score.findIndex(s=>s>=7);
+    if(winner>=0){
+      if(onlineActive())turnEl.textContent=winner===onlineRole?'You win!':'Opponent wins!';
+      else turnEl.textContent=(opponentMode==='ai'&&winner===1)?'AI wins!':`Player ${winner+1} wins!`;
+    }
+
     document.getElementById('legend').textContent=easyMode
-      ? 'Easy Mode · 3 pennies · any coin can score'
-      : 'Pennies = 1 point · Dime = 2 points';
+      ? 'Easy Mode · 3 pennies · First to 7'
+      : 'Pennies = 1 point · Dime = 2 points · First to 7';
 
     document.getElementById('mode').textContent=easyMode?'Mode: Easy':'Mode: Standard';
 
