@@ -180,6 +180,55 @@ score.every(s=>s<7)&&attacker===0;
     }
   }
 
+  function resolveSimultaneousKickoffBreak(){
+    if(!kickoffShot||shotCoinIndex!==1||coins.length<3)return false;
+    const striker=coins[1];
+    if(striker._kickoffBreakResolved)return false;
+
+    const left=coins[0],right=coins[2];
+    let ldx=left.x-striker.x,ldy=left.y-striker.y;
+    let rdx=right.x-striker.x,rdy=right.y-striker.y;
+    const ld=Math.hypot(ldx,ldy)||.001;
+    const rd=Math.hypot(rdx,rdy)||.001;
+    const lContact=striker.r+left.r+2.5;
+    const rContact=striker.r+right.r+2.5;
+    if(ld>lContact||rd>rContact)return false;
+
+    const vxi=striker.vx,vyi=striker.vy;
+    const speed=Math.hypot(vxi,vyi);
+    if(speed<10)return false;
+
+    const lnx=ldx/ld,lny=ldy/ld;
+    const rnx=rdx/rd,rny=rdy/rd;
+    const lProj=vxi*lnx+vyi*lny;
+    const rProj=vxi*rnx+vyi*rny;
+    if(lProj<=0||rProj<=0)return false;
+
+    // Use the SAME incoming velocity for both contacts. The normal pairwise solver
+    // cannot do this because resolving the first penny changes the dime before the
+    // second penny is processed. A .58 transfer with .12 follow-through keeps the
+    // break lively without creating extra energy.
+    const transfer=.58;
+    left.vx+=lnx*lProj*transfer;
+    left.vy+=lny*lProj*transfer;
+    right.vx+=rnx*rProj*transfer;
+    right.vy+=rny*rProj*transfer;
+    striker.vx=vxi*.12;
+    striker.vy=vyi*.12;
+
+    // Separate both contacts by a hair so the ordinary sequential solver does not
+    // immediately re-resolve the same impact and reintroduce left/right bias.
+    const lSep=striker.r+left.r+.8;
+    const rSep=striker.r+right.r+.8;
+    left.x=striker.x+lnx*lSep;
+    left.y=striker.y+lny*lSep;
+    right.x=striker.x+rnx*rSep;
+    right.y=striker.y+rny*rSep;
+
+    striker._kickoffBreakResolved=true;
+    return true;
+  }
+
   function resolveGoalieCollision(c){
     let dx=c.x-goalie.x,dy=c.y-goalie.y;
     let d=Math.hypot(dx,dy);
@@ -263,6 +312,7 @@ score.every(s=>s<7)&&attacker===0;
 
       if(shotCoinIndex>=0)checkGate(coins[shotCoinIndex]);
 
+      resolveSimultaneousKickoffBreak();
       for(let i=0;i<coins.length;i++){
         for(let j=i+1;j<coins.length;j++)resolveCoinCollision(coins[i],coins[j]);
       }
