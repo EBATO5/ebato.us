@@ -35,6 +35,17 @@ if (!source.includes(oldScoringTrigger)) {
 }
 source = source.replace(oldScoringTrigger, newScoringTrigger);
 
+// The original goal pocket could be shallower than a penny's radius. In that
+// case the back wall stopped the penny before its CENTER ever crossed the goal
+// line, so checkGoal() could never fire. Make the pocket deep enough for the
+// largest standard coin while preserving the existing center-crossing rule.
+const oldGoalDepth = `    field.goalDepth=Math.max(16,field.h*0.026);`;
+const newGoalDepth = `    field.goalDepth=Math.max(16,field.h*0.026,baseRadius()*1.2);`;
+if (!source.includes(oldGoalDepth)) {
+  throw new Error('Coin Soccer build: expected goal-depth source was not found');
+}
+source = source.replace(oldGoalDepth, newGoalDepth);
+
 await writeFile('dist/app.js', source, 'utf8');
 await copyFile('index.html', 'dist/index.html');
 await copyFile('style.css', 'dist/style.css');
