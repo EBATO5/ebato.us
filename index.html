@@ -24,7 +24,7 @@
       --line-glow:0 0 7px rgba(125,247,255,.14),0 0 15px rgba(125,247,255,.05);
     }
     *{box-sizing:border-box}
-    html{scroll-behavior:smooth;overflow-y:scroll;scrollbar-gutter:stable}
+    html{scroll-behavior:smooth;overflow-y:scroll;scrollbar-gutter:stable;background:#020810}
     body{
       margin:0;
       min-height:100vh;
@@ -32,15 +32,20 @@
       font-family:"Oxanium",ui-sans-serif,system-ui,sans-serif;
       font-weight:400;
       text-shadow:var(--text-glow);
+      background:transparent;
+      overflow-x:hidden;
+    }
+    body.holo-off{overflow:hidden}
+    .space-bg{
+      position:fixed;top:0;left:0;right:0;height:100lvh;min-height:100vh;
+      pointer-events:none;z-index:0;transform:translateZ(0);
       background:
         radial-gradient(circle at 16% 12%,rgba(125,247,255,.13),transparent 24%),
         radial-gradient(circle at 84% 14%,rgba(255,171,82,.11),transparent 20%),
         linear-gradient(rgba(2,8,16,.57),rgba(2,8,16,.78)),
-        url("https://images.unsplash.com/photo-1462331940025-496dfbfc7564?auto=format&fit=crop&w=2200&q=80") center/cover fixed;
-      overflow-x:hidden;
+        url("https://images.unsplash.com/photo-1462331940025-496dfbfc7564?auto=format&fit=crop&w=2200&q=80") center/cover no-repeat;
     }
-    body.holo-off{overflow:hidden}
-    body::before,body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:0}
+    body::before,body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:1}
     body::before{
       background-image:linear-gradient(rgba(125,247,255,.044) 1px,transparent 1px),linear-gradient(90deg,rgba(125,247,255,.044) 1px,transparent 1px);
       background-size:48px 48px;
@@ -80,7 +85,7 @@
     @keyframes orbit{to{transform:translate(-50%,-50%) rotate(360deg)}}
     @keyframes orbitReverse{to{transform:translate(-50%,-50%) rotate(-360deg)}}
 
-    .shell{position:relative;z-index:1;width:min(1320px,calc(100% - 28px));margin:auto;padding:20px 0 42px}
+    .shell{position:relative;z-index:2;width:min(1320px,calc(100% - 28px));margin:auto;padding:20px 0 42px}
     .topbar,.footer{opacity:0;transform:translateY(-8px);transition:opacity .55s ease .65s,transform .55s ease .65s}
     body.holo-on .topbar,body.holo-on .footer{opacity:1;transform:none}
     .topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:12px}
@@ -191,7 +196,6 @@
       .lead,.secondary{grid-column:span 12}.lead{border-right:0}.secondary{border-right:0}.brief{grid-column:span 6}.brief:nth-of-type(4){border-right:0}
     }
     @media(max-width:650px){
-      body{background-size:auto,auto,auto,auto 100lvh;background-position:center,center,center,center}
       .shell{width:min(100% - 16px,1320px)}.topbar{align-items:flex-start}.nav{justify-content:flex-end}
       .ticker{grid-template-columns:1fr}.ticker div{border-right:0;border-bottom:1px solid var(--cyan-line);box-shadow:inset 0 -4px 9px -8px rgba(125,247,255,.36),0 4px 9px -8px rgba(125,247,255,.36)}.ticker div:last-child{border-bottom:0;box-shadow:none}
       .lead,.secondary,.brief{grid-column:span 12;border-right:0;min-height:auto}.masthead,.story{padding:18px}
@@ -199,15 +203,13 @@
       .boot-screen::before{width:230px;height:230px}.boot-screen::after{width:150px;height:150px}.start-button{letter-spacing:.22em}
       .collapse-button{top:10px;right:10px;width:32px;height:32px;font-size:24px}
     }
-    @media(max-height:650px) and (orientation:landscape){
-      body{background-size:auto,auto,auto,100lvw auto;background-position:center,center,center,center}
-    }
     @media(prefers-reduced-motion:reduce){
       *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
     }
   </style>
 </head>
 <body class="holo-off">
+  <div class="space-bg" aria-hidden="true"></div>
   <div class="boot-screen" id="bootScreen">
     <button class="start-button" id="startButton" type="button" aria-controls="holoPanel" aria-expanded="false">
       Press Here To Start
