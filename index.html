@@ -191,12 +191,16 @@
       .lead,.secondary{grid-column:span 12}.lead{border-right:0}.secondary{border-right:0}.brief{grid-column:span 6}.brief:nth-of-type(4){border-right:0}
     }
     @media(max-width:650px){
+      body{background-size:auto,auto,auto,auto 100lvh;background-position:center,center,center,center}
       .shell{width:min(100% - 16px,1320px)}.topbar{align-items:flex-start}.nav{justify-content:flex-end}
       .ticker{grid-template-columns:1fr}.ticker div{border-right:0;border-bottom:1px solid var(--cyan-line);box-shadow:inset 0 -4px 9px -8px rgba(125,247,255,.36),0 4px 9px -8px rgba(125,247,255,.36)}.ticker div:last-child{border-bottom:0;box-shadow:none}
       .lead,.secondary,.brief{grid-column:span 12;border-right:0;min-height:auto}.masthead,.story{padding:18px}
       .bottomstrip{grid-template-columns:1fr}.bottomstrip>div{border-right:0;border-bottom:1px solid var(--cyan-line);box-shadow:inset 0 -4px 9px -8px rgba(125,247,255,.36),0 4px 9px -8px rgba(125,247,255,.36)}.bottomstrip>div:last-child{border-bottom:0;box-shadow:none}
       .boot-screen::before{width:230px;height:230px}.boot-screen::after{width:150px;height:150px}.start-button{letter-spacing:.22em}
       .collapse-button{top:10px;right:10px;width:32px;height:32px;font-size:24px}
+    }
+    @media(max-height:650px) and (orientation:landscape){
+      body{background-size:auto,auto,auto,100lvw auto;background-position:center,center,center,center}
     }
     @media(prefers-reduced-motion:reduce){
       *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
