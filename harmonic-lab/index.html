@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="description" content="Harmonic Frequency Lab — build intervals, extended harmonies, and layered frequency stacks from any root pitch." />
+  <title>Harmonic Frequency Lab // EBATO</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <a href="/" class="back">← EBATO Mission Control</a>
+      <div class="status-pill" id="audioStatus">Audio idle</div>
+    </header>
+
+    <section class="hero">
+      <div>
+        <div class="kicker">EBATO // Harmonic Systems</div>
+        <h1>Harmonic Frequency Lab</h1>
+        <p>Choose any root frequency, build musical intervals and extended harmonies from it, mix in independent frequency presets, then play the entire stack together.</p>
+      </div>
+      <div class="hero-actions">
+        <button class="btn primary" id="playAll" type="button">▶ Play All</button>
+        <button class="btn danger" id="stopAll" type="button">■ Stop All</button>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="left-col">
+        <section class="card root-card">
+          <div class="card-head">
+            <div>
+              <div class="eyebrow">01 // Root generator</div>
+              <h2>Choose the root</h2>
+            </div>
+            <label class="root-switch">
+              <input type="checkbox" id="rootEnabled" checked />
+              <span>Include root</span>
+            </label>
+          </div>
+
+          <div class="root-layout">
+            <div class="root-readout">
+              <div class="root-note" id="rootNote">A4</div>
+              <div class="root-hz"><span id="rootHzReadout">440.00</span> Hz</div>
+              <div class="root-detail" id="rootDetail">Concert A • equal-tempered reference</div>
+            </div>
+
+            <div class="root-controls">
+              <div class="field">
+                <label for="rootFrequency">Exact root frequency</label>
+                <div class="freq-row">
+                  <button class="btn square" id="rootOctDown" type="button" aria-label="One octave down">÷2</button>
+                  <input id="rootFrequency" type="number" min="0.01" max="20000" step="0.01" value="440" inputmode="decimal" />
+                  <button class="btn square" id="rootOctUp" type="button" aria-label="One octave up">×2</button>
+                </div>
+              </div>
+
+              <div class="field">
+                <label for="rootNoteSelect">Musical note</label>
+                <select id="rootNoteSelect"></select>
+              </div>
+
+              <div class="two-col">
+                <div class="field">
+                  <label for="rootWave">Root waveform</label>
+                  <select id="rootWave">
+                    <option value="sine">Sine</option>
+                    <option value="triangle">Triangle</option>
+                    <option value="square">Square</option>
+                    <option value="sawtooth">Sawtooth</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="rootVolume">Root volume <span id="rootVolumeText">28%</span></label>
+                  <input id="rootVolume" type="range" min="0" max="100" value="28" />
+                </div>
+              </div>
+
+              <div class="row">
+                <button class="btn orange grow" id="playRoot" type="button">▶ Play Root</button>
+                <button class="btn grow" id="addRootLayer" type="button">＋ Duplicate Root Layer</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <div>
+              <div class="eyebrow">02 // Interval builder</div>
+              <h2>Build from the root</h2>
+            </div>
+            <div class="small">Intervals retune automatically when the root changes.</div>
+          </div>
+
+          <div class="section">
+            <div class="interval-grid" id="intervalGrid"></div>
+          </div>
+
+          <div class="section border-top">
+            <div class="custom-interval">
+              <div>
+                <div class="label">Custom equal-tempered interval</div>
+                <div class="small">Positive or negative semitones from the root.</div>
+              </div>
+              <input id="customSemitones" type="number" step="0.01" value="7" aria-label="Custom interval in semitones" />
+              <button class="btn" id="addCustomInterval" type="button">＋ Add interval</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="card-head">
+            <div>
+              <div class="eyebrow">03 // Harmony recipes</div>
+              <h2>Build chords & extensions</h2>
+            </div>
+            <button class="btn mini" id="clearDerived" type="button">Clear derived</button>
+          </div>
+          <div class="section">
+            <div class="recipe-grid" id="recipeGrid"></div>
+            <p class="helper">Recipes add interval layers relative to the current root. Duplicate intervals are allowed so you can intentionally double voices.</p>
+          </div>
+        </section>
+      </div>
+
+      <aside class="right-col">
+        <section class="card">
+          <div class="card-head">
+            <div>
+              <div class="eyebrow">04 // Frequency presets</div>
+              <h2>Independent drones</h2>
+            </div>
+          </div>
+          <div class="section">
+            <div class="preset-list">
+              <article class="preset-card">
+                <div>
+                  <strong>7.83 Hz</strong>
+                  <span>Schumann Resonance</span>
+                  <small>Custom label: “Stem Cell Activation”</small>
+                </div>
+                <div class="preset-actions">
+                  <button class="btn mini set-root" data-freq="7.83" type="button">Set Root</button>
+                  <button class="btn mini orange add-preset" data-freq="7.83" data-label="Schumann 7.83 Hz" type="button">＋ Layer</button>
+                </div>
+              </article>
+
+              <article class="preset-card">
+                <div>
+                  <strong>10.5 Hz</strong>
+                  <span>Full Body Regen</span>
+                  <small>Custom frequency preset</small>
+                </div>
+                <div class="preset-actions">
+                  <button class="btn mini set-root" data-freq="10.5" type="button">Set Root</button>
+                  <button class="btn mini orange add-preset" data-freq="10.5" data-label="Full Body Regen 10.5 Hz" type="button">＋ Layer</button>
+                </div>
+              </article>
+
+              <article class="preset-card">
+                <div>
+                  <strong>14.1 Hz</strong>
+                  <span>Neurological Healing</span>
+                  <small>Custom frequency preset</small>
+                </div>
+                <div class="preset-actions">
+                  <button class="btn mini set-root" data-freq="14.1" type="button">Set Root</button>
+                  <button class="btn mini orange add-preset" data-freq="14.1" data-label="Neurological Healing 14.1 Hz" type="button">＋ Layer</button>
+                </div>
+              </article>
+            </div>
+
+            <div class="custom-frequency">
+              <div class="label">Add independent frequency</div>
+              <div class="row">
+                <input id="customFrequency" type="number" min="0.01" max="20000" step="0.01" value="432" inputmode="decimal" />
+                <button class="btn" id="addCustomFrequency" type="button">＋ Layer</button>
+              </div>
+            </div>
+            <p class="disclaimer">Preset names are user-defined labels, not established medical effects. Very low frequencies may not be reproduced by ordinary speakers or headphones.</p>
+          </div>
+        </section>
+
+        <section class="card mixer-card">
+          <div class="card-head">
+            <div>
+              <div class="eyebrow">05 // Live mixer</div>
+              <h2>Frequency stack</h2>
+            </div>
+            <span class="count" id="layerCount">0 layers</span>
+          </div>
+
+          <div class="mixer-toolbar">
+            <button class="btn primary" id="playAll2" type="button">▶ Play All</button>
+            <button class="btn danger" id="stopAll2" type="button">■ Stop All</button>
+            <button class="btn" id="clearAll" type="button">Clear Layers</button>
+          </div>
+
+          <div class="layer-list" id="layerList"></div>
+          <div class="empty" id="emptyState">
+            Add intervals, harmony recipes, or presets. There is no 8-tone limit; the lab supports up to 64 simultaneous layers plus the root.
+          </div>
+
+          <div class="master-strip">
+            <label for="masterVolume">Master volume <span id="masterVolumeText">75%</span></label>
+            <input id="masterVolume" type="range" min="0" max="100" value="75" />
+          </div>
+        </section>
+      </aside>
+    </section>
+
+    <footer>
+      <p>Musical intervals use 12-tone equal temperament: frequency = root × 2<sup>semitones/12</sup>. Extended intervals such as 9ths, 11ths, and 13ths span beyond the octave.</p>
+    </footer>
+  </main>
+  <script src="./app.js"></script>
+</body>
+</html>
