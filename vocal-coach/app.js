@@ -19,7 +19,9 @@
     songIndex: -1,
     songPlaying: false,
     selectedDeviceId: "",
-    pitchBuffer: null
+    pitchBuffer: null,
+    mixerTones: new Map(),
+    nextToneId: 1
   };
 
   const noteNames = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
@@ -391,6 +393,174 @@
   }
   function restartTone(){ stopTone(); startTone(); }
 
+  function refreshMixerGains() {
+    const playing = [...state.mixerTones.values()].filter(t => t.playing && t.gain);
+    const count = Math.max(1, playing.length);
+    const perVoice = 0.16 / Math.sqrt(count);
+    const now = state.audioCtx ? state.audioCtx.currentTime : 0;
+    playing.forEach(t => {
+      const value = (t.volume / 100) * perVoice;
+      try { t.gain.gain.setTargetAtTime(value, now, 0.015); } catch { t.gain.gain.value = value; }
+    });
+  }
+
+  function startMixerTone(tone) {
+    if (!tone || tone.playing || !(tone.hz > 0)) return;
+    const ctx = ensureAudio();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = tone.waveform;
+    osc.frequency.value = tone.hz;
+    gain.gain.value = 0;
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    tone.osc = osc;
+    tone.gain = gain;
+    tone.playing = true;
+    refreshMixerGains();
+  }
+
+  function stopMixerTone(tone) {
+    if (!tone) return;
+    if (tone.osc) {
+      try { tone.osc.stop(); } catch {}
+      try { tone.osc.disconnect(); } catch {}
+    }
+    if (tone.gain) try { tone.gain.disconnect(); } catch {}
+    tone.osc = null;
+    tone.gain = null;
+    tone.playing = false;
+    refreshMixerGains();
+  }
+
+  function updateMixerStatus(message) {
+    const count = state.mixerTones.size;
+    const playing = [...state.mixerTones.values()].filter(t => t.playing).length;
+    $("toneCount").textContent = count + " / 8";
+    $("toneMixerStatus").textContent = message || (count ? (playing + " playing • " + count + " stacked") : "No stacked tones yet.");
+    $("toneMixerEmpty").style.display = count ? "none" : "block";
+  }
+
+  function renderToneMixer() {
+    const list = $("toneMixerList");
+    list.innerHTML = "";
+
+    state.mixerTones.forEach((tone, id) => {
+      const row = document.createElement("div");
+      row.className = "tone-row" + (tone.playing ? "" : " tone-paused");
+      row.dataset.id = String(id);
+      const note = freqToNote(tone.hz).name;
+      row.innerHTML =
+        '<div class="tone-frequency">' +
+          '<input class="tone-hz" type="number" min="0" max="20000" step="0.01" value="' + tone.hz.toFixed(2) + '" aria-label="Tone frequency in hertz">' +
+          '<div class="tone-note">' + (tone.hz > 0 ? note : "silence") + '</div>' +
+        '</div>' +
+        '<select class="tone-wave" aria-label="Tone waveform">' +
+          '<option value="sine">Sine</option><option value="triangle">Triangle</option><option value="square">Square</option><option value="sawtooth">Saw</option>' +
+        '</select>' +
+        '<div class="tone-volume">' +
+          '<input class="tone-vol" type="range" min="0" max="100" value="' + tone.volume + '" aria-label="Tone volume">' +
+          '<span>' + tone.volume + '%</span>' +
+        '</div>' +
+        '<button class="btn tone-icon tone-toggle" type="button" aria-label="' + (tone.playing ? "Pause tone" : "Play tone") + '">' + (tone.playing ? "■" : "▶") + '</button>' +
+        '<button class="btn tone-icon tone-remove" type="button" aria-label="Remove tone">×</button>';
+
+      const wave = row.querySelector(".tone-wave");
+      wave.value = tone.waveform;
+
+      const hzInput = row.querySelector(".tone-hz");
+      const noteLabel = row.querySelector(".tone-note");
+      const vol = row.querySelector(".tone-vol");
+      const volLabel = row.querySelector(".tone-volume span");
+      const toggle = row.querySelector(".tone-toggle");
+      const remove = row.querySelector(".tone-remove");
+
+      hzInput.addEventListener("input", () => {
+        let hz = Number(hzInput.value);
+        if (!Number.isFinite(hz)) return;
+        hz = clamp(hz, 0, 20000);
+        tone.hz = hz;
+        noteLabel.textContent = hz > 0 ? freqToNote(hz).name : "silence";
+        if (tone.osc) {
+          if (hz > 0) tone.osc.frequency.setTargetAtTime(hz, state.audioCtx.currentTime, 0.01);
+          else stopMixerTone(tone);
+        }
+        updateMixerStatus();
+      });
+
+      hzInput.addEventListener("change", () => {
+        hzInput.value = tone.hz.toFixed(2);
+        if (tone.hz > 0 && !tone.playing) {
+          startMixerTone(tone);
+          renderToneMixer();
+        }
+      });
+
+      wave.addEventListener("change", () => {
+        tone.waveform = wave.value;
+        if (tone.osc) tone.osc.type = tone.waveform;
+      });
+
+      vol.addEventListener("input", () => {
+        tone.volume = Number(vol.value);
+        volLabel.textContent = tone.volume + "%";
+        refreshMixerGains();
+      });
+
+      toggle.addEventListener("click", () => {
+        if (tone.playing) stopMixerTone(tone);
+        else startMixerTone(tone);
+        renderToneMixer();
+      });
+
+      remove.addEventListener("click", () => {
+        stopMixerTone(tone);
+        state.mixerTones.delete(id);
+        renderToneMixer();
+      });
+
+      list.appendChild(row);
+    });
+
+    updateMixerStatus();
+  }
+
+  function addToneToMixer() {
+    if (state.mixerTones.size >= 8) {
+      updateMixerStatus("Maximum of 8 stacked tones.");
+      return;
+    }
+    if (!(state.targetHz > 0)) {
+      updateMixerStatus("Choose a frequency above 0 Hz before adding it.");
+      return;
+    }
+    const id = state.nextToneId++;
+    const tone = {
+      id,
+      hz: state.targetHz,
+      waveform: $("waveform").value,
+      volume: Number($("toneVolume").value),
+      playing: false,
+      osc: null,
+      gain: null
+    };
+    state.mixerTones.set(id, tone);
+    startMixerTone(tone);
+    renderToneMixer();
+  }
+
+  function stopAllMixerTones() {
+    state.mixerTones.forEach(t => stopMixerTone(t));
+    renderToneMixer();
+  }
+
+  function stopAllTones() {
+    stopTone();
+    stopAllMixerTones();
+    updateMixerStatus(state.mixerTones.size ? "All stacked tones paused." : "No stacked tones yet.");
+  }
+
   function stopSong() {
     if (state.songTimer) clearTimeout(state.songTimer);
     state.songTimer=null;state.songPlaying=false;state.songIndex=-1;
@@ -437,6 +607,8 @@
   $("octaveDown").addEventListener("click",()=>setTargetHz(state.targetHz/2));
   $("octaveUp").addEventListener("click",()=>setTargetHz(Math.min(20000,state.targetHz*2)));
   $("toneButton").addEventListener("click",()=>{ state.toneActive?stopTone():startTone(); });
+  $("addToneButton").addEventListener("click",addToneToMixer);
+  $("stopAllTones").addEventListener("click",stopAllTones);
   $("waveform").addEventListener("change",()=>{ if(state.toneActive) restartTone(); });
   $("toneVolume").addEventListener("input",e=>{
     $("toneVolumeText").textContent=e.target.value+"%";
@@ -446,11 +618,17 @@
   $("songButton").addEventListener("click",startSong);
 
   window.addEventListener("resize",drawGraph);
-  window.addEventListener("beforeunload",()=>{stopMic();stopTone();stopSong();});
+  window.addEventListener("beforeunload",()=>{
+    stopMic();
+    stopTone();
+    stopSong();
+    state.mixerTones.forEach(t => stopMixerTone(t));
+  });
 
   populateNotes();
   renderIntervals();
   renderSong();
+  renderToneMixer();
   setTargetHz(440);
   listMics();
   $("secureLabel").textContent = window.isSecureContext ? "HTTPS • microphone-ready" : "Microphone may require HTTPS";
