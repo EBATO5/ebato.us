@@ -18,7 +18,7 @@
       <div>
         <div class="kicker">EBATO // Voice Lab</div>
         <h1>Digital Vocal Coach</h1>
-        <p>Sing into your microphone, watch your pitch move in real time, generate a target tone or exact frequency, and see how your voice relates to the reference harmonically.</p>
+        <p>Sing into your microphone, watch your pitch move in real time, generate one or several target tones or exact frequencies, and see how your voice relates to the primary reference harmonically.</p>
       </div>
       <div class="version">Full trainer build</div>
     </header>
@@ -112,14 +112,31 @@
             </div>
 
             <div class="field" style="margin-top:12px">
-              <label for="toneVolume">Tone volume</label>
+              <label for="toneVolume">Primary tone volume</label>
               <div class="range-row">
                 <input id="toneVolume" type="range" min="0" max="100" value="24" />
                 <span class="small" id="toneVolumeText">24%</span>
               </div>
             </div>
 
-            <p class="disclaimer">0 Hz is silence rather than an audible pitch. Frequencies below about 20 Hz are generally sub-audible and may not be reproduced by ordinary speakers or headphones.</p>
+            <div class="mixer-actions">
+              <button class="btn primary" id="addToneButton" type="button">＋ Add current tone</button>
+              <button class="btn" id="stopAllTones" type="button">■ Stop all tones</button>
+            </div>
+
+            <div class="tone-mixer" aria-labelledby="toneMixerHeading">
+              <div class="tone-mixer-head">
+                <div>
+                  <div class="label" id="toneMixerHeading">Tone stack</div>
+                  <div class="small" id="toneMixerStatus">No stacked tones yet.</div>
+                </div>
+                <span class="tone-count" id="toneCount">0 / 8</span>
+              </div>
+              <div class="tone-list" id="toneMixerList"></div>
+              <div class="tone-empty" id="toneMixerEmpty">Add the current frequency to layer it with the primary target tone.</div>
+            </div>
+
+            <p class="disclaimer">0 Hz is silence rather than an audible pitch. Frequencies below about 20 Hz are generally sub-audible and may not be reproduced by ordinary speakers or headphones. Multiple tones are automatically gain-balanced to reduce clipping.</p>
           </div>
 
           <div class="section">
