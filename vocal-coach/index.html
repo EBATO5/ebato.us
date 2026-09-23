@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="description" content="Digital Vocal Coach — live pitch tracking, target-tone training, harmony analysis, and simple song practice." />
+  <title>Digital Vocal Coach // EBATO</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <main class="app">
+    <div class="topline">
+      <a class="back" href="/">← EBATO Mission Control</a>
+      <div class="privacy"><b>Local audio processing</b><br>Your microphone audio is not uploaded.</div>
+    </div>
+
+    <header class="hero">
+      <div>
+        <div class="kicker">EBATO // Voice Lab</div>
+        <h1>Digital Vocal Coach</h1>
+        <p>Sing into your microphone, watch your pitch move in real time, generate a target tone or exact frequency, and see how your voice relates to the reference harmonically.</p>
+      </div>
+      <div class="version">Full trainer build</div>
+    </header>
+
+    <div class="main-grid">
+      <section class="card" aria-labelledby="livePitchHeading">
+        <div class="card-head">
+          <h2 id="livePitchHeading">Live pitch</h2>
+          <span class="small" id="secureLabel">Checking microphone support…</span>
+        </div>
+
+        <div class="pitch-readout">
+          <div class="note-box">
+            <div class="label">Your voice</div>
+            <div class="big-note" id="voiceNote">—</div>
+            <div class="hz" id="voiceHz">— Hz</div>
+            <div class="cents" id="nearestCents">Waiting for pitch</div>
+            <div class="match" id="matchBadge">Start microphone</div>
+          </div>
+
+          <div class="target-box">
+            <div class="label">Current target</div>
+            <div class="target-freq" id="targetReadout">440.00</div>
+            <div class="target-note" id="targetNoteReadout">Hz • A4</div>
+            <div class="delta" id="targetDelta">Sing near the target to see matching feedback.</div>
+          </div>
+        </div>
+
+        <div class="level-wrap">
+          <div class="level-row"><span>Microphone input level</span><span id="levelText">0%</span></div>
+          <div class="meter" aria-hidden="true"><div id="levelBar"></div></div>
+        </div>
+
+        <div class="graph-wrap">
+          <div class="graph-shell">
+            <canvas id="pitchCanvas" aria-label="Scrolling graph of your sung pitch over time"></canvas>
+            <div class="graph-key">
+              <span><i class="keydot voice-dot"></i>voice</span>
+              <span><i class="keydot target-dot"></i>target</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="side-stack">
+        <section class="card">
+          <div class="section">
+            <h3>Microphone</h3>
+            <div class="field">
+              <label for="micSelect">Input device</label>
+              <select id="micSelect">
+                <option value="">Default microphone</option>
+              </select>
+            </div>
+            <div class="row wrap">
+              <button class="btn primary grow" id="micButton" type="button">Start microphone</button>
+              <button class="btn" id="refreshMics" type="button" title="Refresh microphone list">↻</button>
+            </div>
+            <div class="switchrow">
+              <label for="monitorToggle">Hear my voice <span class="small">(headphones recommended)</span></label>
+              <input id="monitorToggle" type="checkbox" />
+            </div>
+            <div class="mic-status" id="micStatus">Microphone is off.</div>
+          </div>
+
+          <div class="section">
+            <h3>Training tone</h3>
+
+            <div class="field">
+              <label for="freqInput">Exact frequency (0–20,000 Hz)</label>
+              <div class="row">
+                <button class="btn octave" id="octaveDown" type="button" aria-label="One octave down">↓</button>
+                <input class="grow" id="freqInput" type="number" min="0" max="20000" step="0.01" value="440" inputmode="decimal" />
+                <button class="btn octave" id="octaveUp" type="button" aria-label="One octave up">↑</button>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="noteSelect">Musical note</label>
+              <select id="noteSelect"></select>
+            </div>
+
+            <div class="row wrap">
+              <button class="btn orange grow" id="toneButton" type="button">▶ Play target tone</button>
+              <select id="waveform" aria-label="Tone waveform" style="width:120px">
+                <option value="sine">Sine</option>
+                <option value="triangle">Triangle</option>
+                <option value="square">Square</option>
+                <option value="sawtooth">Saw</option>
+              </select>
+            </div>
+
+            <div class="field" style="margin-top:12px">
+              <label for="toneVolume">Tone volume</label>
+              <div class="range-row">
+                <input id="toneVolume" type="range" min="0" max="100" value="24" />
+                <span class="small" id="toneVolumeText">24%</span>
+              </div>
+            </div>
+
+            <p class="disclaimer">0 Hz is silence rather than an audible pitch. Frequencies below about 20 Hz are generally sub-audible and may not be reproduced by ordinary speakers or headphones.</p>
+          </div>
+
+          <div class="section">
+            <h3>Saved frequencies</h3>
+            <div class="preset-grid">
+              <button class="preset" type="button" data-freq="7.83">
+                <strong>7.83 Hz — Schumann Resonance</strong>
+                <span>Custom label: “Stem Cell Activation”</span>
+              </button>
+              <button class="preset" type="button" data-freq="10.5">
+                <strong>10.5 Hz — Full Body Regen</strong>
+                <span>Custom frequency preset</span>
+              </button>
+              <button class="preset" type="button" data-freq="14.1">
+                <strong>14.1 Hz — Neurological Healing</strong>
+                <span>Custom frequency preset</span>
+              </button>
+            </div>
+            <p class="disclaimer">These preset names are user-defined labels, not medical claims. The app does not establish that these frequencies cause healing, regeneration, or stem-cell effects.</p>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="section">
+            <h3>Harmony relationship</h3>
+            <div class="harmony-main">
+              <div class="interval" id="intervalName">—</div>
+              <div class="interval-cents" id="intervalCents">Sing + play a target</div>
+            </div>
+            <div class="interval-strip" id="intervalStrip" aria-label="Twelve semitone interval categories"></div>
+            <div class="mic-status" id="harmonyDetail">This compares your detected pitch with the currently selected reference frequency, octave-equivalent.</div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="section">
+            <h3>Song trainer</h3>
+            <div class="song-controls">
+              <button class="btn orange" id="songButton" type="button">♪ Mary Had a Little Lamb</button>
+              <select id="tempoSelect" aria-label="Song tempo">
+                <option value="70">70 BPM</option>
+                <option value="85">85 BPM</option>
+                <option value="100" selected>100 BPM</option>
+                <option value="120">120 BPM</option>
+                <option value="140">140 BPM</option>
+              </select>
+            </div>
+            <div class="note-sequence" id="songNotes" aria-label="Song note sequence"></div>
+            <div class="mic-status" id="songStatus">Press the song button to hear the target notes and sing along while the pitch trace continues.</div>
+          </div>
+        </section>
+      </aside>
+    </div>
+
+    <div class="footer-note">
+      Best results: Chrome or Edge over HTTPS, a reasonably quiet room, and headphones when “Hear my voice” is enabled.
+    </div>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>
