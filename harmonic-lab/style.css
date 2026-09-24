@@ -145,3 +145,14 @@ footer{margin-top:18px;text-align:center;color:#707c90;font-size:.7rem;line-heig
   .history-controls .btn{flex:1}
   .current-octaves{grid-template-columns:1fr 1fr}
 }
+
+.quick-transform-wrap{display:grid;gap:7px}
+.quick-transforms{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px}
+.quick-transform{min-width:0}
+.quick-transform.active{border-color:rgba(255,181,94,.7);background:rgba(255,181,94,.12);color:var(--orange)}
+.audible-note{margin-top:12px;padding:10px 11px;border:1px solid rgba(125,233,255,.18);border-radius:10px;background:rgba(125,233,255,.035);display:grid;gap:4px}
+.audible-note strong{font-size:.72rem;color:var(--cyan)}
+.audible-note span{font-size:.68rem;line-height:1.45;color:var(--muted)}
+.audible-note b{color:var(--text)}
+@media(max-width:700px){.quick-transforms{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:420px){.quick-transforms{grid-template-columns:repeat(2,minmax(0,1fr))}}
