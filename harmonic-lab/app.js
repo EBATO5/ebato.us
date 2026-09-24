@@ -81,6 +81,10 @@
   };
   const fmtHz = f => f < 100 ? f.toFixed(3).replace(/0+$/,"").replace(/\.$/,"") : f.toFixed(2);
   const intervalFreq = semis => state.rootHz * Math.pow(2,Number(semis)/12);
+  const audibleOctaveSemitones = (freq,minHz=55) => {
+    if(!(freq>0) || freq>=minHz) return 0;
+    return Math.max(0,Math.ceil(Math.log2(minHz/freq)))*12;
+  };
 
   function ensureAudio(){
     if(!state.ctx){
@@ -274,6 +278,11 @@
     $("currentOctUp").disabled=!enabled;
     $("currentWave").disabled=!enabled;
     $("currentVolume").disabled=!enabled;
+    document.querySelectorAll(".quick-transform").forEach(b=>{
+      b.disabled=!enabled;
+      const s=Number(b.dataset.semis);
+      b.classList.toggle("active",!!state.current && state.current.mode==="derived" && Math.abs(state.current.semitones-s)<.0001);
+    });
 
     if(!state.current){
       $("auditionInterval").textContent="Nothing selected";
@@ -347,7 +356,12 @@
     if(state.editingLayerId!==null) restoreEditingLayer();
     setRootHz(freq);
     state.rootLabel=label;
-    setCurrent({mode:"derived",semitones:0,label:"Root — "+label},{autoplay:true,record:true});
+    const semis=audibleOctaveSemitones(freq);
+    const octaveCount=semis/12;
+    const currentLabel=octaveCount>0
+      ? label+" — audible octave +"+octaveCount
+      : "Root — "+label;
+    setCurrent({mode:"derived",semitones:semis,label:currentLabel},{autoplay:true,record:true});
   }
 
   function selectInterval(semitones,label){
@@ -690,6 +704,11 @@
 
   $("currentOctDown").addEventListener("click",()=>shiftCurrentOctave(-1));
   $("currentOctUp").addEventListener("click",()=>shiftCurrentOctave(1));
+  document.querySelectorAll(".quick-transform").forEach(b=>{
+    b.addEventListener("click",()=>{
+      selectInterval(Number(b.dataset.semis),b.dataset.label);
+    });
+  });
   $("currentWave").addEventListener("change",()=>{
     if(!state.current) return;
     state.current.waveform=$("currentWave").value;
