@@ -84,7 +84,7 @@
           <div class="card-head">
             <div>
               <div class="eyebrow">02 // Interval Changes</div>
-              <h2>Full Interval Ladder: 2nd → 13th</h2>
+              <h2>Full Interval Ladder: 2nd → 22nd</h2>
             </div>
             <div class="interval-root-box">
               <span>Interval Root</span>
@@ -97,10 +97,31 @@
           </div>
         </section>
 
+        <section class="card">
+          <div class="card-head">
+            <div>
+              <div class="eyebrow">03 // Relative Piano</div>
+              <h2>Play intervals like a keyboard</h2>
+            </div>
+            <div class="piano-bank">
+              <button class="btn mini" id="pianoBankDown" type="button">Z • Octave ↓</button>
+              <span id="pianoBankLabel">Hotkeys: root → octave</span>
+              <button class="btn mini" id="pianoBankUp" type="button">X • Octave ↑</button>
+            </div>
+          </div>
+
+          <div class="section">
+            <p class="small piano-help">The piano is relative to the Interval Root: the first white key is the root. Click a key, or use <b>A W S E D F T G Y H U J K</b>. Z/X shifts the computer-keyboard octave. Piano notes rewrite Current Frequency; they do not add to the stack.</p>
+            <div class="piano-scroll">
+              <div class="piano" id="pianoKeyboard" aria-label="Three-octave relative piano from root through 22nd"></div>
+            </div>
+          </div>
+        </section>
+
         <section class="card stack-card">
           <div class="card-head">
             <div>
-              <div class="eyebrow">03 // Stack</div>
+              <div class="eyebrow">04 // Stack</div>
               <h2>Committed frequencies</h2>
             </div>
             <span class="count" id="stackCount">0 layers</span>
