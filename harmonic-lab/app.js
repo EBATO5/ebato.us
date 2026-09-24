@@ -50,7 +50,6 @@
     currentHz:440,currentLabel:"A440 — Standard",
     intervalRootHz:null,intervalRootLabel:null,
     history:[],manualStart:null,
-    pianoBank:0,
     stack:new Map(),nextId:1,maxLayers:64
   };
 
@@ -259,11 +258,43 @@
   }
 
   const pianoHotkeys=[
-    {key:"a",offset:0},{key:"w",offset:1},{key:"s",offset:2},
-    {key:"e",offset:3},{key:"d",offset:4},{key:"f",offset:5},
-    {key:"t",offset:6},{key:"g",offset:7},{key:"y",offset:8},
-    {key:"h",offset:9},{key:"u",offset:10},{key:"j",offset:11},
-    {key:"k",offset:12}
+    {code:"Tab",label:"Tab",offset:0},
+    {code:"Digit1",label:"1",offset:1},
+    {code:"KeyQ",label:"Q",offset:2},
+    {code:"Digit2",label:"2",offset:3},
+    {code:"KeyW",label:"W",offset:4},
+    {code:"Digit3",label:"3",offset:5},
+    {code:"KeyE",label:"E",offset:6},
+    {code:"Digit4",label:"4",offset:7},
+    {code:"KeyR",label:"R",offset:8},
+    {code:"Digit5",label:"5",offset:9},
+    {code:"KeyT",label:"T",offset:10},
+    {code:"Digit6",label:"6",offset:11},
+    {code:"KeyY",label:"Y",offset:12},
+    {code:"Digit7",label:"7",offset:13},
+    {code:"KeyU",label:"U",offset:14},
+    {code:"Digit8",label:"8",offset:15},
+    {code:"KeyI",label:"I",offset:16},
+    {code:"Digit9",label:"9",offset:17},
+    {code:"KeyO",label:"O",offset:18},
+    {code:"Digit0",label:"0",offset:19},
+    {code:"KeyP",label:"P",offset:20},
+    {code:"Minus",label:"-",offset:21},
+    {code:"BracketLeft",label:"[",offset:22},
+    {code:"Equal",label:"=",offset:23},
+    {code:"BracketRight",label:"]",offset:24},
+    {code:"ShiftLeft",label:"L Shift",offset:25},
+    {code:"KeyA",label:"A",offset:26},
+    {code:"KeyZ",label:"Z",offset:27},
+    {code:"KeyS",label:"S",offset:28},
+    {code:"KeyX",label:"X",offset:29},
+    {code:"KeyD",label:"D",offset:30},
+    {code:"KeyC",label:"C",offset:31},
+    {code:"KeyF",label:"F",offset:32},
+    {code:"KeyV",label:"V",offset:33},
+    {code:"KeyG",label:"G",offset:34},
+    {code:"KeyB",label:"B",offset:35},
+    {code:"KeyH",label:"H",offset:36}
   ];
 
   function intervalDefForSemitone(semitones){
@@ -319,9 +350,9 @@
       }
 
       const def=intervalDefForSemitone(s);
-      const hot=pianoHotkeys.find(h=>h.offset+state.pianoBank*12===s);
+      const hot=pianoHotkeys.find(h=>h.offset===s);
       key.innerHTML="<span class=\"piano-interval\">"+def.short+"</span>"+
-        (hot?"<kbd>"+hot.key.toUpperCase()+"</kbd>":"");
+        (hot?"<kbd>"+hot.label+"</kbd>":"");
 
       if(Math.abs(state.currentHz-transformed(intervalBaseHz(),s))<0.01){
         key.classList.add("active");
@@ -335,19 +366,7 @@
     }
 
     piano.style.width=(whiteCount*keyWidth)+"px";
-    const labels=[
-      "Hotkeys: root → 8th",
-      "Hotkeys: 8th → 15th",
-      "Hotkeys: 15th → 22nd"
-    ];
-    $("pianoBankLabel").textContent=labels[state.pianoBank];
-    $("pianoBankDown").disabled=state.pianoBank===0;
-    $("pianoBankUp").disabled=state.pianoBank===2;
-  }
-
-  function changePianoBank(delta){
-    state.pianoBank=clamp(state.pianoBank+delta,0,2);
-    renderPiano();
+    $("pianoHotkeyLabel").textContent="Hotkeys: Tab → H • root → 22nd";
   }
 
   function renderIntervals(){
@@ -491,42 +510,27 @@
   }
 
   $("currentBack").addEventListener("click",goBack);
-  $("pianoBankDown").addEventListener("click",()=>changePianoBank(-1));
-  $("pianoBankUp").addEventListener("click",()=>changePianoBank(1));
 
   document.addEventListener("keydown",event=>{
-    const target=event.target;
-    if(target && target.matches && target.matches("input, select, textarea, button")) return;
     if(event.repeat) return;
+    const target=event.target;
+    const editable=target && target.matches && target.matches("input, select, textarea, [contenteditable='true']");
+    if(editable) return;
 
-    const key=event.key.toLowerCase();
-    if(key==="z"){
-      event.preventDefault();
-      changePianoBank(-1);
-      return;
-    }
-    if(key==="x"){
-      event.preventDefault();
-      changePianoBank(1);
-      return;
-    }
-
-    const match=pianoHotkeys.find(h=>h.key===key);
+    const match=pianoHotkeys.find(h=>h.code===event.code);
     if(!match) return;
-    const semitone=match.offset+state.pianoBank*12;
-    if(semitone>36) return;
+
     event.preventDefault();
-    selectPianoSemitone(semitone,{autoplay:true});
-    document.querySelector('.piano-key[data-semitone="'+semitone+'"]')?.classList.add("pressed");
-  });
+    selectPianoSemitone(match.offset,{autoplay:true});
+    document.querySelector('.piano-key[data-semitone="'+match.offset+'"]')?.classList.add("pressed");
+  },true);
 
   document.addEventListener("keyup",event=>{
-    const key=event.key.toLowerCase();
-    const match=pianoHotkeys.find(h=>h.key===key);
+    const match=pianoHotkeys.find(h=>h.code===event.code);
     if(!match) return;
-    const semitone=match.offset+state.pianoBank*12;
-    document.querySelector('.piano-key[data-semitone="'+semitone+'"]')?.classList.remove("pressed");
-  });
+    event.preventDefault();
+    document.querySelector('.piano-key[data-semitone="'+match.offset+'"]')?.classList.remove("pressed");
+  },true);
 
   $("currentFrequency").addEventListener("focus",()=>{
     state.manualStart=snapshotCurrent();
