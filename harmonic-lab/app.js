@@ -448,6 +448,18 @@
     });
   });
 
+  document.querySelectorAll(".preset-detail-toggle").forEach(button=>{
+    button.addEventListener("click",()=>{
+      const card=button.closest(".preset-card");
+      const detail=card?.querySelector(".preset-detail");
+      if(!detail) return;
+      const expanded=button.getAttribute("aria-expanded")==="true";
+      button.setAttribute("aria-expanded",String(!expanded));
+      button.textContent=expanded?"Details":"Hide details";
+      detail.hidden=expanded;
+    });
+  });
+
   $("playStack").addEventListener("click",playStack);
   $("playStackTop").addEventListener("click",playStack);
   $("stopAll").addEventListener("click",stopAll);
