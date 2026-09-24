@@ -132,30 +132,164 @@
           </div>
 
           <div class="section">
-            <div class="preset-list">
-              <button class="preset" type="button" data-freq="440" data-label="A440 — Standard">
-                <strong>440 Hz</strong>
-                <span>A440 — Standard</span>
-              </button>
-              <button class="preset" type="button" data-freq="432" data-label="A432 — Verdi's A">
-                <strong>432 Hz</strong>
-                <span>A432 — Verdi's A</span>
-              </button>
-              <button class="preset" type="button" data-freq="7.83" data-label="Schumann Resonance">
-                <strong>7.83 Hz</strong>
-                <span>Schumann Resonance</span>
-                <small>Custom label: “Stem Cell Activation”</small>
-              </button>
-              <button class="preset" type="button" data-freq="10.5" data-label="Full Body Regen">
-                <strong>10.5 Hz</strong>
-                <span>Full Body Regen</span>
-              </button>
-              <button class="preset" type="button" data-freq="14.1" data-label="Neurological Healing">
-                <strong>14.1 Hz</strong>
-                <span>Neurological Healing</span>
-              </button>
+            <div class="preset-groups">
+              <div class="preset-group">
+                <div class="preset-group-title">Tuning references</div>
+
+                <article class="preset-card">
+                  <button class="preset preset-select" type="button" data-freq="440" data-label="A440 — Standard"
+                    title="Standard modern concert-pitch reference. This is a tuning standard, not a healing frequency.">
+                    <strong>440 Hz</strong>
+                    <span>A440 — Standard</span>
+                  </button>
+                  <button class="preset-detail-toggle" type="button" aria-expanded="false">Details</button>
+                  <div class="preset-detail" hidden>
+                    <b>Common use:</b> Modern concert-pitch reference for tuning instruments.
+                    <em>Evidence note:</em> This is a musical standard, not a medical or wellness treatment.
+                  </div>
+                </article>
+
+                <article class="preset-card">
+                  <button class="preset preset-select" type="button" data-freq="432" data-label="A432 — Verdi's A"
+                    title="Alternative tuning often described as calmer or more relaxed. Small studies exist, but healing effects are not established.">
+                    <strong>432 Hz</strong>
+                    <span>A432 — “Verdi's A”</span>
+                  </button>
+                  <button class="preset-detail-toggle" type="button" aria-expanded="false">Details</button>
+                  <div class="preset-detail" hidden>
+                    <b>Common association:</b> Relaxation, warmth, or a softer alternative tuning.
+                    <em>Evidence note:</em> Some small studies report differences in relaxation-related measures, but this does not establish a healing effect.
+                  </div>
+                </article>
+              </div>
+
+              <div class="preset-group">
+                <div class="preset-group-title">Your low-frequency presets</div>
+
+                <article class="preset-card">
+                  <button class="preset preset-select" type="button" data-freq="7.83" data-label="Schumann Resonance"
+                    title="Often associated with grounding or meditation. Reproducing 7.83 Hz as sound is not an established medical treatment.">
+                    <strong>7.83 Hz</strong>
+                    <span>Schumann Resonance</span>
+                    <small>Custom label: “Stem Cell Activation”</small>
+                  </button>
+                  <button class="preset-detail-toggle" type="button" aria-expanded="false">Details</button>
+                  <div class="preset-detail" hidden>
+                    <b>Common association:</b> Grounding, meditation, and “Earth resonance.”
+                    <em>Evidence note:</em> There is no robust clinical evidence that playing 7.83 Hz as sound causes stem-cell activation or healing.
+                  </div>
+                </article>
+
+                <article class="preset-card">
+                  <button class="preset preset-select" type="button" data-freq="10.5" data-label="Full Body Regen"
+                    title="Your custom 10.5 Hz preset. The regeneration label is not an established medical effect.">
+                    <strong>10.5 Hz</strong>
+                    <span>Full Body Regen</span>
+                  </button>
+                  <button class="preset-detail-toggle" type="button" aria-expanded="false">Details</button>
+                  <div class="preset-detail" hidden>
+                    <b>Custom association:</b> “Full Body Regen.”
+                    <em>Evidence note:</em> This is a user-defined wellness label; regeneration from this sound frequency has not been clinically established.
+                  </div>
+                </article>
+
+                <article class="preset-card">
+                  <button class="preset preset-select" type="button" data-freq="14.1" data-label="Neurological Healing"
+                    title="Your custom 14.1 Hz preset. Neurological healing from this sound frequency is not established.">
+                    <strong>14.1 Hz</strong>
+                    <span>Neurological Healing</span>
+                  </button>
+                  <button class="preset-detail-toggle" type="button" aria-expanded="false">Details</button>
+                  <div class="preset-detail" hidden>
+                    <b>Custom association:</b> “Neurological Healing.”
+                    <em>Evidence note:</em> This is a user-defined wellness label, not an established neurological treatment.
+                  </div>
+                </article>
+              </div>
+
+              <div class="preset-group">
+                <div class="preset-group-title">Solfeggio-style presets</div>
+
+                <article class="preset-card">
+                  <button class="preset preset-select" type="button" data-freq="396" data-label="396 Hz — Solfeggio"
+                    title="Commonly associated in wellness traditions with releasing fear or guilt; no established clinical healing effect.">
+                    <strong>396 Hz</strong>
+                    <span>Release / grounding</span>
+                  </button>
+                  <button class="preset-detail-toggle" type="button" aria-expanded="false">Details</button>
+                  <div class="preset-detail" hidden>
+                    <b>Common association:</b> Releasing fear, guilt, or emotional heaviness.
+                    <em>Evidence note:</em> This is a modern wellness/Solfeggio association rather than an established clinical effect.
+                  </div>
+                </article>
+
+                <article class="preset-card">
+                  <button class="preset preset-select" type="button" data-freq="417" data-label="417 Hz — Solfeggio"
+                    title="Commonly associated with change, renewal, or clearing old patterns; not an established medical effect.">
+                    <strong>417 Hz</strong>
+                    <span>Change / renewal</span>
+                  </button>
+                  <button class="preset-detail-toggle" type="button" aria-expanded="false">Details</button>
+                  <div class="preset-detail" hidden>
+                    <b>Common association:</b> Change, renewal, or “clearing” old patterns.
+                    <em>Evidence note:</em> These associations are primarily traditional/wellness claims, not validated medical outcomes.
+                  </div>
+                </article>
+
+                <article class="preset-card">
+                  <button class="preset preset-select" type="button" data-freq="528" data-label="528 Hz — Solfeggio"
+                    title="Often called the “love” or “miracle” frequency. Preliminary studies exist, but DNA repair or healing claims are not established.">
+                    <strong>528 Hz</strong>
+                    <span>“Love” / transformation</span>
+                  </button>
+                  <button class="preset-detail-toggle" type="button" aria-expanded="false">Details</button>
+                  <div class="preset-detail" hidden>
+                    <b>Common association:</b> Love, transformation, repair, or the “miracle frequency.”
+                    <em>Evidence note:</em> Some preliminary research has examined biological or stress-related effects, but claims such as DNA repair or tissue healing are not established.
+                  </div>
+                </article>
+
+                <article class="preset-card">
+                  <button class="preset preset-select" type="button" data-freq="639" data-label="639 Hz — Solfeggio"
+                    title="Commonly associated with connection, relationships, and harmony; no established medical healing effect.">
+                    <strong>639 Hz</strong>
+                    <span>Connection / relationships</span>
+                  </button>
+                  <button class="preset-detail-toggle" type="button" aria-expanded="false">Details</button>
+                  <div class="preset-detail" hidden>
+                    <b>Common association:</b> Connection, communication, relationships, and emotional harmony.
+                    <em>Evidence note:</em> These are wellness/spiritual associations rather than clinically established effects.
+                  </div>
+                </article>
+
+                <article class="preset-card">
+                  <button class="preset preset-select" type="button" data-freq="741" data-label="741 Hz — Solfeggio"
+                    title="Commonly associated with expression, clarity, or cleansing; detoxification claims are not established.">
+                    <strong>741 Hz</strong>
+                    <span>Expression / clarity</span>
+                  </button>
+                  <button class="preset-detail-toggle" type="button" aria-expanded="false">Details</button>
+                  <div class="preset-detail" hidden>
+                    <b>Common association:</b> Expression, clarity, problem-solving, or “cleansing.”
+                    <em>Evidence note:</em> Claims that 741 Hz detoxifies the body are not established by clinical evidence.
+                  </div>
+                </article>
+
+                <article class="preset-card">
+                  <button class="preset preset-select" type="button" data-freq="852" data-label="852 Hz — Solfeggio"
+                    title="Commonly associated with intuition or spiritual awareness; no established medical healing effect.">
+                    <strong>852 Hz</strong>
+                    <span>Intuition / awareness</span>
+                  </button>
+                  <button class="preset-detail-toggle" type="button" aria-expanded="false">Details</button>
+                  <div class="preset-detail" hidden>
+                    <b>Common association:</b> Intuition, awareness, or spiritual reflection.
+                    <em>Evidence note:</em> These are spiritual/wellness associations rather than established therapeutic effects.
+                  </div>
+                </article>
+              </div>
             </div>
-            <p class="disclaimer">The three wellness-style names are custom labels, not established medical effects. Frequencies below about 20 Hz are usually not audible on ordinary speakers/headphones; use Octave ↑ to move them into an audible range.</p>
+            <p class="disclaimer">Preset descriptions distinguish commonly reported wellness associations from evidence. None of these frequencies should be treated as a substitute for medical care. Frequencies below about 20 Hz are usually not audible on ordinary speakers/headphones.</p>
           </div>
         </section>
       </aside>
