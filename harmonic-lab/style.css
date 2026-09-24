@@ -125,3 +125,23 @@ footer{margin-top:18px;text-align:center;color:#707c90;font-size:.7rem;line-heig
   .current-tone{grid-template-columns:1fr}
   .current-tone-actions{justify-content:flex-start}
 }
+
+.history-controls{display:flex;gap:7px;flex-wrap:wrap}
+.current-tone{grid-template-columns:minmax(0,1fr)}
+.current-tone-info{min-width:0}
+.current-editor{display:grid;gap:10px}
+.current-octaves{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.current-tone-actions{justify-content:flex-start}
+.preset-card{width:100%;color:var(--text);font:inherit;text-align:left;cursor:pointer}
+.preset-card b{color:var(--cyan);font-size:.7rem;font-weight:650;white-space:nowrap}
+.preset-card:hover{border-color:rgba(255,181,94,.55);background:rgba(255,181,94,.07)}
+.layer-row{cursor:pointer}
+.layer-row:hover{background:rgba(125,233,255,.035)}
+.layer-row.editing{border-left:3px solid var(--orange);background:rgba(255,181,94,.055)}
+.layer-title strong::after{content:"";display:none}
+.layer-row.editing .layer-title strong::after{content:" • editing";display:inline;color:var(--orange);font-weight:500}
+@media(max-width:560px){
+  .history-controls{width:100%}
+  .history-controls .btn{flex:1}
+  .current-octaves{grid-template-columns:1fr 1fr}
+}
