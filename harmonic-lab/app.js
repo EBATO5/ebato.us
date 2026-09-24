@@ -7,36 +7,42 @@
 
     {name:"Minor 2nd",short:"m2",s:1,degree:"2nd"},
     {name:"Major 2nd",short:"M2",s:2,degree:"2nd"},
-
     {name:"Minor 3rd",short:"m3",s:3,degree:"3rd"},
     {name:"Major 3rd",short:"M3",s:4,degree:"3rd"},
-
     {name:"Perfect 4th",short:"P4",s:5,degree:"4th"},
     {name:"Augmented 4th / Tritone",short:"#4 / TT",s:6,degree:"4th"},
-
     {name:"Perfect 5th",short:"P5",s:7,degree:"5th"},
-
     {name:"Minor 6th",short:"m6",s:8,degree:"6th"},
     {name:"Major 6th",short:"M6",s:9,degree:"6th"},
-
     {name:"Minor 7th",short:"m7",s:10,degree:"7th"},
     {name:"Major 7th",short:"M7",s:11,degree:"7th"},
-
     {name:"Perfect Octave",short:"P8",s:12,degree:"8th"},
 
     {name:"Minor 9th",short:"m9",s:13,degree:"9th"},
     {name:"Major 9th",short:"M9",s:14,degree:"9th"},
-
     {name:"Minor 10th",short:"m10",s:15,degree:"10th"},
     {name:"Major 10th",short:"M10",s:16,degree:"10th"},
-
     {name:"Perfect 11th",short:"P11",s:17,degree:"11th"},
     {name:"Augmented 11th",short:"#11",s:18,degree:"11th"},
-
     {name:"Perfect 12th",short:"P12",s:19,degree:"12th"},
-
     {name:"Minor 13th",short:"m13",s:20,degree:"13th"},
-    {name:"Major 13th",short:"M13",s:21,degree:"13th"}
+    {name:"Major 13th",short:"M13",s:21,degree:"13th"},
+
+    {name:"Minor 14th",short:"m14",s:22,degree:"14th"},
+    {name:"Major 14th",short:"M14",s:23,degree:"14th"},
+    {name:"Double Octave",short:"P15",s:24,degree:"15th"},
+    {name:"Minor 16th",short:"m16",s:25,degree:"16th"},
+    {name:"Major 16th",short:"M16",s:26,degree:"16th"},
+    {name:"Minor 17th",short:"m17",s:27,degree:"17th"},
+    {name:"Major 17th",short:"M17",s:28,degree:"17th"},
+    {name:"Perfect 18th",short:"P18",s:29,degree:"18th"},
+    {name:"Augmented 18th",short:"#18",s:30,degree:"18th"},
+    {name:"Perfect 19th",short:"P19",s:31,degree:"19th"},
+    {name:"Minor 20th",short:"m20",s:32,degree:"20th"},
+    {name:"Major 20th",short:"M20",s:33,degree:"20th"},
+    {name:"Minor 21st",short:"m21",s:34,degree:"21st"},
+    {name:"Major 21st",short:"M21",s:35,degree:"21st"},
+    {name:"Triple Octave",short:"P22",s:36,degree:"22nd"}
   ];
 
   const state={
@@ -44,6 +50,7 @@
     currentHz:440,currentLabel:"A440 — Standard",
     intervalRootHz:null,intervalRootLabel:null,
     history:[],manualStart:null,
+    pianoBank:0,
     stack:new Map(),nextId:1,maxLayers:64
   };
 
@@ -205,6 +212,7 @@
       :"▶ Play Current Frequency";
     renderIntervalRoot();
     renderIntervals();
+    renderPiano();
   }
 
   function setCurrent(freq,label,{autoplay=false,record=true}={}){
@@ -250,6 +258,98 @@
     );
   }
 
+  const pianoHotkeys=[
+    {key:"a",offset:0},{key:"w",offset:1},{key:"s",offset:2},
+    {key:"e",offset:3},{key:"d",offset:4},{key:"f",offset:5},
+    {key:"t",offset:6},{key:"g",offset:7},{key:"y",offset:8},
+    {key:"h",offset:9},{key:"u",offset:10},{key:"j",offset:11},
+    {key:"k",offset:12}
+  ];
+
+  function intervalDefForSemitone(semitones){
+    if(semitones===0) return {name:"Root / Unison",short:"1",s:0,degree:"root"};
+    return intervals.find(def=>def.s===semitones) || {
+      name:semitones+" semitones",
+      short:String(semitones),
+      s:semitones,
+      degree:"chromatic"
+    };
+  }
+
+  function pianoLabel(semitones){
+    const def=intervalDefForSemitone(semitones);
+    return def.short+" — "+def.name;
+  }
+
+  function selectPianoSemitone(semitones,{autoplay=true}={}){
+    if(semitones<0||semitones>36) return;
+    const root=intervalBaseHz();
+    const def=intervalDefForSemitone(semitones);
+    setCurrent(
+      transformed(root,semitones),
+      def.name+" of "+intervalBaseLabel(),
+      {autoplay,record:true}
+    );
+  }
+
+  function renderPiano(){
+    const piano=$("pianoKeyboard");
+    if(!piano) return;
+    piano.innerHTML="";
+    const whitePcs=new Set([0,2,4,5,7,9,11]);
+    let whiteCount=0;
+    const keyWidth=52;
+    const blackWidth=34;
+
+    for(let s=0;s<=36;s++){
+      const pc=s%12;
+      const isWhite=whitePcs.has(pc);
+      const key=document.createElement("button");
+      key.type="button";
+      key.className="piano-key "+(isWhite?"white":"black");
+      key.dataset.semitone=String(s);
+      key.setAttribute("aria-label",pianoLabel(s));
+      key.title=pianoLabel(s)+" • "+fmt(transformed(intervalBaseHz(),s))+" Hz";
+
+      if(isWhite){
+        key.style.left=(whiteCount*keyWidth)+"px";
+        whiteCount++;
+      }else{
+        key.style.left=(whiteCount*keyWidth-blackWidth/2)+"px";
+      }
+
+      const def=intervalDefForSemitone(s);
+      const hot=pianoHotkeys.find(h=>h.offset+state.pianoBank*12===s);
+      key.innerHTML="<span class=\"piano-interval\">"+def.short+"</span>"+
+        (hot?"<kbd>"+hot.key.toUpperCase()+"</kbd>":"");
+
+      if(Math.abs(state.currentHz-transformed(intervalBaseHz(),s))<0.01){
+        key.classList.add("active");
+      }
+
+      key.addEventListener("click",()=>{
+        selectPianoSemitone(s,{autoplay:true});
+      });
+
+      piano.appendChild(key);
+    }
+
+    piano.style.width=(whiteCount*keyWidth)+"px";
+    const labels=[
+      "Hotkeys: root → 8th",
+      "Hotkeys: 8th → 15th",
+      "Hotkeys: 15th → 22nd"
+    ];
+    $("pianoBankLabel").textContent=labels[state.pianoBank];
+    $("pianoBankDown").disabled=state.pianoBank===0;
+    $("pianoBankUp").disabled=state.pianoBank===2;
+  }
+
+  function changePianoBank(delta){
+    state.pianoBank=clamp(state.pianoBank+delta,0,2);
+    renderPiano();
+  }
+
   function renderIntervals(){
     const grid=$("intervalGrid");
     grid.innerHTML="";
@@ -273,6 +373,7 @@
     state.intervalRootLabel=label||("Stack root "+fmt(freq)+" Hz");
     renderIntervalRoot();
     renderIntervals();
+    renderPiano();
   }
 
   function addToStack(){
@@ -390,6 +491,42 @@
   }
 
   $("currentBack").addEventListener("click",goBack);
+  $("pianoBankDown").addEventListener("click",()=>changePianoBank(-1));
+  $("pianoBankUp").addEventListener("click",()=>changePianoBank(1));
+
+  document.addEventListener("keydown",event=>{
+    const target=event.target;
+    if(target && target.matches && target.matches("input, select, textarea, button")) return;
+    if(event.repeat) return;
+
+    const key=event.key.toLowerCase();
+    if(key==="z"){
+      event.preventDefault();
+      changePianoBank(-1);
+      return;
+    }
+    if(key==="x"){
+      event.preventDefault();
+      changePianoBank(1);
+      return;
+    }
+
+    const match=pianoHotkeys.find(h=>h.key===key);
+    if(!match) return;
+    const semitone=match.offset+state.pianoBank*12;
+    if(semitone>36) return;
+    event.preventDefault();
+    selectPianoSemitone(semitone,{autoplay:true});
+    document.querySelector('.piano-key[data-semitone="'+semitone+'"]')?.classList.add("pressed");
+  });
+
+  document.addEventListener("keyup",event=>{
+    const key=event.key.toLowerCase();
+    const match=pianoHotkeys.find(h=>h.key===key);
+    if(!match) return;
+    const semitone=match.offset+state.pianoBank*12;
+    document.querySelector('.piano-key[data-semitone="'+semitone+'"]')?.classList.remove("pressed");
+  });
 
   $("currentFrequency").addEventListener("focus",()=>{
     state.manualStart=snapshotCurrent();
@@ -477,5 +614,6 @@
 
   renderCurrent();
   renderStack();
+  renderPiano();
   updateBackButton();
 })();
