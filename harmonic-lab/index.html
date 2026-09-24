@@ -92,6 +92,21 @@
                   <button class="btn" id="currentOctUp" type="button">Octave →</button>
                 </div>
 
+                <div class="quick-transform-wrap">
+                  <div class="label">Change Current Note</div>
+                  <div class="quick-transforms" id="quickTransforms">
+                    <button class="btn mini quick-transform" data-semis="0" data-label="Fundamental" type="button">Fundamental</button>
+                    <button class="btn mini quick-transform" data-semis="3" data-label="Minor 3rd" type="button">m3</button>
+                    <button class="btn mini quick-transform" data-semis="4" data-label="Major 3rd" type="button">M3</button>
+                    <button class="btn mini quick-transform" data-semis="7" data-label="Perfect 5th" type="button">P5</button>
+                    <button class="btn mini quick-transform" data-semis="12" data-label="Octave" type="button">8ve</button>
+                    <button class="btn mini quick-transform" data-semis="14" data-label="Major 9th" type="button">9th</button>
+                    <button class="btn mini quick-transform" data-semis="17" data-label="Perfect 11th" type="button">11th</button>
+                    <button class="btn mini quick-transform" data-semis="18" data-label="Augmented 11th" type="button">#11</button>
+                    <button class="btn mini quick-transform" data-semis="21" data-label="Major 13th" type="button">13th</button>
+                  </div>
+                </div>
+
                 <div class="two-col">
                   <div class="field">
                     <label for="currentWave">Waveform</label>
@@ -189,6 +204,10 @@
                 <input id="customFrequency" type="number" min="0.01" max="20000" step="0.01" value="432" inputmode="decimal" />
                 <button class="btn" id="useCustomFrequency" type="button">Use & Play</button>
               </div>
+            </div>
+            <div class="audible-note">
+              <strong>Preset playback behavior</strong>
+              <span>For roots below 55 Hz, the lab automatically auditions the lowest octave at or above 55 Hz so you can actually hear it. The root itself remains the exact preset frequency. Use <b>Fundamental</b> or Octave ↓ to return to the exact low-frequency root.</span>
             </div>
             <p class="disclaimer">Preset names are user-defined labels, not established medical effects. Very low frequencies may not be reproduced by ordinary speakers or headphones.</p>
           </div>
