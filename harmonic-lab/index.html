@@ -3,60 +3,75 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <meta name="description" content="Harmonic Frequency Lab — audition intervals from any root frequency, then build and edit a live harmonic stack." />
+  <meta name="description" content="Harmonic Frequency Lab — transform a current frequency by musical intervals and build a live stack." />
   <title>Harmonic Frequency Lab // EBATO</title>
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
   <main class="app">
     <header class="topbar">
-      <a href="/" class="back">← EBATO Mission Control</a>
+      <a class="back" href="/">← EBATO Mission Control</a>
       <div class="status-pill" id="audioStatus">Nothing playing</div>
     </header>
 
     <section class="hero">
       <div>
-        <div class="kicker">EBATO // Harmonic Systems</div>
-        <h1>Harmonic Frequency Lab</h1>
-        <p>Pick a root, audition one Current Note at a time, then commit the notes you like to a persistent stack. Intervals always derive from the selected root.</p>
+        <div class="kicker">EBATO // Harmonic Frequency Lab</div>
+        <h1>Frequency Stack</h1>
+        <p>Work from one Current Frequency. Presets replace it. Interval buttons transform it. Add only the frequencies you want to keep.</p>
       </div>
       <div class="hero-actions">
-        <button class="btn primary" id="playAll" type="button">▶ Play Stack</button>
-        <button class="btn danger" id="stopAll" type="button">■ Stop All</button>
+        <button class="btn primary" id="playStackTop" type="button">▶ Play Stack</button>
+        <button class="btn danger" id="stopAllTop" type="button">■ Stop All</button>
       </div>
     </section>
 
-    <section class="grid">
-      <div class="left-col">
-        <section class="card root-card">
+    <section class="layout">
+      <div class="main-col">
+        <section class="card current-card">
           <div class="card-head">
             <div>
-              <div class="eyebrow">01 // Harmonic reference</div>
-              <h2>Root frequency</h2>
+              <div class="eyebrow">01 // Current Frequency</div>
+              <h2>What you're hearing now</h2>
             </div>
-            <div class="small">The root is a reference. It does not play by itself.</div>
+            <span class="source-label" id="currentSource">A440 — Standard</span>
           </div>
 
-          <div class="root-layout">
-            <div class="root-readout">
-              <div class="root-note" id="rootNote">A4</div>
-              <div class="root-hz"><span id="rootHzReadout">440.00</span> Hz</div>
-              <div class="root-detail" id="rootDetail">Nearest A4 • +0.0 cents</div>
+          <div class="current-grid">
+            <div class="current-display">
+              <div class="frequency-big"><span id="currentHzDisplay">440.00</span><small>Hz</small></div>
+              <div class="note-line">
+                <strong id="currentNote">A4</strong>
+                <span id="currentCents">+0.0 cents</span>
+              </div>
+              <div class="current-warning" id="currentWarning"></div>
             </div>
 
-            <div class="root-controls">
+            <div class="current-controls">
               <div class="field">
-                <label for="rootFrequency">Exact root frequency</label>
-                <div class="freq-row">
-                  <button class="btn square" id="rootOctDown" type="button" aria-label="Root one octave down">÷2</button>
-                  <input id="rootFrequency" type="number" min="0.01" max="20000" step="0.01" value="440" inputmode="decimal" />
-                  <button class="btn square" id="rootOctUp" type="button" aria-label="Root one octave up">×2</button>
+                <label for="currentFrequency">Current frequency</label>
+                <input id="currentFrequency" type="number" min="0.01" max="20000" step="0.01" value="440" inputmode="decimal" />
+              </div>
+
+              <div class="two-col">
+                <div class="field">
+                  <label for="currentWave">Waveform</label>
+                  <select id="currentWave">
+                    <option value="sine">Sine</option>
+                    <option value="triangle">Triangle</option>
+                    <option value="square">Square</option>
+                    <option value="sawtooth">Sawtooth</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="currentVolume">Current volume <span id="currentVolumeText">30%</span></label>
+                  <input id="currentVolume" type="range" min="0" max="100" value="30" />
                 </div>
               </div>
 
-              <div class="field">
-                <label for="rootNoteSelect">Standard musical root</label>
-                <select id="rootNoteSelect"></select>
+              <div class="current-actions">
+                <button class="btn orange" id="playCurrent" type="button">▶ Play Current Frequency</button>
+                <button class="btn primary" id="addToStack" type="button">＋ Add Frequency to Stack</button>
               </div>
             </div>
           </div>
@@ -65,186 +80,86 @@
         <section class="card">
           <div class="card-head">
             <div>
-              <div class="eyebrow">02 // Current Note</div>
-              <h2>Listen, shape, then commit</h2>
+              <div class="eyebrow">02 // Interval Changes</div>
+              <h2>Transform the Current Frequency</h2>
             </div>
-            <div class="history-controls">
-              <button class="btn mini" id="historyBack" type="button" disabled>← Back</button>
-              <button class="btn mini" id="historyForward" type="button" disabled>Forward →</button>
-            </div>
+            <div class="small">Every button rewrites the Current Frequency value itself.</div>
           </div>
 
           <div class="section">
-            <div class="current-tone" aria-live="polite">
-              <div class="current-tone-info">
-                <div class="label">Current note / audition tone</div>
-                <div class="current-tone-main">
-                  <strong id="auditionInterval">Nothing selected</strong>
-                  <span id="auditionNote">—</span>
-                  <span id="auditionHz">— Hz</span>
-                </div>
-                <div class="small" id="auditionRelation">Choose a preset, interval, or frequency to begin.</div>
-              </div>
-
-              <div class="current-editor">
-                <div class="current-octaves">
-                  <button class="btn" id="currentOctDown" type="button">← Octave</button>
-                  <button class="btn" id="currentOctUp" type="button">Octave →</button>
-                </div>
-
-                <div class="quick-transform-wrap">
-                  <div class="label">Change Current Note</div>
-                  <div class="quick-transforms" id="quickTransforms">
-                    <button class="btn mini quick-transform" data-semis="0" data-label="Fundamental" type="button">Fundamental</button>
-                    <button class="btn mini quick-transform" data-semis="3" data-label="Minor 3rd" type="button">m3</button>
-                    <button class="btn mini quick-transform" data-semis="4" data-label="Major 3rd" type="button">M3</button>
-                    <button class="btn mini quick-transform" data-semis="7" data-label="Perfect 5th" type="button">P5</button>
-                    <button class="btn mini quick-transform" data-semis="12" data-label="Octave" type="button">8ve</button>
-                    <button class="btn mini quick-transform" data-semis="14" data-label="Major 9th" type="button">9th</button>
-                    <button class="btn mini quick-transform" data-semis="17" data-label="Perfect 11th" type="button">11th</button>
-                    <button class="btn mini quick-transform" data-semis="18" data-label="Augmented 11th" type="button">#11</button>
-                    <button class="btn mini quick-transform" data-semis="21" data-label="Major 13th" type="button">13th</button>
-                  </div>
-                </div>
-
-                <div class="two-col">
-                  <div class="field">
-                    <label for="currentWave">Waveform</label>
-                    <select id="currentWave">
-                      <option value="sine">Sine</option>
-                      <option value="triangle">Triangle</option>
-                      <option value="square">Square</option>
-                      <option value="sawtooth">Sawtooth</option>
-                    </select>
-                  </div>
-                  <div class="field">
-                    <label for="currentVolume">Current volume <span id="currentVolumeText">28%</span></label>
-                    <input id="currentVolume" type="range" min="0" max="100" value="28" />
-                  </div>
-                </div>
-
-                <div class="current-tone-actions">
-                  <button class="btn orange" id="auditionToggle" type="button" disabled>▶ Play Current Note</button>
-                  <button class="btn primary" id="addAuditionToStack" type="button" disabled>＋ Add Current Note to Stack</button>
-                </div>
-              </div>
-            </div>
-
             <div class="interval-grid" id="intervalGrid"></div>
           </div>
-
-          <div class="section border-top">
-            <div class="custom-interval">
-              <div>
-                <div class="label">Custom equal-tempered interval</div>
-                <div class="small">Positive or negative semitones from the root. Preview only until you commit it.</div>
-              </div>
-              <input id="customSemitones" type="number" step="0.01" value="7" aria-label="Custom interval in semitones" />
-              <button class="btn" id="previewCustomInterval" type="button">▶ Preview interval</button>
-            </div>
-          </div>
         </section>
 
-        <section class="card">
+        <section class="card stack-card">
           <div class="card-head">
             <div>
-              <div class="eyebrow">03 // Harmony recipes</div>
-              <h2>Commit whole chords</h2>
+              <div class="eyebrow">03 // Stack</div>
+              <h2>Committed frequencies</h2>
             </div>
-            <button class="btn mini" id="clearDerived" type="button">Clear derived</button>
-          </div>
-          <div class="section">
-            <div class="recipe-grid" id="recipeGrid"></div>
-            <p class="helper">Chord recipes are the shortcut exception: they intentionally commit several root-derived voices at once.</p>
-          </div>
-        </section>
-      </div>
-
-      <aside class="right-col">
-        <section class="card">
-          <div class="card-head">
-            <div>
-              <div class="eyebrow">04 // Starting frequencies</div>
-              <h2>Presets & custom root</h2>
-            </div>
-          </div>
-          <div class="section">
-            <div class="preset-list">
-              <button class="preset-card preset-current" data-freq="7.83" data-label="Schumann Resonance" type="button">
-                <div>
-                  <strong>7.83 Hz</strong>
-                  <span>Schumann Resonance</span>
-                  <small>Custom label: “Stem Cell Activation”</small>
-                </div>
-                <b>Use & Play →</b>
-              </button>
-
-              <button class="preset-card preset-current" data-freq="10.5" data-label="Full Body Regen" type="button">
-                <div>
-                  <strong>10.5 Hz</strong>
-                  <span>Full Body Regen</span>
-                  <small>Custom frequency preset</small>
-                </div>
-                <b>Use & Play →</b>
-              </button>
-
-              <button class="preset-card preset-current" data-freq="14.1" data-label="Neurological Healing" type="button">
-                <div>
-                  <strong>14.1 Hz</strong>
-                  <span>Neurological Healing</span>
-                  <small>Custom frequency preset</small>
-                </div>
-                <b>Use & Play →</b>
-              </button>
-            </div>
-
-            <div class="custom-frequency">
-              <div class="label">Use a custom frequency as root + Current Note</div>
-              <div class="row">
-                <input id="customFrequency" type="number" min="0.01" max="20000" step="0.01" value="432" inputmode="decimal" />
-                <button class="btn" id="useCustomFrequency" type="button">Use & Play</button>
-              </div>
-            </div>
-            <div class="audible-note">
-              <strong>Preset playback behavior</strong>
-              <span>For roots below 55 Hz, the lab automatically auditions the lowest octave at or above 55 Hz so you can actually hear it. The root itself remains the exact preset frequency. Use <b>Fundamental</b> or Octave ↓ to return to the exact low-frequency root.</span>
-            </div>
-            <p class="disclaimer">Preset names are user-defined labels, not established medical effects. Very low frequencies may not be reproduced by ordinary speakers or headphones.</p>
-          </div>
-        </section>
-
-        <section class="card mixer-card">
-          <div class="card-head">
-            <div>
-              <div class="eyebrow">05 // Committed voices</div>
-              <h2>Playing stack</h2>
-            </div>
-            <span class="count" id="layerCount">0 layers</span>
+            <span class="count" id="stackCount">0 layers</span>
           </div>
 
-          <div class="mixer-toolbar">
-            <button class="btn primary" id="playAll2" type="button">▶ Play Stack</button>
-            <button class="btn danger" id="stopAll2" type="button">■ Stop All</button>
-            <button class="btn" id="clearAll" type="button">Clear Stack</button>
+          <div class="stack-toolbar">
+            <button class="btn primary" id="playStack" type="button">▶ Play Stack</button>
+            <button class="btn danger" id="stopAll" type="button">■ Stop All</button>
+            <button class="btn" id="clearStack" type="button">Clear Stack</button>
           </div>
 
-          <div class="layer-list" id="layerList"></div>
-          <div class="empty" id="emptyState">
-            Nothing committed yet. Pick a preset or interval, adjust the Current Note, then add it to the stack. Click any committed layer later to pull it back into Current Note for editing.
-          </div>
+          <div class="stack-list" id="stackList"></div>
+          <div class="empty" id="emptyState">Nothing in the stack yet. Add the Current Frequency when you hear something you want to keep.</div>
 
           <div class="master-strip">
             <label for="masterVolume">Master volume <span id="masterVolumeText">75%</span></label>
             <input id="masterVolume" type="range" min="0" max="100" value="75" />
           </div>
         </section>
+      </div>
+
+      <aside class="side-col">
+        <section class="card">
+          <div class="card-head">
+            <div>
+              <div class="eyebrow">Presets</div>
+              <h2>Set Current Frequency</h2>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="preset-list">
+              <button class="preset" type="button" data-freq="440" data-label="A440 — Standard">
+                <strong>440 Hz</strong>
+                <span>A440 — Standard</span>
+              </button>
+              <button class="preset" type="button" data-freq="432" data-label="A432 — Verdi's A">
+                <strong>432 Hz</strong>
+                <span>A432 — Verdi's A</span>
+              </button>
+              <button class="preset" type="button" data-freq="7.83" data-label="Schumann Resonance">
+                <strong>7.83 Hz</strong>
+                <span>Schumann Resonance</span>
+                <small>Custom label: “Stem Cell Activation”</small>
+              </button>
+              <button class="preset" type="button" data-freq="10.5" data-label="Full Body Regen">
+                <strong>10.5 Hz</strong>
+                <span>Full Body Regen</span>
+              </button>
+              <button class="preset" type="button" data-freq="14.1" data-label="Neurological Healing">
+                <strong>14.1 Hz</strong>
+                <span>Neurological Healing</span>
+              </button>
+            </div>
+            <p class="disclaimer">The three wellness-style names are custom labels, not established medical effects. Frequencies below about 20 Hz are usually not audible on ordinary speakers/headphones; use Octave ↑ to move them into an audible range.</p>
+          </div>
+        </section>
       </aside>
     </section>
 
     <footer>
-      <p>Workflow: choose root → audition Current Note → adjust volume/waveform → commit → audition the next interval over the playing stack. Intervals use 12-tone equal temperament.</p>
+      <p>Intervals use 12-tone equal temperament. Each transform multiplies the Current Frequency by 2<sup>semitones/12</sup>, then writes the result back into the Current Frequency box.</p>
     </footer>
   </main>
+
   <script src="./app.js"></script>
 </body>
 </html>
