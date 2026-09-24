@@ -51,6 +51,9 @@
     compressor:null,
     rootHz:440,
     rootVoice:null,
+    auditionSemitones:0,
+    auditionLabel:"Unison",
+    auditionVoice:null,
     layers:new Map(),
     nextId:1,
     maxLayers:64
@@ -100,6 +103,7 @@
   function activeVoices(){
     const voices=[];
     if (state.rootVoice) voices.push({voice:state.rootVoice,volume:Number($("rootVolume").value)});
+    if (state.auditionVoice) voices.push({voice:state.auditionVoice,volume:Number($("rootVolume").value)});
     state.layers.forEach(l=>{ if(l.voice) voices.push({voice:l.voice,volume:l.volume}); });
     return voices;
   }
@@ -156,9 +160,67 @@
     $("playRoot").textContent=state.rootVoice ? "■ Stop Root" : "▶ Play Root";
   }
 
+  function auditionHz(){
+    return intervalFreq(state.auditionSemitones);
+  }
+
+  function renderAudition(){
+    const hz=auditionHz();
+    const note=freqToNote(hz).name;
+    $("auditionInterval").textContent=state.auditionLabel;
+    $("auditionNote").textContent=note;
+    $("auditionHz").textContent=fmtHz(hz)+" Hz";
+    $("auditionRelation").textContent=(state.auditionSemitones>=0?"+":"")+state.auditionSemitones+" semitones from the root";
+    $("auditionToggle").textContent=state.auditionVoice ? "■ Stop Current Note" : "▶ Play Current Note";
+  }
+
+  function startAudition(){
+    const hz=auditionHz();
+    if (!(hz>0) || hz>20000) return;
+    if (state.auditionVoice) {
+      state.auditionVoice.osc.frequency.setTargetAtTime(hz,state.ctx.currentTime,0.012);
+      renderAudition();
+      return;
+    }
+    state.auditionVoice=makeVoice(hz,$("rootWave").value);
+    rebalance();
+    renderAudition();
+  }
+
+  function stopAudition(){
+    if (state.auditionVoice) stopVoice(state.auditionVoice);
+    state.auditionVoice=null;
+    rebalance();
+    renderAudition();
+  }
+
+  function selectAudition(semitones,label,{autoplay=true}={}){
+    const s=Number(semitones);
+    if(!Number.isFinite(s)) return;
+    state.auditionSemitones=s;
+    state.auditionLabel=label || ((s>=0?"+":"")+s+" semitones");
+    if(state.auditionVoice && state.ctx){
+      const hz=auditionHz();
+      if(hz>0 && hz<=20000) state.auditionVoice.osc.frequency.setTargetAtTime(hz,state.ctx.currentTime,0.012);
+      else stopAudition();
+    }
+    renderAudition();
+    renderIntervals();
+    if(autoplay) startAudition();
+  }
+
+  function addAuditionToStack(){
+    addDerived(state.auditionSemitones,state.auditionLabel);
+  }
+
   function retuneRoot(){
     if (state.rootVoice && state.ctx) {
       state.rootVoice.osc.frequency.setTargetAtTime(state.rootHz,state.ctx.currentTime,0.012);
+    }
+    if (state.auditionVoice && state.ctx) {
+      const hz=auditionHz();
+      if(hz>0 && hz<=20000) state.auditionVoice.osc.frequency.setTargetAtTime(hz,state.ctx.currentTime,0.012);
+      else stopAudition();
     }
     state.layers.forEach(layer=>{
       if(layer.type==="derived"){
@@ -171,6 +233,7 @@
       }
     });
     renderRoot();
+    renderAudition();
     renderIntervals();
     renderLayers();
   }
@@ -224,9 +287,9 @@
       const note=freqToNote(f).name;
       const b=document.createElement("button");
       b.type="button";
-      b.className="interval-btn";
+      b.className="interval-btn"+(Math.abs(state.auditionSemitones-def.s)<0.0001?" active":"");
       b.innerHTML="<strong>"+def.short+" — "+def.name+"</strong><span>"+def.s+" semitone"+(def.s===1?"":"s")+" from root</span><em>"+fmtHz(f)+" Hz • "+note+"</em>";
-      b.addEventListener("click",()=>addDerived(def.s,def.name));
+      b.addEventListener("click",()=>selectAudition(def.s,def.name));
       grid.appendChild(b);
     });
   }
@@ -306,6 +369,7 @@
 
   function stopAll(){
     stopRoot();
+    stopAudition();
     state.layers.forEach(stopLayer);
     rebalance();
     renderLayers();
@@ -388,7 +452,10 @@
   $("rootNoteSelect").addEventListener("change",e=>setRootHz(Number(e.target.value),{syncSelect:false}));
   $("rootOctDown").addEventListener("click",()=>setRootHz(state.rootHz/2));
   $("rootOctUp").addEventListener("click",()=>setRootHz(state.rootHz*2));
-  $("rootWave").addEventListener("change",()=>{if(state.rootVoice) state.rootVoice.osc.type=$("rootWave").value;});
+  $("rootWave").addEventListener("change",()=>{
+    if(state.rootVoice) state.rootVoice.osc.type=$("rootWave").value;
+    if(state.auditionVoice) state.auditionVoice.osc.type=$("rootWave").value;
+  });
   $("rootVolume").addEventListener("input",e=>{$("rootVolumeText").textContent=e.target.value+"%";rebalance();});
   $("rootEnabled").addEventListener("change",()=>{if(!$("rootEnabled").checked) stopRoot();});
   $("playRoot").addEventListener("click",()=>state.rootVoice?stopRoot():startRoot());
@@ -396,8 +463,10 @@
 
   $("addCustomInterval").addEventListener("click",()=>{
     const s=Number($("customSemitones").value);
-    if(Number.isFinite(s)) addDerived(s,(s>=0?"+":"")+s+" semitone interval");
+    if(Number.isFinite(s)) selectAudition(s,(s>=0?"+":"")+s+" semitone interval");
   });
+  $("auditionToggle").addEventListener("click",()=>state.auditionVoice?stopAudition():startAudition());
+  $("addAuditionToStack").addEventListener("click",addAuditionToStack);
 
   document.querySelectorAll(".set-root").forEach(b=>b.addEventListener("click",()=>setRootHz(Number(b.dataset.freq))));
   document.querySelectorAll(".add-preset").forEach(b=>b.addEventListener("click",()=>addAbsolute(Number(b.dataset.freq),b.dataset.label)));
@@ -415,6 +484,7 @@
 
   populateNotes();
   renderRoot();
+  renderAudition();
   renderIntervals();
   renderRecipes();
   renderLayers();
