@@ -34,7 +34,10 @@
               <div class="eyebrow">01 // Current Frequency</div>
               <h2>What you're hearing now</h2>
             </div>
-            <span class="source-label" id="currentSource">A440 — Standard</span>
+            <div class="current-head-tools">
+              <button class="btn mini" id="currentBack" type="button" disabled>← Back</button>
+              <span class="source-label" id="currentSource">A440 — Standard</span>
+            </div>
           </div>
 
           <div class="current-grid">
@@ -83,7 +86,10 @@
               <div class="eyebrow">02 // Interval Changes</div>
               <h2>Transform the Current Frequency</h2>
             </div>
-            <div class="small">Every button rewrites the Current Frequency value itself.</div>
+            <div class="interval-root-box">
+              <span>Interval Root</span>
+              <strong id="intervalRootStatus">440.00 Hz • current (not yet committed)</strong>
+            </div>
           </div>
 
           <div class="section">
@@ -156,7 +162,7 @@
     </section>
 
     <footer>
-      <p>Intervals use 12-tone equal temperament. Each transform multiplies the Current Frequency by 2<sup>semitones/12</sup>, then writes the result back into the Current Frequency box.</p>
+      <p>Intervals use 12-tone equal temperament. Once you add or load a stack frequency, it becomes the Interval Root. Every interval button calculates from that root and writes the result into Current Frequency.</p>
     </footer>
   </main>
 
