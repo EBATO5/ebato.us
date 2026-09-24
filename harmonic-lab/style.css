@@ -100,3 +100,25 @@ footer{margin-top:18px;text-align:center;color:#727f93;font-size:.69rem;line-hei
 .preset-detail{padding:10px 11px 11px;border-top:1px solid rgba(125,233,255,.12);font-size:.68rem;line-height:1.5;color:var(--muted)}
 .preset-detail b{display:block;color:var(--text);margin-bottom:2px}
 .preset-detail em{display:block;font-style:normal;color:#7f8ca1;margin-top:5px}
+
+.piano-bank{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.piano-bank span{font-size:.68rem;color:var(--muted);min-width:120px;text-align:center}
+.piano-help{margin:0 0 12px}
+.piano-help b{color:var(--text)}
+.piano-scroll{overflow-x:auto;padding:4px 2px 10px}
+.piano{position:relative;height:190px;min-width:max-content}
+.piano-key{position:absolute;top:0;border-radius:0 0 8px 8px;border:1px solid #313b4e;padding:0;display:flex;align-items:flex-end;justify-content:center;transition:transform .05s ease,background .08s ease,border-color .08s ease;user-select:none}
+.piano-key.white{width:52px;height:188px;background:linear-gradient(180deg,#f8fbff,#d8e0ea);color:#0b1119;z-index:1}
+.piano-key.black{width:34px;height:116px;background:linear-gradient(180deg,#111723,#02050a);color:#edf4fb;z-index:2;border-color:#02050a}
+.piano-key:hover,.piano-key.active{border-color:var(--orange)}
+.piano-key.white:hover,.piano-key.white.active{background:linear-gradient(180deg,#fff7e9,#e9d0a9)}
+.piano-key.black:hover,.piano-key.black.active{background:linear-gradient(180deg,#4b3823,#15100b)}
+.piano-key.pressed{transform:translateY(3px);box-shadow:inset 0 5px 12px rgba(0,0,0,.28)}
+.piano-interval{font-size:.61rem;font-weight:750;margin-bottom:12px;writing-mode:vertical-rl;transform:rotate(180deg);white-space:nowrap}
+.piano-key.black .piano-interval{font-size:.56rem;margin-bottom:9px}
+.piano-key kbd{position:absolute;top:8px;left:50%;transform:translateX(-50%);font-family:inherit;font-size:.58rem;font-weight:800;border:1px solid currentColor;border-radius:5px;padding:2px 4px;opacity:.78;background:rgba(255,255,255,.08)}
+.piano-key.white kbd{background:rgba(0,0,0,.06)}
+@media(max-width:680px){
+  .piano-bank{width:100%;justify-content:flex-start}
+  .piano-bank span{text-align:left}
+}
