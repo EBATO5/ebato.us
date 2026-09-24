@@ -90,12 +90,28 @@
           <div class="card-head">
             <div>
               <div class="eyebrow">02 // Interval builder</div>
-              <h2>Build from the root</h2>
+              <h2>Audition intervals from the root</h2>
             </div>
-            <div class="small">Intervals retune automatically when the root changes.</div>
+            <div class="small">Tap an interval to hear it immediately. Add it to the stack only when you want to keep it.</div>
           </div>
 
           <div class="section">
+            <div class="current-tone" aria-live="polite">
+              <div>
+                <div class="label">Current note / audition tone</div>
+                <div class="current-tone-main">
+                  <strong id="auditionInterval">Unison</strong>
+                  <span id="auditionNote">A4</span>
+                  <span id="auditionHz">440.00 Hz</span>
+                </div>
+                <div class="small" id="auditionRelation">0 semitones from the root</div>
+              </div>
+              <div class="current-tone-actions">
+                <button class="btn orange" id="auditionToggle" type="button">▶ Play Current Note</button>
+                <button class="btn primary" id="addAuditionToStack" type="button">＋ Add Current Note to Stack</button>
+              </div>
+            </div>
+
             <div class="interval-grid" id="intervalGrid"></div>
           </div>
 
@@ -103,10 +119,10 @@
             <div class="custom-interval">
               <div>
                 <div class="label">Custom equal-tempered interval</div>
-                <div class="small">Positive or negative semitones from the root.</div>
+                <div class="small">Positive or negative semitones from the root. This previews first; it does not add a layer.</div>
               </div>
               <input id="customSemitones" type="number" step="0.01" value="7" aria-label="Custom interval in semitones" />
-              <button class="btn" id="addCustomInterval" type="button">＋ Add interval</button>
+              <button class="btn" id="addCustomInterval" type="button">▶ Preview interval</button>
             </div>
           </div>
         </section>
@@ -201,7 +217,7 @@
 
           <div class="layer-list" id="layerList"></div>
           <div class="empty" id="emptyState">
-            Add intervals, harmony recipes, or presets. There is no 8-tone limit; the lab supports up to 64 simultaneous layers plus the root.
+            Add the Current Note when you want to keep an auditioned interval, or add harmony recipes and presets. The lab supports up to 64 simultaneous layers plus the root and Current Note.
           </div>
 
           <div class="master-strip">
