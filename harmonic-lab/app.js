@@ -3,18 +3,40 @@
   const noteNames=["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
 
   const intervals=[
-    {name:"Octave Down",short:"8ve ↓",s:-12},
-    {name:"Minor 3rd",short:"m3",s:3},
-    {name:"Major 3rd",short:"M3",s:4},
-    {name:"Perfect 4th",short:"P4",s:5},
-    {name:"Perfect 5th",short:"P5",s:7},
-    {name:"Minor 7th",short:"m7",s:10},
-    {name:"Major 7th",short:"M7",s:11},
-    {name:"Octave Up",short:"8ve ↑",s:12},
-    {name:"Major 9th",short:"9th",s:14},
-    {name:"Perfect 11th",short:"11th",s:17},
-    {name:"Augmented 11th",short:"#11",s:18},
-    {name:"Major 13th",short:"13th",s:21}
+    {name:"Octave Down",short:"8ve ↓",s:-12,degree:"octave"},
+
+    {name:"Minor 2nd",short:"m2",s:1,degree:"2nd"},
+    {name:"Major 2nd",short:"M2",s:2,degree:"2nd"},
+
+    {name:"Minor 3rd",short:"m3",s:3,degree:"3rd"},
+    {name:"Major 3rd",short:"M3",s:4,degree:"3rd"},
+
+    {name:"Perfect 4th",short:"P4",s:5,degree:"4th"},
+    {name:"Augmented 4th / Tritone",short:"#4 / TT",s:6,degree:"4th"},
+
+    {name:"Perfect 5th",short:"P5",s:7,degree:"5th"},
+
+    {name:"Minor 6th",short:"m6",s:8,degree:"6th"},
+    {name:"Major 6th",short:"M6",s:9,degree:"6th"},
+
+    {name:"Minor 7th",short:"m7",s:10,degree:"7th"},
+    {name:"Major 7th",short:"M7",s:11,degree:"7th"},
+
+    {name:"Perfect Octave",short:"P8",s:12,degree:"8th"},
+
+    {name:"Minor 9th",short:"m9",s:13,degree:"9th"},
+    {name:"Major 9th",short:"M9",s:14,degree:"9th"},
+
+    {name:"Minor 10th",short:"m10",s:15,degree:"10th"},
+    {name:"Major 10th",short:"M10",s:16,degree:"10th"},
+
+    {name:"Perfect 11th",short:"P11",s:17,degree:"11th"},
+    {name:"Augmented 11th",short:"#11",s:18,degree:"11th"},
+
+    {name:"Perfect 12th",short:"P12",s:19,degree:"12th"},
+
+    {name:"Minor 13th",short:"m13",s:20,degree:"13th"},
+    {name:"Major 13th",short:"M13",s:21,degree:"13th"}
   ];
 
   const state={
@@ -239,7 +261,7 @@
       button.className="interval-btn";
       button.innerHTML=
         "<strong>"+def.short+" — "+def.name+"</strong>"+
-        "<span>"+(def.s>=0?"+":"")+def.s+" semitones from interval root</span>"+
+        "<span>"+def.degree+" • "+(def.s>=0?"+":"")+def.s+" semitones from interval root</span>"+
         "<em>"+fmt(next)+" Hz</em>";
       button.addEventListener("click",()=>applyInterval(def));
       grid.appendChild(button);
