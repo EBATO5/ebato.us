@@ -42,7 +42,20 @@
     {name:"Major 20th",short:"M20",s:33,degree:"20th"},
     {name:"Minor 21st",short:"m21",s:34,degree:"21st"},
     {name:"Major 21st",short:"M21",s:35,degree:"21st"},
-    {name:"Triple Octave",short:"P22",s:36,degree:"22nd"}
+    {name:"Triple Octave",short:"P22",s:36,degree:"22nd"},
+
+    {name:"Minor 23rd",short:"m23",s:37,degree:"23rd"},
+    {name:"Major 23rd",short:"M23",s:38,degree:"23rd"},
+    {name:"Minor 24th",short:"m24",s:39,degree:"24th"},
+    {name:"Major 24th",short:"M24",s:40,degree:"24th"},
+    {name:"Perfect 25th",short:"P25",s:41,degree:"25th"},
+    {name:"Augmented 25th",short:"#25",s:42,degree:"25th"},
+    {name:"Perfect 26th",short:"P26",s:43,degree:"26th"},
+    {name:"Minor 27th",short:"m27",s:44,degree:"27th"},
+    {name:"Major 27th",short:"M27",s:45,degree:"27th"},
+    {name:"Minor 28th",short:"m28",s:46,degree:"28th"},
+    {name:"Major 28th",short:"M28",s:47,degree:"28th"},
+    {name:"Quadruple Octave",short:"P29",s:48,degree:"29th"}
   ];
 
   const state={
@@ -258,43 +271,58 @@
   }
 
   const pianoHotkeys=[
+    // Upper manual: Tab/QWERTY row = white keys; number/symbol row = black keys.
     {code:"Tab",label:"Tab",offset:0},
     {code:"Digit1",label:"1",offset:1},
     {code:"KeyQ",label:"Q",offset:2},
     {code:"Digit2",label:"2",offset:3},
     {code:"KeyW",label:"W",offset:4},
-    {code:"Digit3",label:"3",offset:5},
-    {code:"KeyE",label:"E",offset:6},
-    {code:"Digit4",label:"4",offset:7},
-    {code:"KeyR",label:"R",offset:8},
-    {code:"Digit5",label:"5",offset:9},
-    {code:"KeyT",label:"T",offset:10},
-    {code:"Digit6",label:"6",offset:11},
-    {code:"KeyY",label:"Y",offset:12},
-    {code:"Digit7",label:"7",offset:13},
-    {code:"KeyU",label:"U",offset:14},
-    {code:"Digit8",label:"8",offset:15},
-    {code:"KeyI",label:"I",offset:16},
-    {code:"Digit9",label:"9",offset:17},
-    {code:"KeyO",label:"O",offset:18},
-    {code:"Digit0",label:"0",offset:19},
-    {code:"KeyP",label:"P",offset:20},
-    {code:"Minus",label:"-",offset:21},
-    {code:"BracketLeft",label:"[",offset:22},
-    {code:"Equal",label:"=",offset:23},
-    {code:"BracketRight",label:"]",offset:24},
-    {code:"ShiftLeft",label:"L Shift",offset:25},
-    {code:"KeyA",label:"A",offset:26},
-    {code:"KeyZ",label:"Z",offset:27},
-    {code:"KeyS",label:"S",offset:28},
-    {code:"KeyX",label:"X",offset:29},
-    {code:"KeyD",label:"D",offset:30},
-    {code:"KeyC",label:"C",offset:31},
-    {code:"KeyF",label:"F",offset:32},
-    {code:"KeyV",label:"V",offset:33},
-    {code:"KeyG",label:"G",offset:34},
-    {code:"KeyB",label:"B",offset:35},
-    {code:"KeyH",label:"H",offset:36}
+    {code:"KeyE",label:"E",offset:5},
+    {code:"Digit4",label:"4",offset:6},
+    {code:"KeyR",label:"R",offset:7},
+    {code:"Digit5",label:"5",offset:8},
+    {code:"KeyT",label:"T",offset:9},
+    {code:"Digit6",label:"6",offset:10},
+    {code:"KeyY",label:"Y",offset:11},
+    {code:"KeyU",label:"U",offset:12},
+    {code:"Digit8",label:"8",offset:13},
+    {code:"KeyI",label:"I",offset:14},
+    {code:"Digit9",label:"9",offset:15},
+    {code:"KeyO",label:"O",offset:16},
+    {code:"KeyP",label:"P",offset:17},
+    {code:"Minus",label:"-",offset:18},
+    {code:"BracketLeft",label:"[",offset:19},
+    {code:"Equal",label:"=",offset:20},
+    {code:"BracketRight",label:"]",offset:21},
+    {code:"Backspace",label:"Bksp",offset:22},
+    {code:"Backslash",label:"\\",offset:23},
+
+    // Lower manual: Shift/ZXCV row = white keys; ASDF row = black keys.
+    {code:"ShiftLeft",label:"L Shift",offset:24},
+    {code:"KeyA",label:"A",offset:25},
+    {code:"KeyZ",label:"Z",offset:26},
+    {code:"KeyS",label:"S",offset:27},
+    {code:"KeyX",label:"X",offset:28},
+    {code:"KeyC",label:"C",offset:29},
+    {code:"KeyF",label:"F",offset:30},
+    {code:"KeyV",label:"V",offset:31},
+    {code:"KeyG",label:"G",offset:32},
+    {code:"KeyB",label:"B",offset:33},
+    {code:"KeyH",label:"H",offset:34},
+    {code:"KeyN",label:"N",offset:35},
+    {code:"KeyM",label:"M",offset:36},
+    {code:"KeyK",label:"K",offset:37},
+    {code:"Comma",label:",",offset:38},
+    {code:"KeyL",label:"L",offset:39},
+    {code:"Period",label:".",offset:40},
+    {code:"Slash",label:"/",offset:41},
+    {code:"Quote",label:"'",offset:42},
+    {code:"ShiftRight",label:"R Shift",offset:43},
+    {code:"Enter",label:"Enter",offset:44},
+    {code:"ArrowLeft",label:"←",offset:45},
+    {code:"ArrowUp",label:"↑",offset:46},
+    {code:"ArrowDown",label:"↓",offset:47},
+    {code:"ArrowRight",label:"→",offset:48}
   ];
 
   function intervalDefForSemitone(semitones){
@@ -313,7 +341,7 @@
   }
 
   function selectPianoSemitone(semitones,{autoplay=true}={}){
-    if(semitones<0||semitones>36) return;
+    if(semitones<0||semitones>48) return;
     const root=intervalBaseHz();
     const def=intervalDefForSemitone(semitones);
     setCurrent(
@@ -332,7 +360,7 @@
     const keyWidth=52;
     const blackWidth=34;
 
-    for(let s=0;s<=36;s++){
+    for(let s=0;s<=48;s++){
       const pc=s%12;
       const isWhite=whitePcs.has(pc);
       const key=document.createElement("button");
@@ -366,7 +394,7 @@
     }
 
     piano.style.width=(whiteCount*keyWidth)+"px";
-    $("pianoHotkeyLabel").textContent="Hotkeys: Tab → H • root → 22nd";
+    $("pianoHotkeyLabel").textContent="Hotkeys: four octaves • root → 29th";
   }
 
   function renderIntervals(){
