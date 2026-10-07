@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Teaching portfolio of Ted E. Sim — science educator specializing in inquiry-based biology, anatomy, physiology, and middle-school science.">
+  <title>Ted E. Sim | Science Teaching Portfolio</title>
+  <style>
+    :root{
+      --ink:#173228;--muted:#5e7067;--paper:#f8f5ed;--paper2:#fffdf7;
+      --green:#245b45;--green2:#39785f;--gold:#b98a3d;--line:#d8d3c7;
+      --shadow:0 24px 70px rgba(33,54,43,.12)
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;background:var(--paper);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.65}
+    a{color:inherit}
+    .wrap{width:min(1120px,calc(100% - 32px));margin:auto}
+    .top{position:sticky;top:0;z-index:20;background:rgba(248,245,237,.92);backdrop-filter:blur(14px);border-bottom:1px solid rgba(36,91,69,.12)}
+    .nav{display:flex;align-items:center;justify-content:space-between;gap:20px;min-height:66px}
+    .brand{text-decoration:none;font-weight:850;letter-spacing:.08em;text-transform:uppercase}.brand span{color:var(--gold)}
+    .links{display:flex;gap:18px;flex-wrap:wrap}.links a{text-decoration:none;color:var(--muted);font-weight:650;font-size:.9rem}.links a:hover{color:var(--green)}
+    .hero{padding:86px 0 58px}
+    .eyebrow{color:var(--green2);font-weight:850;text-transform:uppercase;letter-spacing:.18em;font-size:.76rem}
+    h1{font-size:clamp(3.2rem,9vw,7rem);line-height:.9;letter-spacing:-.055em;margin:14px 0 24px;max-width:940px}
+    .lead{font-size:clamp(1.18rem,2.2vw,1.55rem);max-width:780px;color:#3f574c}
+    .hero-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:30px}
+    .button{display:inline-flex;align-items:center;justify-content:center;padding:12px 18px;border-radius:999px;text-decoration:none;font-weight:800;border:1px solid var(--green)}
+    .button.primary{background:var(--green);color:white}.button.secondary{background:transparent;color:var(--green)}
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:52px}
+    .stat{background:var(--paper2);border:1px solid var(--line);padding:18px;border-radius:18px;box-shadow:0 12px 30px rgba(33,54,43,.05)}
+    .stat b{display:block;font-size:1.5rem;color:var(--green)}.stat span{color:var(--muted);font-size:.9rem}
+    section{padding:68px 0;border-top:1px solid rgba(23,50,40,.1)}
+    .section-head{display:grid;grid-template-columns:220px 1fr;gap:36px;margin-bottom:34px}
+    .section-head h2{margin:0;font-size:clamp(2rem,4vw,3.4rem);line-height:1}.section-head p{margin:0;color:var(--muted);max-width:760px}
+    .philosophy{background:var(--green);color:white;border-radius:28px;padding:42px;box-shadow:var(--shadow)}
+    .philosophy blockquote{font-family:Georgia,serif;font-size:clamp(1.8rem,4vw,3.3rem);line-height:1.14;margin:0 0 22px;max-width:900px}
+    .philosophy p{color:#dce8e2;max-width:830px;margin:0}
+    .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+    .card{background:var(--paper2);border:1px solid var(--line);border-radius:22px;padding:24px;box-shadow:0 16px 45px rgba(30,52,42,.07)}
+    .card .tag{color:var(--gold);font-size:.75rem;font-weight:850;letter-spacing:.13em;text-transform:uppercase}
+    .card h3{font-size:1.45rem;line-height:1.15;margin:8px 0 12px}.card p{color:var(--muted);margin:0}
+    .timeline{display:grid;gap:14px}
+    .role{display:grid;grid-template-columns:190px 1fr;gap:24px;padding:24px 0;border-bottom:1px solid var(--line)}
+    .role:last-child{border-bottom:0}.role .when{color:var(--gold);font-weight:850}.role h3{margin:0 0 6px;font-size:1.35rem}.role p{margin:0;color:var(--muted)}
+    .evidence{display:grid;grid-template-columns:1.15fr .85fr;gap:18px}
+    .quote{background:#fff7e9;border:1px solid #ead6b5;border-radius:22px;padding:28px}
+    .quote strong{display:block;color:#8a6122;margin-bottom:10px}.quote p{font-family:Georgia,serif;font-size:1.35rem;line-height:1.45;margin:0}
+    .list{display:grid;gap:12px}.point{padding:18px;border-left:4px solid var(--green);background:var(--paper2);border-radius:0 14px 14px 0}.point b{display:block;margin-bottom:4px}.point span{color:var(--muted)}
+    .credentials{display:grid;grid-template-columns:1fr 1fr;gap:20px}.credentials ul{margin:10px 0 0;padding-left:20px;color:var(--muted)}
+    .contact{background:#10281f;color:white;border-radius:30px;padding:44px;display:grid;grid-template-columns:1fr auto;gap:24px;align-items:center}
+    .contact h2{margin:0 0 8px;font-size:clamp(2rem,4vw,3.4rem)}.contact p{margin:0;color:#c9ddd4}.contact .button{border-color:#e9c884;color:#10281f;background:#e9c884}
+    footer{padding:38px 0 56px;color:var(--muted);font-size:.9rem}.foot{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
+    @media(max-width:820px){.links{display:none}.stats,.grid3{grid-template-columns:1fr 1fr}.section-head,.role,.evidence,.credentials,.contact{grid-template-columns:1fr}.hero{padding-top:58px}.contact{align-items:start}}
+    @media(max-width:560px){.stats,.grid3{grid-template-columns:1fr}h1{font-size:clamp(3rem,16vw,5rem)}.philosophy,.contact{padding:28px}.wrap{width:min(100% - 22px,1120px)}}
+  </style>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap nav">
+      <a class="brand" href="./">Ted E. <span>Sim</span></a>
+      <nav class="links" aria-label="Portfolio navigation">
+        <a href="#philosophy">Philosophy</a><a href="#experience">Experience</a><a href="#practice">Practice</a><a href="#evidence">Evidence</a><a href="#contact">Contact</a><a href="../">EBATO ↗</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="wrap hero">
+      <div class="eyebrow">Science Educator • New York City</div>
+      <h1>Curiosity first.<br>Science that sticks.</h1>
+      <p class="lead">I design hands-on science experiences that make difficult ideas feel concrete, relevant, and worth investigating — from middle-school cells and chemistry to high-school anatomy and physiology.</p>
+      <div class="hero-actions">
+        <a class="button primary" href="#practice">Explore my teaching</a>
+        <a class="button secondary" href="mailto:TedESim@gmail.com">Contact me</a>
+      </div>
+      <div class="stats" aria-label="Portfolio highlights">
+        <div class="stat"><b>3 years</b><span>NYC science teaching</span></div>
+        <div class="stat"><b>7–12</b><span>Grade-band experience</span></div>
+        <div class="stat"><b>Biology + A&P</b><span>Deep life-science background</span></div>
+        <div class="stat"><b>Inquiry-led</b><span>Hands-on, student-centered practice</span></div>
+      </div>
+    </div>
+
+    <section id="philosophy"><div class="wrap">
+      <div class="section-head"><div class="eyebrow">Teaching Philosophy</div><div><h2>Make learning feel alive.</h2><p>My classroom philosophy centers on relevance, curiosity, belonging, and the belief that rigorous learning works best when students feel safe enough to wonder out loud.</p></div></div>
+      <div class="philosophy">
+        <blockquote>“All students can learn anything if it feels interesting and relevant to them.”</blockquote>
+        <p>I prioritize hands-on inquiry because tactile, spatial, and collaborative experiences create more ways for students to connect new ideas to what they already know. Just as important: students should feel welcomed, supported, and respected in the room where we ask them to take intellectual risks.</p>
+      </div>
+    </div></section>
+
+    <section id="experience"><div class="wrap">
+      <div class="section-head"><div class="eyebrow">Experience</div><div><h2>Across classrooms and age groups.</h2><p>My work spans middle-school general science, high-school biology, anatomy & physiology, and health education, with experience adapting instruction for honors, general-education, multilingual/ELL, and Regents-repeat learners.</p></div></div>
+      <div class="timeline">
+        <div class="role"><div class="when">2025–2026</div><div><h3>Science Teacher, Grade 7</h3><p>I.S. 61 Leonardo Da Vinci Intermediate School — hands-on inquiry lessons for honors, general-education, and multilingual/ELL classes; founder/advisor of the Video Game Club and science-event contributor.</p></div></div>
+        <div class="role"><div class="when">2024–2025</div><div><h3>Anatomy & Physiology Teacher, Grades 11–12</h3><p>Flushing High School — built and launched a new hands-on Anatomy & Physiology curriculum for a newly created course supporting the school’s emerging medical track.</p></div></div>
+        <div class="role"><div class="when">2023–2025</div><div><h3>Biology Teacher, Grades 9–12</h3><p>Flushing High School — taught New Visions Biology and designed targeted curriculum for students repeating the Regents course while preserving scientific accuracy and conceptual depth.</p></div></div>
+        <div class="role"><div class="when">Summer 2023</div><div><h3>Health Teacher, Grades 7–8</h3><p>I.S. 61 Summer Rising — created health curriculum focused on helping students make informed, health-conscious choices as they moved toward high school.</p></div></div>
+      </div>
+    </div></section>
+
+    <section id="practice"><div class="wrap">
+      <div class="section-head"><div class="eyebrow">Featured Practice</div><div><h2>Learning by doing.</h2><p>Three examples of how I turn abstract science into experiences students can manipulate, discuss, test, and remember.</p></div></div>
+      <div class="grid3">
+        <article class="card"><div class="tag">Cells • Microscopy</div><h3>Microscope Certification Lab</h3><p>Students choose specimens, predict what they will see, learn microscope parts and safety, pass a “certification” check, rotate through real specimens, sketch observations, and reflect like practicing scientists.</p></article>
+        <article class="card"><div class="tag">Chemistry • Modeling</div><h3>Balancing Reactions with Artemis I</h3><p>An Artemis I launch anchors a two-period investigation into conservation of matter. Students use molecule cards and models to reason about coefficients, atom counts, and why subscripts cannot be changed.</p></article>
+        <article class="card"><div class="tag">Anatomy • Project-Based</div><h3>Movement, Muscles & Joint Models</h3><p>Students connect anatomical vocabulary to real movement through resistance-band demonstrations, then apply that understanding to collaborative joint-model design and assessment criteria.</p></article>
+      </div>
+    </div></section>
+
+    <section id="evidence"><div class="wrap">
+      <div class="section-head"><div class="eyebrow">Evidence</div><div><h2>What observers and students noticed.</h2><p>Formal observation feedback and student letters consistently point to strong content knowledge, an encouraging classroom culture, calm redirection, and a willingness to make science active and memorable.</p></div></div>
+      <div class="evidence">
+        <div class="list">
+          <div class="point"><b>Content mastery through modeling</b><span>An evaluator highlighted the integration of anatomy and biomechanics with live physical modeling to deepen understanding of muscle movement and joint function.</span></div>
+          <div class="point"><b>Positive respect and rapport</b><span>Observation notes described a consistently positive classroom tone where students were comfortable asking questions and taking risks without fear of judgment.</span></div>
+          <div class="point"><b>Student-centered ambition</b><span>Evaluators recognized the value of student ownership in project and rubric design while offering specific next steps that informed continued professional growth.</span></div>
+        </div>
+        <div class="quote"><strong>Student voice</strong><p>“You made science and health interesting, exciting, and meaningful… You always encouraged us to ask questions.”</p></div>
+      </div>
+    </div></section>
+
+    <section><div class="wrap">
+      <div class="section-head"><div class="eyebrow">Education & Credentials</div><div><h2>Built on science and pedagogy.</h2><p>A life-science foundation paired with graduate preparation in adolescent education.</p></div></div>
+      <div class="credentials">
+        <div class="card"><div class="tag">Education</div><h3>Academic background</h3><ul><li>M.A./Master of Adolescent Education — Pace University, 2023–2025</li><li>B.A. Cell Biology & Neuroscience — Rutgers University, New Brunswick</li><li>Minors: Psychology & Cognitive Science</li><li>A.S. Mathematics & Natural Sciences — Bergen Community College</li></ul></div>
+        <div class="card"><div class="tag">Credentials & Languages</div><h3>Prepared to connect</h3><ul><li>New York State Biology / Adolescent Biology Education, Grades 7–12</li><li>English — native</li><li>Korean — fluent</li><li>Spanish — intermediate</li><li>American Sign Language — beginner</li></ul></div>
+      </div>
+    </div></section>
+
+    <section id="contact"><div class="wrap">
+      <div class="contact"><div><h2>Let’s build a classroom students want to enter.</h2><p>Available for science-education opportunities, curriculum work, and conversations about inquiry-based learning.</p></div><a class="button" href="mailto:TedESim@gmail.com">TedESim@gmail.com</a></div>
+    </div></section>
+  </main>
+
+  <footer><div class="wrap foot"><span>© 2026 Ted E. Sim</span><span><a href="tel:+19175759768">917-575-9768</a> · Queens, New York · <a href="../">EBATO home</a></span></div></footer>
+</body>
+</html>
