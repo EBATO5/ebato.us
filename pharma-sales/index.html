@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Pharmaceutical and neuroscience sales portfolio of Ted E. Sim — science communicator, educator, and business-development candidate.">
+  <title>Ted E. Sim | Pharmaceutical & Neuroscience Sales</title>
+  <style>
+    :root{
+      --navy:#08111e;--navy2:#0d1b2d;--panel:#10243b;--line:#25415f;
+      --text:#edf6ff;--muted:#9fb3c8;--cyan:#58d7e8;--blue:#6b91ff;--lime:#b9e774;
+      --shadow:0 28px 85px rgba(0,0,0,.35)
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth;background:var(--navy)}
+    body{margin:0;color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.62;background:
+      radial-gradient(circle at 90% 0,rgba(88,215,232,.11),transparent 32%),
+      radial-gradient(circle at 8% 22%,rgba(107,145,255,.10),transparent 28%),
+      var(--navy)}
+    a{color:inherit}.wrap{width:min(1140px,calc(100% - 32px));margin:auto}
+    .top{position:sticky;top:0;z-index:20;background:rgba(8,17,30,.88);backdrop-filter:blur(16px);border-bottom:1px solid rgba(88,215,232,.12)}
+    .nav{min-height:66px;display:flex;align-items:center;justify-content:space-between;gap:22px}
+    .brand{text-decoration:none;font-weight:900;letter-spacing:.08em;text-transform:uppercase}.brand span{color:var(--cyan)}
+    .links{display:flex;gap:18px;flex-wrap:wrap}.links a{text-decoration:none;color:var(--muted);font-weight:700;font-size:.9rem}.links a:hover{color:var(--cyan)}
+    .hero{padding:94px 0 68px;display:grid;grid-template-columns:1.18fr .82fr;gap:52px;align-items:center}
+    .eyebrow{font-size:.76rem;text-transform:uppercase;letter-spacing:.18em;color:var(--cyan);font-weight:900}
+    h1{font-size:clamp(3.15rem,7.5vw,6.6rem);line-height:.92;letter-spacing:-.055em;margin:14px 0 22px}
+    .lead{font-size:clamp(1.15rem,2vw,1.45rem);color:#c4d6e8;max-width:760px}
+    .actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:30px}.button{display:inline-flex;padding:12px 18px;border-radius:10px;text-decoration:none;font-weight:850;border:1px solid var(--cyan)}.button.primary{background:var(--cyan);color:#06111c}.button.secondary{color:var(--cyan)}
+    .signal{background:linear-gradient(145deg,rgba(16,36,59,.96),rgba(9,23,40,.94));border:1px solid var(--line);border-radius:24px;padding:24px;box-shadow:var(--shadow)}
+    .signal .kicker{font-size:.75rem;color:var(--lime);font-weight:900;letter-spacing:.13em;text-transform:uppercase;margin-bottom:16px}
+    .metric{padding:15px 0;border-bottom:1px solid var(--line)}.metric:last-child{border:0}.metric b{display:block;font-size:1.25rem}.metric span{color:var(--muted);font-size:.9rem}
+    section{padding:70px 0;border-top:1px solid rgba(159,179,200,.11)}
+    .section-head{display:grid;grid-template-columns:220px 1fr;gap:36px;margin-bottom:34px}.section-head h2{margin:0;font-size:clamp(2rem,4vw,3.5rem);line-height:1}.section-head p{margin:0;color:var(--muted);max-width:760px}
+    .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:15px}.card{background:rgba(16,36,59,.77);border:1px solid var(--line);border-radius:18px;padding:22px}.card .num{color:var(--cyan);font-size:.75rem;font-weight:900;letter-spacing:.14em}.card h3{font-size:1.25rem;margin:8px 0 10px}.card p{color:var(--muted);margin:0}
+    .competencies{display:flex;gap:10px;flex-wrap:wrap}.chip{padding:9px 12px;border:1px solid #315776;border-radius:999px;background:rgba(88,215,232,.035);color:#cfe2f4;font-size:.9rem}
+    .timeline{display:grid;gap:0}.role{display:grid;grid-template-columns:185px 1fr;gap:24px;padding:26px 0;border-bottom:1px solid var(--line)}.role:last-child{border-bottom:0}.role .when{color:var(--lime);font-weight:900}.role h3{margin:0 0 3px;font-size:1.35rem}.role .org{color:var(--cyan);font-weight:750;margin-bottom:9px}.role p{color:var(--muted);margin:0}
+    .territory{display:grid;grid-template-columns:1fr 1fr;gap:18px}.callout{padding:30px;border-radius:22px;border:1px solid var(--line);background:linear-gradient(145deg,rgba(88,215,232,.07),rgba(107,145,255,.035))}.callout h3{font-size:1.5rem;margin:0 0 10px}.callout p{margin:0;color:var(--muted)}
+    .education{display:grid;grid-template-columns:1fr 1fr;gap:18px}.education h3{margin-top:0}.education ul{padding-left:20px;color:var(--muted)}
+    .contact{display:grid;grid-template-columns:1fr auto;align-items:center;gap:24px;padding:42px;border:1px solid #376789;border-radius:24px;background:linear-gradient(120deg,#112b45,#0c1e32)}.contact h2{margin:0 0 8px;font-size:clamp(2rem,4vw,3.4rem)}.contact p{margin:0;color:#b9ccdf}.contact .button{background:var(--cyan);color:#06111c}
+    footer{padding:40px 0 58px;color:var(--muted);font-size:.9rem}.foot{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
+    @media(max-width:880px){.links{display:none}.hero,.section-head,.role,.territory,.education,.contact{grid-template-columns:1fr}.grid4{grid-template-columns:1fr 1fr}.hero{padding-top:60px}.contact{align-items:start}}
+    @media(max-width:560px){.grid4{grid-template-columns:1fr}.wrap{width:min(100% - 22px,1140px)}h1{font-size:clamp(3rem,15vw,5rem)}.contact{padding:28px}}
+  </style>
+</head>
+<body>
+  <header class="top"><div class="wrap nav"><a class="brand" href="./">Ted E. <span>Sim</span></a><nav class="links" aria-label="Portfolio navigation"><a href="#value">Value</a><a href="#experience">Experience</a><a href="#territory">Territory Fit</a><a href="#education">Education</a><a href="#contact">Contact</a><a href="../">EBATO ↗</a></nav></div></header>
+
+  <main>
+    <div class="wrap hero">
+      <div>
+        <div class="eyebrow">Pharmaceutical • Neuroscience • Healthcare Sales</div>
+        <h1>Science fluency.<br>Human connection.</h1>
+        <p class="lead">I’m a Queens-based science communicator and entrepreneur bringing a B.A. in Cell Biology & Neuroscience, graduate training in education, three years of audience-facing science communication, and hands-on business-development experience to territory-based healthcare sales.</p>
+        <div class="actions"><a class="button primary" href="#value">Why I fit</a><a class="button secondary" href="mailto:TedESim@gmail.com">Contact me</a></div>
+      </div>
+      <aside class="signal" aria-label="Candidate snapshot">
+        <div class="kicker">Candidate Snapshot</div>
+        <div class="metric"><b>B.A. Cell Biology & Neuroscience</b><span>Rutgers University • Psychology & Cognitive Science minors</span></div>
+        <div class="metric"><b>3 years of science communication</b><span>Biology, anatomy, physiology, disease, and health</span></div>
+        <div class="metric"><b>Founder / business development</b><span>Outreach, stakeholder messaging, compliance planning, unit economics</span></div>
+        <div class="metric"><b>English • Korean • Spanish</b><span>Native • Fluent • Intermediate</span></div>
+      </aside>
+    </div>
+
+    <section id="value"><div class="wrap">
+      <div class="section-head"><div class="eyebrow">Commercial Value</div><div><h2>A technical story, translated clearly.</h2><p>I do not claim prior pharmaceutical-sales experience. I bring the adjacent skills that matter: scientific credibility, audience adaptation, relationship development, disciplined follow-through, and the ability to learn complex material quickly and explain it accurately.</p></div></div>
+      <div class="grid4">
+        <article class="card"><div class="num">01 / SCIENCE</div><h3>Scientific fluency</h3><p>Neuroscience, human biology, anatomy, physiology, disease, and health concepts are familiar working territory — not vocabulary I am meeting for the first time.</p></article>
+        <article class="card"><div class="num">02 / MESSAGE</div><h3>Adaptive communication</h3><p>Years of adjusting technical explanations in real time for honors, general, multilingual, and struggling learners translate directly to audience-specific messaging.</p></article>
+        <article class="card"><div class="num">03 / RELATIONSHIPS</div><h3>Rapport & stakeholder engagement</h3><p>Teaching and entrepreneurship both reward listening, trust, responsiveness, and understanding what matters to the person in front of you.</p></article>
+        <article class="card"><div class="num">04 / OWNERSHIP</div><h3>Business-development mindset</h3><p>Building an independent venture required outreach, follow-up, regulatory planning, deadlines, pricing, research, and decisions without waiting for someone else to move first.</p></article>
+      </div>
+    </div></section>
+
+    <section><div class="wrap">
+      <div class="section-head"><div class="eyebrow">Core Competencies</div><div><h2>Built for scientific selling.</h2><p>A blend of technical understanding, communication, business development, and execution.</p></div></div>
+      <div class="competencies">
+        <span class="chip">Neuroscience & Human Biology</span><span class="chip">Scientific Communication</span><span class="chip">Relationship Development</span><span class="chip">Stakeholder Engagement</span><span class="chip">Presentations & Training</span><span class="chip">Business Development & Outreach</span><span class="chip">Data-Informed Planning</span><span class="chip">Digital Communication</span><span class="chip">Cross-Functional Collaboration</span><span class="chip">Compliance Mindset</span><span class="chip">Adaptable Messaging</span>
+      </div>
+    </div></section>
+
+    <section id="experience"><div class="wrap">
+      <div class="section-head"><div class="eyebrow">Experience</div><div><h2>Communication, ownership, execution.</h2><p>My background combines scientific presentation experience with direct founder-level responsibility for business outreach and planning.</p></div></div>
+      <div class="timeline">
+        <div class="role"><div class="when">2026–Present</div><div><h3>Founder / Business Development</h3><div class="org">K-Crunchies — Independent Venture, Queens, New York</div><p>Developed the venture from concept through brand and website launch; researched pricing and unit economics; conducted outreach to host locations and community partners; tailored value propositions and follow-up; and managed licensing, food-safety, and compliance planning across multiple workstreams.</p></div></div>
+        <div class="role"><div class="when">2025–2026</div><div><h3>Science Teacher, Grade 7</h3><div class="org">I.S. 61 Leonardo Da Vinci Intermediate School — New York City</div><p>Delivered complex scientific content to honors, general-education, and multilingual/ELL audiences, adapting messaging and engagement strategies while partnering with coaches, administrators, and colleagues around performance and outcomes.</p></div></div>
+        <div class="role"><div class="when">2023–2025</div><div><h3>Science Educator — Anatomy & Physiology / Biology</h3><div class="org">Flushing High School — New York City</div><p>Built and launched a new Anatomy & Physiology course for an emerging medical track, taught biology, and used feedback and performance data to adjust explanations, materials, and instructional strategy.</p></div></div>
+      </div>
+    </div></section>
+
+    <section id="territory"><div class="wrap">
+      <div class="section-head"><div class="eyebrow">Territory Fit</div><div><h2>How I would approach the work.</h2><p>My founder experience sharpened the habits I would bring into a territory: preparation before outreach, tailoring the message, documenting follow-up, learning from response patterns, and staying compliant while moving opportunities forward.</p></div></div>
+      <div class="territory">
+        <div class="callout"><h3>Listen → tailor → follow through.</h3><p>I am comfortable changing the depth, framing, and language of a technical explanation without changing its accuracy. That same discipline applies to understanding stakeholder needs and making every interaction useful.</p></div>
+        <div class="callout"><h3>Own the pipeline.</h3><p>Independent business development taught me to build lead lists, initiate contact, keep track of responses, research constraints, and continue the work even when the answer is “not yet.”</p></div>
+      </div>
+    </div></section>
+
+    <section id="education"><div class="wrap">
+      <div class="section-head"><div class="eyebrow">Education</div><div><h2>Science first. Communication on top.</h2><p>A technical undergraduate foundation reinforced by graduate training in how people learn, process, and retain complex information.</p></div></div>
+      <div class="education">
+        <div class="card"><h3>Rutgers University — New Brunswick</h3><ul><li>B.A., Cell Biology & Neuroscience, 2010–2013</li><li>Minors: Psychology and Cognitive Science</li></ul></div>
+        <div class="card"><h3>Pace University</h3><ul><li>Master of Adolescent Education, 2023–2025</li><li>New York State Biology / Adolescent Biology Education</li></ul></div>
+      </div>
+    </div></section>
+
+    <section id="contact"><div class="wrap">
+      <div class="contact"><div><h2>Ready to talk territory, science, and people.</h2><p>Open to pharmaceutical, biotech, neuroscience, medical-device, and healthcare business-development opportunities in the New York market.</p></div><div><a class="button" href="mailto:TedESim@gmail.com">TedESim@gmail.com</a></div></div>
+    </div></section>
+  </main>
+
+  <footer><div class="wrap foot"><span>© 2026 Ted E. Sim</span><span><a href="tel:+19175759768">917-575-9768</a> · Queens, New York · <a href="../teaching-portfolio/">Teaching portfolio</a> · <a href="../">EBATO home</a></span></div></footer>
+</body>
+</html>
