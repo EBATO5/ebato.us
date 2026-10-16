@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
 <meta name="theme-color" content="#080e17" />
-<title>STRIKE VECTOR v1.3.4 — Zoomable Skill Web</title>
+<title>STRIKE VECTOR v1.3.5 — Regenerating Arena</title>
 <style>
 :root{color-scheme:dark;--bg:#080e17;--panel:#101b28;--border:#263746;--mint:#74f7d4;--text:#eef6f7;--muted:#8da4b3;--orange:#ffbd75}
 *{box-sizing:border-box}html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text)}
@@ -241,7 +241,7 @@ const ui={wave:document.getElementById('wave'),kills:document.getElementById('ki
 let sw=innerWidth,sh=innerHeight,dpr=1,renderedStill=false,cam={x:0,y:0},clock=0,last=0,started=false,paused=true,ended=false,fireHeld=false,altHeld=false,secondaryPending=false,altStart=0,mouse={x:innerWidth*.64,y:innerHeight*.5,active:false},keys=new Set(),lastShiftTap=-Infinity;
 const isCrouching=()=>keys.has('AltLeft')||keys.has('AltRight');
 const WORLD={w:2500,h:1700},TAU=Math.PI*2,clamp=(v,l,h)=>Math.max(l,Math.min(h,v)),rand=(a,b)=>a+Math.random()*(b-a),dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
-let player,enemies=[],bullets=[],grenades=[],knives=[],particles=[],texts=[],wave=0,kills=0,score=0,credits=0,shopOpen=false,shopMode="between",toSpawn=0,spawnTimer=0,nextWaveTimer=0,bannerUntil=0,shake=0,obstacles=[],coverSpawnTimer=14;
+let player,enemies=[],bullets=[],grenades=[],knives=[],particles=[],texts=[],wave=0,kills=0,score=0,credits=0,shopOpen=false,shopMode="between",toSpawn=0,spawnTimer=0,nextWaveTimer=0,bannerUntil=0,shake=0,obstacles=[],coverSpawnTimer=5;
 let shopTab='gun',selectedTreeNode='core',treePopupOpen=false,treePan={x:0,y:0},treeScale=1,treePanReady=false,treeDrag=null,treeSuppressUntil=0;let soundOn=true,ac=null,activeVoices=0;const soundTimes=Object.create(null);function sound(kind){if(!soundOn||activeVoices>=8)return;const now=performance.now(),limit=(kind==='hit'?65:kind==='pistol'||kind==='rifle'?36:kind==='grenade'?75:22);if(now-(soundTimes[kind]||-1000)<limit)return;soundTimes[kind]=now;try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended')ac.resume();const o=ac.createOscillator(),g=ac.createGain(),n=ac.currentTime;let f=220,d=.06,ty='triangle',vol=.027;if(kind==='pistol'){f=260;d=.085;ty='triangle';vol=.030}else if(kind==='buy'){f=650;d=.13;ty='sine';vol=.025}else if(kind==='rifle'){f=155;d=.055;ty='sawtooth';vol=.025}else if(kind==='sniper'){f=74;d=.22;ty='sawtooth';vol=.055}else if(kind==='grenade'){f=82;d=.36;ty='sawtooth';vol=.065}else if(kind==='knife'){f=450;d=.08}else if(kind==='hit'){f=90;d=.10;vol=.016}else if(kind==='dodge'){f=400;d=.13;vol=.020}else if(kind==='dry'){f=350;d=.035;vol=.014}o.type=ty;o.frequency.setValueAtTime(f,n);o.frequency.exponentialRampToValueAtTime(Math.max(28,f*.35),n+d);g.gain.setValueAtTime(vol,n);g.gain.exponentialRampToValueAtTime(.0001,n+d);o.connect(g);g.connect(ac.destination);activeVoices++;o.addEventListener('ended',()=>{activeVoices=Math.max(0,activeVoices-1);o.disconnect();g.disconnect()},{once:true});o.start(n);o.stop(n+d+.01)}catch(e){activeVoices=Math.max(0,activeVoices-1)}}
 function resize(){
  sw=innerWidth;sh=innerHeight;
@@ -263,7 +263,7 @@ function reset(){
   roll:0,rollMax:.78,rollMode:'slide',rollDx:0,rollDy:0,rollCd:0,invul:0,slideTurn:0,fireCd:0,secondaryCd:0,slash:0,slashDir:0,slashHits:new Set(),
   reload:0,gun:14,gunReserve:Infinity,grenades:5,grenadeReserve:Infinity,grenadeReload:0,throwKnives:Infinity,step:0,meleeCd:0,slashKind:'knife',triggerQueue:0,triggerExpiry:0,fireMode:'semi',burstShots:0};
  enemies=[];bullets=[];grenades=[];knives=[];particles=[];texts=[];clock=0;wave=0;kills=0;score=0;credits=0;
- shopOpen=false;shopTab='gun';shopMode='between';coverSpawnTimer=12;toSpawn=0;spawnTimer=0;nextWaveTimer=1.1;shake=0;
+ shopOpen=false;shopTab='gun';shopMode='between';coverSpawnTimer=4.5;toSpawn=0;spawnTimer=0;nextWaveTimer=1.1;shake=0;
  fireHeld=false;altHeld=false;secondaryPending=false;ended=false;keys.clear();cam.x=player.x-sw/2;cam.y=player.y-sh/2;
 }
 const RECEIVERS=[
@@ -877,7 +877,7 @@ function damageCover(o,damage,x,y){
  }
  if(lost<=0)return;
  o.hp=Math.max(0,o.hp-lost);o.hit=.16;if(removed)o.dirty=true;
- if(o.hp<1){obstacles.splice(obstacles.indexOf(o),1);burst(ix,iy,Math.min(20,4+removed),'#b8cbc9',155);}
+ if(o.hp<1){const idx=obstacles.indexOf(o);if(idx>=0)obstacles.splice(idx,1);coverSpawnTimer=Math.min(coverSpawnTimer,1.2);burst(ix,iy,Math.min(20,4+removed),'#b8cbc9',155);}
  else if(removed&&Math.random()<.75)burst(ix,iy,Math.min(7,2+removed),'#b8cbc9',100);
 }
 function repaintCover(o){
@@ -924,7 +924,7 @@ function rayCoverDistance(x,y,dx,dy,length){
 
 function spawnCover(n=1){
  let created=0;
- for(let i=0;i<n&&obstacles.length<29;i++){
+ for(let i=0;i<n&&obstacles.length<30;i++){
   for(let attempt=0;attempt<80;attempt++){
    const a=rand(0,TAU),d=rand(250,780),k=Math.random()<.70?'crate':'wall',w=Math.round(rand(64,122)),h=Math.round(rand(60,109));
    const x=clamp(player.x+Math.cos(a)*d-w/2,95,WORLD.w-w-95),y=clamp(player.y+Math.sin(a)*d-h/2,95,WORLD.h-h-95);
@@ -1057,8 +1057,23 @@ function smallExplosion(x,y,b,skip){
 }
 function spawnEnemy(){let x,y,tries=0;do{const a=rand(0,TAU),r=rand(Math.max(sw,sh)*.66,Math.max(sw,sh)*.84+180);x=clamp(player.x+Math.cos(a)*r,75,WORLD.w-75);y=clamp(player.y+Math.sin(a)*r,75,WORLD.h-75);tries++}while((blocked(x,y,23)||Math.hypot(x-player.x,y-player.y)<420)&&tries<75);if(blocked(x,y,23))return;const rusher=Math.random()<clamp(.47+wave*.017,.47,.70);enemies.push({x,y,r:rusher?17:19,type:rusher?'rusher':'gunner',hp:rusher?65+wave*5:88+wave*6,maxHp:rusher?65+wave*5:88+wave*6,spd:rusher?rand(140,160)+wave*3:rand(90,109)+wave*2,fire:rand(.3,1.7),flash:0,hitCd:0,sway:rand(0,TAU),dead:false})}
 
-function nextWave(){wave++;toSpawn=4+wave*3;spawnTimer=.15;nextWaveTimer=-1;player.hp=Math.min(100,player.hp+(wave===1?0:22));if(wave>1)refillWeapons();spawnCover(Math.min(3,1+Math.floor(wave/3)));coverSpawnTimer=rand(11,17);ui.banner.innerHTML=`INCOMING HOSTILES<strong>WAVE ${String(wave).padStart(2,'0')}</strong>`;ui.banner.classList.add('show');bannerUntil=clock+1.8}
-function update(dt){clock+=dt;shake=Math.max(0,shake-25*dt);if(ui.banner.classList.contains('show')&&clock>bannerUntil)ui.banner.classList.remove('show');if(nextWaveTimer>0){nextWaveTimer-=dt;if(nextWaveTimer<=0)nextWave()}if(wave>0){coverSpawnTimer-=dt;if(coverSpawnTimer<=0){spawnCover(Math.random()<.45?2:1);coverSpawnTimer=rand(12,19)}}for(const o of obstacles){o.hit=Math.max(0,(o.hit||0)-dt);o.newborn=Math.max(0,(o.newborn||0)-dt)}if(toSpawn>0){spawnTimer-=dt;if(spawnTimer<=0){if(enemies.length<48){spawnEnemy();toSpawn--;spawnTimer=clamp(1.0-wave*.047,.40,1.0)}else spawnTimer=.35}}
+function nextWave(){wave++;toSpawn=4+wave*3;spawnTimer=.15;nextWaveTimer=-1;player.hp=Math.min(100,player.hp+(wave===1?0:22));if(wave>1)refillWeapons();spawnCover(Math.min(4,2+Math.floor(wave/3)));coverSpawnTimer=rand(3.3,5.2);ui.banner.innerHTML=`INCOMING HOSTILES<strong>WAVE ${String(wave).padStart(2,'0')}</strong>`;ui.banner.classList.add('show');bannerUntil=clock+1.8}
+function update(dt){clock+=dt;shake=Math.max(0,shake-25*dt);if(ui.banner.classList.contains('show')&&clock>bannerUntil)ui.banner.classList.remove('show');if(nextWaveTimer>0){nextWaveTimer-=dt;if(nextWaveTimer<=0)nextWave()}if(wave>0){
+ coverSpawnTimer-=dt;
+ if(coverSpawnTimer<=0){
+  // Count mostly-destroyed walls as partial cover, not as fully intact blocks.
+  // This keeps damaged arenas from appearing empty even if a few scraps remain.
+  const intactCover=obstacles.reduce((sum,o)=>sum+o.hp/Math.max(1,o.maxHp),0);
+  const depleted=intactCover<10,low=intactCover<15;
+  // At most four new pieces in one pulse; fewer when the arena is healthy.
+  const requested=depleted?4:low?3:obstacles.length<22?2:1;
+  const created=spawnCover(requested);
+  // Heavily damaged maps replenish quickly. Healthy maps replenish calmly.
+  coverSpawnTimer=depleted?rand(1.6,2.5):low?rand(2.7,4.2):rand(5,7.2);
+  // If there isn't space to place all pieces, don't brute-force retry each frame.
+  if(created===0)coverSpawnTimer=Math.max(coverSpawnTimer,3.4);
+ }
+}for(const o of obstacles){o.hit=Math.max(0,(o.hit||0)-dt);o.newborn=Math.max(0,(o.newborn||0)-dt)}if(toSpawn>0){spawnTimer-=dt;if(spawnTimer<=0){if(enemies.length<48){spawnEnemy();toSpawn--;spawnTimer=clamp(1.0-wave*.047,.40,1.0)}else spawnTimer=.35}}
 const c=isCrouching(),run=(keys.has('ShiftLeft')||keys.has('ShiftRight'))&&!c,movingX=(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),movingY=(keys.has('KeyS')?1:0)-(keys.has('KeyW')?1:0),norm=Math.hypot(movingX,movingY)||1;player.angle=mouseAim();player.step+=dt*(run?15:c?4:9)*Math.min(1,Math.hypot(movingX,movingY));player.fireCd=Math.max(0,player.fireCd-dt);player.secondaryCd=Math.max(0,player.secondaryCd-dt);player.rollCd=Math.max(0,player.rollCd-dt);player.meleeCd=Math.max(0,player.meleeCd-dt);player.invul=Math.max(0,player.invul-dt);player.slash=Math.max(0,player.slash-dt);
 if(player.reload>0){player.reload-=dt;if(player.reload<=0){player.reload=0;const num=Math.min(clipSize()-player.gun,player.gunReserve);player.gun+=num;player.gunReserve-=num}}
 if(player.grenadeReload>0){player.grenadeReload-=dt;if(player.grenadeReload<=0){player.grenadeReload=0;const count=Math.min(grenadeClipSize()-player.grenades,player.grenadeReserve);player.grenades+=count;player.grenadeReserve-=count;sound('buy')}}
