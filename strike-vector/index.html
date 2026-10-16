@@ -1,0 +1,1241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
+<meta name="theme-color" content="#080e17" />
+<title>STRIKE VECTOR v1.3.4 — Zoomable Skill Web</title>
+<style>
+:root{color-scheme:dark;--bg:#080e17;--panel:#101b28;--border:#263746;--mint:#74f7d4;--text:#eef6f7;--muted:#8da4b3;--orange:#ffbd75}
+*{box-sizing:border-box}html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text)}
+#game{display:block;width:100vw;height:100vh;touch-action:none;cursor:none}
+#vignette{position:fixed;pointer-events:none;inset:0;background:radial-gradient(ellipse at 50% 40%,transparent 40%,rgba(0,0,0,.25) 100%)}
+#hud{position:fixed;pointer-events:none;inset:0;display:flex;flex-direction:column;justify-content:space-between;padding:23px 27px 25px;transition:opacity .2s}
+.topbar,.bottom{display:flex;align-items:flex-start;justify-content:space-between;gap:20px}
+.brand{font-weight:900;letter-spacing:.18em;font-size:19px}.brand span{color:var(--mint)}.subbrand{font-size:10px;color:#7d98a9;letter-spacing:.26em;margin-top:3px}
+.topstats{display:flex;gap:29px;padding-top:4px;text-align:right}.statlabel{font-size:10px;font-weight:700;letter-spacing:.2em;color:#7c96a6}.statnum{font-weight:800;font-size:23px;font-variant-numeric:tabular-nums;line-height:1.4}
+.bottom{align-items:flex-end}.leftpanel,.rightpanel{background:linear-gradient(115deg,rgba(13,24,36,.94),rgba(12,22,32,.72));border:1px solid rgba(102,150,159,.22);box-shadow:0 14px 35px rgba(0,0,0,.22);border-radius:13px;padding:15px 19px}
+.leftpanel{width:285px}.rightpanel{min-width:265px;text-align:right}.micro{color:#85a5b2;font-size:10px;font-weight:800;letter-spacing:.16em}.hpnum{font-size:20px;font-weight:850;font-variant-numeric:tabular-nums}.hpbar{height:7px;background:#233846;border-radius:10px;overflow:hidden;margin:9px 0 11px}.hpfill{height:100%;width:100%;background:linear-gradient(90deg,#48bda7,#8effdb);transition:width .13s}.dodge{display:flex;justify-content:space-between;gap:14px;font-size:11px;color:#a4b8c1}.dodge b{color:#c5faf0}
+.weapon{font-weight:900;font-size:20px;letter-spacing:.05em;margin:4px 0}.ammo{font-weight:900;font-size:23px;font-variant-numeric:tabular-nums;color:var(--mint)}.ammo small{font-size:13px;color:#9baebb;font-weight:600}.alt{color:#f4c588;font-size:11px;min-height:17px;margin-top:6px}
+.controls{position:absolute;bottom:140px;left:50%;transform:translateX(-50%);display:flex;gap:14px;justify-content:center;align-items:center;padding:9px 14px;background:rgba(9,19,28,.6);border-radius:30px;border:1px solid rgba(141,182,198,.15);white-space:nowrap}.controls span{font-size:11px;color:#95aebb}.controls b{font-size:10px;padding:3px 5px;border:1px solid #577080;border-radius:4px;color:#e5f4fa;margin-right:5px}
+#banner{position:fixed;pointer-events:none;top:17%;left:50%;transform:translate(-50%,-12px);opacity:0;transition:opacity .25s,transform .25s;text-align:center;font-size:12px;font-weight:900;letter-spacing:.3em;color:var(--mint);text-shadow:0 2px 20px rgba(25,254,203,.25)}#banner.show{opacity:1;transform:translate(-50%,0)}#banner strong{display:block;font-size:36px;line-height:1.3;letter-spacing:.09em;color:#f6fffa}
+#screen{position:fixed;inset:0;background:rgba(5,13,20,.70);display:flex;align-items:center;justify-content:center;padding:20px;z-index:5}#screen.hidden{display:none}
+.modal{max-width:640px;width:100%;border:1px solid #294355;background:linear-gradient(150deg,#132330f8,#0b1724f9);box-shadow:0 24px 95px rgba(0,0,0,.55);border-radius:19px;padding:40px 45px 35px;position:relative;overflow:hidden}
+#shop{display:none;margin-top:16px}#shop.show{display:block}.modal.shop-mode{max-width:1000px;max-height:calc(100vh - 32px);overflow-y:auto;padding:28px 32px 24px}.modal.shop-mode h1{font-size:38px;margin:8px 0}.modal.shop-mode .intro{margin-bottom:10px;max-width:850px}.shop-summary{display:flex;gap:15px;align-items:center;justify-content:space-between;background:#102e38;padding:13px 17px;border:1px solid #387365;border-radius:10px;margin-bottom:13px;flex-wrap:wrap}.shop-bank{font-weight:900;font-size:21px;color:#7fffd7}.shop-bank small{font-size:10px;letter-spacing:.1em;color:#a2c1c3}.shop-message{font-size:12px;color:#b9d6d2}.shop-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.shop-card{min-width:0;border:1px solid #2e4d59;background:#0c1a26;border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px}.shop-card.owned{border-color:#448a7f}.shop-card h3{font-size:15px;letter-spacing:.04em;margin:0}.shop-card p{font-size:11px;color:#9bb5bc;line-height:1.5;margin:0 0 4px;min-height:35px}.shop-owned{font-size:10px;font-weight:900;letter-spacing:.13em;color:#84e7cc}.shop-unowned{color:#d0bfa5}.shop-buy{display:block;width:100%;padding:10px 7px;border:1px solid #5bcdb3;border-radius:7px;background:#16463e;color:#d7ffef;font-size:11px;font-weight:800;cursor:pointer;text-align:center}.shop-buy:hover:not(:disabled){background:#21685a}.shop-buy:disabled{border-color:#34434b;color:#708d99;background:#172732;cursor:not-allowed}.shop-refund{border-color:#a58056;background:#31291f;color:#fbd6a3;padding:7px 7px;font-size:10px}.shop-refund:hover:not(:disabled){background:#50402e}.shop-refund:disabled{opacity:.48}.shop-buy.mount{border-color:#cb626a;background:#3b1c28}.shop-buy.mount:not(:disabled):hover{background:#582835}.shop-buy.toggle{border-color:#63849b;background:#172d3b}.shop-buy.toggle:hover{background:#29455b}.build-stats{background:#142c35;border:1px solid #3c6570;padding:10px;border-radius:8px;color:#9fe5d3;font-size:12px;line-height:1.6}.shop-card .shop-laser{color:#f6a4aa;font-size:11px;font-weight:800;letter-spacing:.07em}.cover-chip{color:#ecbf8c}.shop-note{font-size:11px;color:#f8cb88;min-height:16px;margin-top:6px}.shop-mode .cta{margin-top:15px}.shop-mode .hint{margin-top:10px}@media(max-width:760px){.shop-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.modal.shop-mode{padding:22px 18px}.shop-card p{min-height:0}}@media(max-width:420px){.shop-grid{grid-template-columns:1fr 1fr;gap:6px}.shop-card{padding:9px}.shop-card h3{font-size:12px}.shop-buy{font-size:10px}}
+.modal:before{content:"";position:absolute;top:0;left:0;width:100%;height:3px;background:linear-gradient(90deg,transparent,var(--mint),transparent)}
+.kicker{font-size:11px;letter-spacing:.31em;color:var(--mint);font-weight:900}.modal h1{font-size:clamp(33px,7vw,57px);letter-spacing:.05em;line-height:1;margin:10px 0 13px;font-weight:950}.modal h1 span{color:var(--mint)}.intro{line-height:1.6;font-size:14px;color:#aabdc7;max-width:470px;margin-bottom:25px}
+.legend{display:grid;grid-template-columns:1fr 1fr;column-gap:22px;row-gap:13px;margin:0 0 28px}.legend-item{font-size:12px;color:#a5b6c0;display:flex;align-items:center;gap:10px}.key{border-radius:5px;border:1px solid #4d6573;min-width:73px;text-align:center;color:#edf7fb;padding:7px 9px;font-weight:800;font-size:11px;letter-spacing:.04em;background:#1b303f}.legend-item:nth-child(6) .key{font-size:10px}.cta{background:var(--mint);border:0;cursor:pointer;padding:15px 24px;border-radius:8px;color:#072025;font-size:13px;font-weight:900;letter-spacing:.12em;width:100%;box-shadow:0 5px 30px #74f7d424}.cta:hover{background:#a1ffe6}.hint{font-size:11px;color:#73909f;text-align:center;margin-top:15px}.red{color:#ff927d}
+#sound{position:fixed;top:81px;right:27px;z-index:2;border:1px solid #3b5663;color:#b8d2d6;background:#142331c9;border-radius:8px;padding:6px 10px;font-size:11px;cursor:pointer}#sound:hover{color:#fff}
+@media(max-width:850px){.controls{bottom:114px;max-width:90vw;overflow:auto;justify-content:flex-start}.rightpanel{min-width:203px}.leftpanel{width:220px}.brand{font-size:15px}.topstats{gap:13px}.statnum{font-size:18px}.statlabel{font-size:9px}#hud{padding:14px}.modal{padding:26px}.legend{gap:8px}.legend-item{font-size:11px}.key{min-width:61px;padding:6px}.leftpanel,.rightpanel{padding:10px}}@media(max-width:540px){.controls{display:none}.topstats{gap:9px}.leftpanel{width:47vw}.rightpanel{min-width:0;width:47vw}.weapon{font-size:14px}.ammo{font-size:18px}.bottom{gap:10px}.statnum{font-size:16px}}
+
+/* v1.1 select-fire workshop */
+.fire-mode-select{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}.fire-mode-select .shop-buy{min-height:41px;font-size:10px;padding:6px 3px}.fire-mode-select .active-mode{background:#226450;border-color:#9df6d7;color:white;box-shadow:inset 0 0 0 1px #a7ffe244}
+@media(max-width:760px){.fire-mode-select{grid-template-columns:1fr 1fr 1fr}}
+/* v1.0 illustrated upgrade workshop */
+.shop-stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-bottom:11px}
+.shop-stats>div{background:#0a2730;border:1px solid #306070;border-radius:10px;padding:9px 12px;min-width:0}
+.shop-stats small{display:block;color:#81adbb;font-size:9px;font-weight:850;letter-spacing:.13em;margin-bottom:3px}
+.shop-stats b{font-size:14px;font-weight:850;color:#d8fff4;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.shop-stats b span{font-size:11px;color:#8bddca}
+.shop-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 12px}
+.shop-tab{background:#102230;border:1px solid #334d59;border-radius:10px;padding:7px 12px;color:#b4c9d0;display:flex;align-items:center;text-align:left;gap:8px;cursor:pointer;min-width:0;flex-wrap:wrap;font-size:12px;font-weight:900;letter-spacing:.04em}
+.shop-tab small{font-size:8px;letter-spacing:.12em;color:#789ca8;flex:0 0 100%;padding-left:38px;margin-top:-3px}
+.shop-tab.active{border-color:#7af6d7;background:linear-gradient(120deg,#164536,#10383b);color:#d0fff0;box-shadow:inset 0 0 0 1px #509f8b44}
+.tab-icon{display:inline-flex;flex:0 0 28px;height:24px;color:#8cf6d7}.tab-icon svg{width:32px;height:24px}
+.shop-card{padding:12px;gap:9px;border-color:#33525e;background:linear-gradient(155deg,#102434,#0b1925)}
+.shop-card:hover{border-color:#538f8c}
+.card-upper{display:flex;align-items:center;gap:11px;min-height:66px}
+.shop-visual{width:102px;height:67px;flex:0 0 102px;display:flex;align-items:center;justify-content:center;border:1px solid #3a696d;border-radius:10px;background:radial-gradient(circle at 45% 50%,#254e56,#102933 68%);color:#a2ffe7;overflow:hidden;box-shadow:inset 0 1px 16px rgba(106,255,214,.06)}
+.item-illustration{width:92%;height:86%;display:block;filter:drop-shadow(0 0 5px #52efcb22)}
+.shop-identity{min-width:0;flex:1}.shop-card h3{font-size:12px;line-height:1.3;margin-top:5px;color:#f1fff9;overflow-wrap:anywhere}.shop-card p{font-size:11px;min-height:unset;line-height:1.5;color:#a6c0c9}
+.shop-effect{display:flex;align-items:center;justify-content:space-between;gap:6px;background:#0a2530;border:1px solid #2d5562;border-radius:7px;padding:9px 8px;font-size:11px;color:#b2d0d6;font-weight:800;min-height:39px}
+.shop-effect .next-stat{color:#9bfed9;text-align:right}.upgrade-arrow{color:#e9c38b;font-size:15px}
+.shop-footnote{color:#81adba;font-size:9px;line-height:1.35;margin-top:-3px}
+.card-level{display:flex;align-items:center;justify-content:space-between;gap:6px;color:#89ecd0;font-size:10px;font-weight:900;letter-spacing:.07em}
+.level-pips{display:flex;align-items:center;gap:3px}.level-pip{height:5px;width:15px;max-width:13px;background:#315563;border-radius:4px}.level-pip.filled{background:#8cf9da}
+.card-actions{display:grid;grid-template-columns:minmax(0,1fr) 93px;gap:7px;margin-top:auto}
+.card-actions .shop-buy{min-height:39px;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:3px;font-size:10px}.card-actions .shop-buy small{font-size:9px;white-space:nowrap;color:#c2e7de;font-weight:600}
+.card-actions .shop-refund{display:flex;gap:2px;align-content:center;min-height:39px}.card-actions .shop-refund small{color:#ffdda9}
+.module-status{background:#164637;padding:6px 9px;border-radius:6px;color:#afffe0}
+.shop-card .shop-buy{margin-top:auto}
+.shop-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+.modal.shop-mode{max-width:1000px;padding:24px 30px 23px}.modal.shop-mode h1{font-size:34px}
+@media(max-width:740px){.shop-visual{width:76px;flex-basis:76px}.shop-card h3{font-size:11px}.shop-stats{grid-template-columns:repeat(2,1fr)}.shop-tab small{display:none}}
+@media(max-width:540px){.shop-grid{grid-template-columns:1fr}.shop-card{padding:11px}.shop-visual{width:95px;flex-basis:95px}.shop-tabs{gap:5px}.shop-tab{padding:6px;font-size:10px}.shop-tab small{display:none}.modal.shop-mode{padding:15px}.shop-summary{padding:9px}.modal.shop-mode h1{font-size:27px}}
+
+/* v1.3 skill-tree workshop */
+.shop-grid.tree-map{display:block;overflow:auto;padding:0;border:1px solid #305865;border-radius:16px;background:
+ radial-gradient(circle at 50% 45%, rgba(33,84,90,.25), transparent 34%),
+ linear-gradient(180deg,#07131b,#081722 50%,#09141d);}
+.tree-canvas{position:relative;width:1200px;height:980px;background-image:
+ linear-gradient(rgba(90,140,150,.08) 1px, transparent 1px),
+ linear-gradient(90deg, rgba(90,140,150,.08) 1px, transparent 1px);
+ background-size:40px 40px;}
+.tree-svg{position:absolute;inset:0;width:1200px;height:980px;pointer-events:none;overflow:visible}
+.tree-svg line{stroke:#2f6670;stroke-width:3;stroke-linecap:round;opacity:.95}
+.tree-svg line.locked{stroke:#3a4650;opacity:.55;stroke-dasharray:7 8}
+.tree-svg circle{fill:#68d0c0;opacity:.35}
+.tree-node{position:absolute;transform:translate(-50%,-50%);width:188px;min-height:96px;border:1px solid #355a66;border-radius:14px;padding:10px;background:linear-gradient(165deg,#0e202d,#0a1823 70%);box-shadow:0 14px 32px rgba(0,0,0,.26);display:flex;flex-direction:column;gap:7px}
+.tree-node.root{width:236px;border-color:#5aaea2;background:radial-gradient(circle at 50% 0%, rgba(77,178,159,.23), transparent 54%),linear-gradient(165deg,#102734,#0a1823 72%)}
+.tree-node.hub{width:210px}
+.tree-node.locked{border-color:#414d57;background:linear-gradient(165deg,#111a24,#0a1118);opacity:.86}
+.tree-node .tree-head{display:flex;gap:9px;align-items:center}
+.tree-node .tree-icon{width:54px;height:42px;flex:0 0 54px;color:#87e6d2}
+.tree-node.locked .tree-icon{color:#7c8a92}
+.tree-node .tree-icon svg{width:100%;height:100%}
+.tree-node .tree-kicker{font-size:9px;letter-spacing:.14em;font-weight:800;color:#85baa9;text-transform:uppercase}
+.tree-node.locked .tree-kicker{color:#87949c}
+.tree-node h3{margin:2px 0 0;font-size:12px;line-height:1.28;color:#effffa}
+.tree-node p{margin:0;color:#a7c2cb;font-size:10.5px;line-height:1.45}
+.tree-statline{display:flex;justify-content:space-between;gap:8px;font-size:10px;padding:6px 8px;border-radius:9px;background:#112532;border:1px solid #23424d;color:#dffcf4}
+.tree-statline b{font-size:11px;color:#fff}
+.tree-hint{font-size:9px;color:#f0c98a;line-height:1.35}
+.tree-level{font-size:10px;font-weight:800;letter-spacing:.1em;color:#8ad8ca}
+.tree-status{font-size:10px;font-weight:800;letter-spacing:.08em;color:#bfe8df}
+.tree-status.warn{color:#efcb96}
+.tree-actions{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:auto}
+.tree-actions.single{grid-template-columns:1fr}
+.tree-actions .shop-buy{margin:0;padding:7px 6px;font-size:10px;line-height:1.2}
+.tree-actions .shop-buy small{display:block;font-size:9px;opacity:.92;margin-top:2px}
+.tree-node .shop-refund{padding:7px 5px}
+.tree-node .shop-buy.toggle.active-mode{border-color:#82d8ff;background:#183a4d;color:#dff7ff}
+.tree-locked-banner{padding:7px 8px;border-radius:9px;border:1px dashed #505d66;color:#b2bfc6;background:#101821;font-size:10px;text-align:center}
+.tree-legend{position:absolute;left:18px;top:16px;display:flex;gap:10px;flex-wrap:wrap;z-index:2}
+.tree-chip{padding:7px 10px;border-radius:999px;background:#11232d;border:1px solid #2b4b57;font-size:10px;color:#d6f6ef}
+.tree-chip b{color:#7fffd7}
+@media(max-width:760px){.shop-grid.tree-map{padding:0}.tree-canvas{transform-origin:top left}}
+
+
+/* v1.3.1 compact tree */
+.shop-grid.tree-map.compact{display:block;padding:0;overflow:auto;border:1px solid #2e5a66;border-radius:16px;background:linear-gradient(180deg,#07131b,#09151d)}
+.tree-shell{display:flex;gap:14px;align-items:stretch;min-width:1140px;padding:12px}
+.tree-map-area{position:relative;flex:0 0 780px;height:900px;border:1px solid #274956;border-radius:14px;background-image:linear-gradient(rgba(90,140,150,.08) 1px, transparent 1px),linear-gradient(90deg, rgba(90,140,150,.08) 1px, transparent 1px);background-size:36px 36px;background-color:#08131b;overflow:hidden}
+.tree-sidepanel{flex:0 0 320px;border:1px solid #325865;border-radius:14px;background:linear-gradient(170deg,#0f2230,#0a1721 78%);padding:16px;display:flex;flex-direction:column;gap:10px;min-height:900px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.03)}
+.tree-sidepanel .tree-icon-large{width:88px;height:62px;color:#86e7d2}
+.tree-sidepanel .tree-icon-large svg{width:100%;height:100%}
+.tree-detail-top{display:flex;gap:12px;align-items:center}
+.tree-detail-kicker{font-size:10px;letter-spacing:.15em;font-weight:800;color:#86bea9;text-transform:uppercase}
+.tree-detail-title{font-size:24px;line-height:1.08;color:#effff9;margin:4px 0 0}
+.tree-detail-desc{font-size:12px;line-height:1.55;color:#a9c3ca}
+.tree-mini-stats{display:grid;grid-template-columns:1fr;gap:8px}
+.tree-mini-stats .tree-statline{font-size:11px}
+.tree-mini-stats .tree-statline b{font-size:12px}
+.tree-map-svg{position:absolute;inset:0;width:780px;height:900px;pointer-events:none}
+.tree-map-svg line{stroke:#305f69;stroke-width:3;stroke-linecap:round;opacity:.9}
+.tree-map-svg line.locked{stroke:#3f4b53;opacity:.55;stroke-dasharray:6 8}
+.tree-compact-node{position:absolute;transform:translate(-50%,-50%);width:58px;height:58px;border-radius:16px;border:1px solid #325965;background:linear-gradient(160deg,#0f2632,#0a1822);display:grid;place-items:center;color:#86e7d2;box-shadow:0 10px 24px rgba(0,0,0,.28);cursor:pointer}
+.tree-compact-node .mini-icon{width:38px;height:28px}
+.tree-compact-node .mini-icon svg{width:100%;height:100%}
+.tree-compact-node:hover,.tree-compact-node.selected{border-color:#7fffd7;box-shadow:0 0 0 2px rgba(127,255,215,.16),0 10px 24px rgba(0,0,0,.3)}
+.tree-compact-node.locked{color:#7a8a91;border-color:#455058;background:linear-gradient(160deg,#121a22,#0c1117)}
+.tree-compact-node.active{border-color:#d2a86d;color:#ffe7b1}
+.tree-compact-node.root{width:70px;height:70px;border-radius:20px}
+.tree-compact-node.root .mini-icon{width:46px;height:34px}
+.tree-node-label{position:absolute;transform:translate(-50%,0);top:66px;left:50%;font-size:9px;letter-spacing:.1em;font-weight:800;color:#90b5b0;text-transform:uppercase;white-space:nowrap;pointer-events:none}
+.tree-node-level{position:absolute;right:-4px;top:-4px;min-width:20px;height:20px;padding:0 5px;border-radius:999px;border:1px solid #4f857d;background:#173733;color:#dffef4;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center}
+.tree-compact-node.locked .tree-node-level{background:#1e242a;border-color:#48545d;color:#a5afb5}
+.tree-help{display:flex;flex-wrap:wrap;gap:8px}
+.tree-help .tree-chip{padding:6px 10px}
+.tree-detail-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:2px}
+.tree-detail-actions.single{grid-template-columns:1fr}
+.tree-empty-note{padding:10px 12px;border-radius:10px;border:1px dashed #4b5b65;color:#b7c4ca;background:#101821;font-size:11px;line-height:1.45}
+@media(max-width:1100px){.tree-shell{flex-direction:column;min-width:780px}.tree-sidepanel{min-height:unset;flex-basis:auto}}
+
+
+/* v1.3.2 — pannable skill web + click-only floating inspector */
+.shop-grid.tree-map.compact{overflow:hidden;padding:0;display:block;background:#08131d}
+.tree-map-viewport{position:relative;width:100%;height:min(565px,58vh);min-height:375px;overflow:hidden;cursor:grab;touch-action:none;user-select:none;background:
+ radial-gradient(ellipse at 50% 50%,rgba(23,59,72,.35),transparent 80%),#08131b}
+.tree-map-viewport.panning{cursor:grabbing}
+.tree-map-stage{position:absolute;left:0;top:0;width:1240px;height:1170px;transform:translate3d(0,0,0);will-change:transform;pointer-events:auto}
+.tree-map-stage .tree-map-svg{width:1240px;height:1170px}
+.tree-compact-node{touch-action:none}
+.tree-map-viewport.panning .tree-compact-node{cursor:grabbing}
+.tree-map-hint{position:absolute;left:14px;top:14px;z-index:3;pointer-events:none;font-size:10px;letter-spacing:.1em;font-weight:900;color:#9cc2c6;background:#0d202be8;border:1px solid #325464;border-radius:999px;padding:9px 13px}
+.tree-map-reset{position:absolute;top:14px;right:14px;z-index:5;border:1px solid #517b81;border-radius:9px;background:#102a34ee;color:#dbfef6;cursor:pointer;padding:8px 12px;font-size:10px;font-weight:900;letter-spacing:.07em}
+.tree-map-reset:hover{border-color:#92f5d8;background:#19433e}
+.tree-popup{position:absolute;z-index:9;width:min(324px,calc(100% - 20px));max-height:calc(100% - 20px);overflow-y:auto;overscroll-behavior:contain;background:linear-gradient(155deg,#122c38,#0a1824 90%);border:1px solid #65b3a4;border-radius:15px;box-shadow:0 22px 65px #000b,0 0 0 2px #5febc316;padding:17px;cursor:default;user-select:text;touch-action:pan-y}
+.tree-popup[hidden]{display:none}
+.tree-popup .tree-icon-large{width:62px;height:46px;flex:0 0 62px;color:#86e7d2}
+.tree-popup .tree-icon-large svg{width:100%;height:100%}
+.tree-popup .tree-detail-title{font-size:19px;line-height:1.1;margin-right:15px}
+.tree-popup .tree-detail-desc{font-size:11px}
+.tree-popup .tree-detail-top{padding-right:16px}
+.tree-popup .tree-mini-stats{gap:6px}
+.tree-popup .tree-mini-stats .tree-statline{font-size:10px}
+.tree-popup .tree-detail-actions{gap:7px}
+.tree-popup .shop-buy{font-size:10px;padding:9px 6px}.tree-popup .shop-buy small{display:block;font-size:9px;opacity:.9;margin-top:3px}
+.tree-popup-close{position:sticky;float:right;top:0;margin:-8px -9px 0 4px;border:1px solid #446978;border-radius:7px;background:#192e39;color:#eafff9;cursor:pointer;width:27px;height:27px;font-size:16px;z-index:2}
+.tree-popup-close:hover{background:#28505a}
+.tree-popup-body{display:flex;flex-direction:column;gap:12px;clear:both}
+.shop-stats{grid-template-columns:repeat(7,minmax(0,1fr));margin-bottom:10px}
+.shop-stats>div{padding:10px 11px}
+.shop-stats>div small{font-size:9px}
+.shop-stats>div b{font-size:12px;white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;line-height:1.2}
+.shop-stats-title{font-weight:900;letter-spacing:.13em;font-size:10px;color:#8dd9c8;margin:6px 0 9px}
+@media(max-width:930px){.shop-stats{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:590px){.shop-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.tree-map-viewport{height:55vh;min-height:335px}.modal.shop-mode{padding:15px}}
+
+
+/* v1.3.3 — genuinely independent forked branches */
+.tree-compact-node.branch-hub{width:65px;height:65px;border-radius:18px;border:2px solid #529c9a;background:linear-gradient(135deg,#193b45,#0e2430);color:#baf7e7}
+.tree-compact-node.branch-hub .mini-icon{width:40px;height:30px}
+.tree-compact-node.branch-hub .tree-node-label{color:#c1f5e8;font-size:10px;letter-spacing:.13em;top:70px}
+.tree-compact-node.root{border:2px solid #c3dba0;background:linear-gradient(150deg,#264439,#10242b);color:#e5ffba}
+.tree-compact-node.branch-grenade{border-color:#b28a66;color:#ffc79a}
+.tree-compact-node.branch-ballistics{border-color:#6aa2c1;color:#b2e1fc}
+.tree-compact-node.branch-feed{border-color:#9b83bc;color:#dfc7ff}
+.tree-compact-node.branch-fire{border-color:#c7a46c;color:#ffe4b5}
+.tree-compact-node.branch-modules{border-color:#9d91b8;color:#e0d2ff}
+.tree-compact-node.branch-receiver{border-color:#7da6a1;color:#bdf6e5}
+.tree-compact-node:focus-visible{outline:3px solid #e2ffd0;outline-offset:4px}
+.tree-map-svg .category-link{stroke:#588e91;stroke-width:3;stroke-dasharray:none;opacity:.85}
+.tree-map-svg .branch-link{stroke:#3d6873;stroke-width:2.5;opacity:.75}
+.tree-map-svg .branch-link.locked{stroke:#53515b;stroke-dasharray:6 7;opacity:.5}
+.tree-map-hint{max-width:min(73%,460px);white-space:normal;line-height:1.5}
+
+
+/* v1.3.4 compact, zoomable six-branch web */
+.tree-map-stage{width:1200px;height:1120px;transform-origin:0 0}
+.tree-map-stage .tree-map-svg{width:1200px;height:1120px}
+.tree-map-viewport{background-image:
+ radial-gradient(ellipse at 50% 50%,rgba(23,59,72,.36),transparent 80%),
+ linear-gradient(rgba(72,112,126,.085) 1px, transparent 1px),
+ linear-gradient(90deg,rgba(72,112,126,.085) 1px, transparent 1px);
+ background-size:auto,36px 36px,36px 36px;background-color:#08131b}
+.tree-map-hint{top:14px;left:14px;padding:8px 10px;font-size:9px;max-width:50%}
+.tree-zoom-controls{position:absolute;right:13px;top:12px;z-index:12;display:flex;align-items:center;gap:4px;
+ padding:4px;background:#0d202beb;border:1px solid #365a68;border-radius:12px;box-shadow:0 6px 15px #0007}
+.tree-zoom-controls button{font-size:15px;line-height:1;font-weight:800;min-width:31px;height:30px;
+ border:1px solid #446d72;border-radius:7px;background:#14323c;color:#dcfff6;cursor:pointer}
+.tree-zoom-controls button:hover{background:#215b5a;border-color:#82e1c7}
+.tree-zoom-controls [data-tree-reset]{font-size:9px;min-width:91px;letter-spacing:.04em;padding:0 7px}
+.tree-zoom-controls output{min-width:42px;text-align:center;font-variant-numeric:tabular-nums;color:#b6ecdb;font-size:11px;font-weight:800}
+.tree-compact-node:not(.root):not(.branch-hub) .tree-node-label{opacity:0;pointer-events:none;top:62px;
+ padding:4px 6px;background:#0e2530;border:1px solid #3f7280;border-radius:5px;
+ transition:opacity .1s;z-index:10;box-shadow:0 5px 10px #0007}
+.tree-compact-node:not(.root):not(.branch-hub):hover .tree-node-label,
+.tree-compact-node:not(.root):not(.branch-hub).selected .tree-node-label,
+.tree-compact-node:not(.root):not(.branch-hub):focus-visible .tree-node-label{opacity:1}
+.tree-compact-node.branch-hub .tree-node-label{top:68px;font-size:9px;background:#081b24dd;border-radius:5px;padding:2px 5px}
+.tree-compact-node{z-index:1}
+.tree-compact-node:hover,.tree-compact-node.selected{z-index:3}
+.tree-compact-node.branch-hub{z-index:2}
+@media(max-width:680px){.tree-map-hint{max-width:45%;font-size:8px}.tree-zoom-controls [data-tree-reset]{min-width:45px;font-size:0}.tree-zoom-controls [data-tree-reset]::after{content:'FIT';font-size:10px}.tree-zoom-controls output{min-width:35px}}
+
+</style>
+</head>
+<body>
+<canvas id="game"></canvas><div id="vignette"></div>
+<div id="hud">
+  <div class="topbar"><div><div class="brand">STRIKE <span>VECTOR</span></div><div class="subbrand">TACTICAL SURVIVAL SIMULATOR // 13</div></div><div class="topstats"><div><div class="statlabel">WAVE</div><div class="statnum" id="wave">01</div></div><div><div class="statlabel">KILLS</div><div class="statnum" id="kills">000</div></div><div><div class="statlabel">CREDITS</div><div class="statnum" id="credits">$0</div></div><div><div class="statlabel">SCORE</div><div class="statnum" id="score">00000</div></div></div></div>
+  <div class="bottom"><div class="leftpanel"><div style="display:flex;justify-content:space-between;align-items:center"><span class="micro">OPERATIVE / HEALTH</span><span class="hpnum" id="health">100</span></div><div class="hpbar"><div class="hpfill" id="hpfill"></div></div><div class="dodge"><span>COMBAT SLIDE</span><b id="dodge">READY</b></div></div><div class="controls"><span><b>WASD</b>MOVE</span><span><b>SHIFT</b>SPRINT</span><span><b>SPACE</b>SLIDE / DODGE</span><span><b>ALT</b>CROUCH</span><span><b>E</b>MELEE</span><span><b>R</b>RELOAD</span><span><b>1 / 2</b>KNIFE / GUN</span><span><b>TAB</b>ARMORY / PAUSE</span><span><b>F</b>FIRE MODE</span><span><b>3–5</b>ALT ABILITIES</span></div><div class="rightpanel"><div class="micro" id="weaponSlot">02 / CUSTOM</div><div class="weapon" id="weapon">9mm · COMPACT</div><div class="ammo" id="ammo">14 <small>/ 120</small></div><div class="alt" id="alt">HOLD RMB · PRECISION AIM</div></div></div>
+</div>
+<div id="banner"></div>
+<button id="sound" type="button">♪ SOUND ON</button>
+<div id="screen"><section class="modal"><div class="kicker" id="kicker">OPERATION // ARCADE PROTOTYPE</div><h1 id="modalTitle">STRIKE <span>VECTOR</span></h1><p class="intro" id="modalIntro">Start with one 9mm pistol. Fire pellets from a single cartridge, unlock all fire modes in one purchase, and fire or strike during a slide.</p><div class="legend" id="legend"><div class="legend-item"><span class="key">WASD</span>Move / strafe</div><div class="legend-item"><span class="key">MOUSE</span>Tap for semi/burst; hold for automatic fire</div><div class="legend-item"><span class="key">F</span>Switch unlocked SEMI / BURST / AUTO modes</div><div class="legend-item"><span class="key">SPACE</span>Slide / dodge · steer while sliding and fire freely</div><div class="legend-item"><span class="key">SHIFT</span>Hold to sprint</div><div class="legend-item"><span class="key">E</span>Quick buttstock / bayonet strike, even mid-slide</div><div class="legend-item"><span class="key">ALT</span>Hold to crouch · slower movement, tighter spread</div><div class="legend-item"><span class="key">RMB + LMB</span>Secondary attack / ADS shot</div><div class="legend-item"><span class="key">1 / 2 / 3–5</span>Knife / custom firearm / secondary abilities</div><div class="legend-item"><span class="key">R / TAB</span>Reload / armory pause</div><div class="legend-item"><span class="key">L / ESC</span>Laser [L] · ammo [X] / pause</div></div><div id="shop"><div class="shop-summary"><div class="shop-bank" id="shopBank">$0 <small>AVAILABLE</small></div><div class="shop-message" id="shopMessage">BUY / REFUND AS MUCH AS YOU LIKE</div></div><div class="shop-stats" id="shopStats"></div><div class="shop-tabs" id="shopTabs" role="tablist" aria-label="Armory categories"></div><div class="shop-grid" id="shopGrid"></div><div class="shop-note" id="shopNote"></div></div><button class="cta" id="start">DEPLOY OPERATIVE →</button><div class="hint" id="hint">Desktop keyboard + mouse recommended · Survive as long as you can</div></section></div>
+<script>
+(()=>{'use strict';
+const canvas=document.getElementById('game'),ctx=canvas.getContext('2d',{alpha:false});
+const ui={wave:document.getElementById('wave'),kills:document.getElementById('kills'),score:document.getElementById('score'),credits:document.getElementById('credits'),health:document.getElementById('health'),hpfill:document.getElementById('hpfill'),dodge:document.getElementById('dodge'),weaponSlot:document.getElementById('weaponSlot'),weapon:document.getElementById('weapon'),ammo:document.getElementById('ammo'),alt:document.getElementById('alt'),banner:document.getElementById('banner'),screen:document.getElementById('screen'),kicker:document.getElementById('kicker'),title:document.getElementById('modalTitle'),intro:document.getElementById('modalIntro'),legend:document.getElementById('legend'),start:document.getElementById('start'),hint:document.getElementById('hint'),sound:document.getElementById('sound'),shop:document.getElementById('shop'),shopGrid:document.getElementById('shopGrid'),shopBank:document.getElementById('shopBank'),shopMessage:document.getElementById('shopMessage'),shopNote:document.getElementById('shopNote'),shopTabs:document.getElementById('shopTabs'),shopStats:document.getElementById('shopStats')};
+let sw=innerWidth,sh=innerHeight,dpr=1,renderedStill=false,cam={x:0,y:0},clock=0,last=0,started=false,paused=true,ended=false,fireHeld=false,altHeld=false,secondaryPending=false,altStart=0,mouse={x:innerWidth*.64,y:innerHeight*.5,active:false},keys=new Set(),lastShiftTap=-Infinity;
+const isCrouching=()=>keys.has('AltLeft')||keys.has('AltRight');
+const WORLD={w:2500,h:1700},TAU=Math.PI*2,clamp=(v,l,h)=>Math.max(l,Math.min(h,v)),rand=(a,b)=>a+Math.random()*(b-a),dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+let player,enemies=[],bullets=[],grenades=[],knives=[],particles=[],texts=[],wave=0,kills=0,score=0,credits=0,shopOpen=false,shopMode="between",toSpawn=0,spawnTimer=0,nextWaveTimer=0,bannerUntil=0,shake=0,obstacles=[],coverSpawnTimer=14;
+let shopTab='gun',selectedTreeNode='core',treePopupOpen=false,treePan={x:0,y:0},treeScale=1,treePanReady=false,treeDrag=null,treeSuppressUntil=0;let soundOn=true,ac=null,activeVoices=0;const soundTimes=Object.create(null);function sound(kind){if(!soundOn||activeVoices>=8)return;const now=performance.now(),limit=(kind==='hit'?65:kind==='pistol'||kind==='rifle'?36:kind==='grenade'?75:22);if(now-(soundTimes[kind]||-1000)<limit)return;soundTimes[kind]=now;try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended')ac.resume();const o=ac.createOscillator(),g=ac.createGain(),n=ac.currentTime;let f=220,d=.06,ty='triangle',vol=.027;if(kind==='pistol'){f=260;d=.085;ty='triangle';vol=.030}else if(kind==='buy'){f=650;d=.13;ty='sine';vol=.025}else if(kind==='rifle'){f=155;d=.055;ty='sawtooth';vol=.025}else if(kind==='sniper'){f=74;d=.22;ty='sawtooth';vol=.055}else if(kind==='grenade'){f=82;d=.36;ty='sawtooth';vol=.065}else if(kind==='knife'){f=450;d=.08}else if(kind==='hit'){f=90;d=.10;vol=.016}else if(kind==='dodge'){f=400;d=.13;vol=.020}else if(kind==='dry'){f=350;d=.035;vol=.014}o.type=ty;o.frequency.setValueAtTime(f,n);o.frequency.exponentialRampToValueAtTime(Math.max(28,f*.35),n+d);g.gain.setValueAtTime(vol,n);g.gain.exponentialRampToValueAtTime(.0001,n+d);o.connect(g);g.connect(ac.destination);activeVoices++;o.addEventListener('ended',()=>{activeVoices=Math.max(0,activeVoices-1);o.disconnect();g.disconnect()},{once:true});o.start(n);o.stop(n+d+.01)}catch(e){activeVoices=Math.max(0,activeVoices-1)}}
+function resize(){
+ sw=innerWidth;sh=innerHeight;
+ // A 4K/high-DPI framebuffer was the biggest avoidable fill-rate cost.
+ // Keep the actual game world in CSS coordinates and cap backing pixels.
+ dpr=Math.max(.7,Math.min(devicePixelRatio||1,1.2,Math.sqrt(1450000/Math.max(1,sw*sh))));
+ canvas.width=Math.round(sw*dpr);canvas.height=Math.round(sh*dpr);
+ ctx.setTransform(dpr,0,0,dpr,0,0);renderedStill=false;
+}window.addEventListener('resize',resize);resize();
+function buildLevel(){obstacles=[
+{x:360,y:270,w:185,h:105,k:'crate'},{x:665,y:225,w:110,h:190,k:'wall'},{x:1045,y:245,w:270,h:75,k:'wall'},{x:1520,y:270,w:125,h:190,k:'wall'},{x:1830,y:240,w:190,h:110,k:'crate'},{x:2130,y:405,w:130,h:130,k:'crate'},
+{x:345,y:645,w:195,h:87,k:'wall'},{x:710,y:615,w:115,h:135,k:'crate'},{x:1675,y:625,w:115,h:145,k:'crate'},{x:2015,y:760,w:245,h:85,k:'wall'},
+{x:385,y:1120,w:160,h:185,k:'crate'},{x:720,y:1010,w:190,h:85,k:'wall'},{x:1100,y:1215,w:280,h:95,k:'wall'},{x:1580,y:1065,w:90,h:215,k:'wall'},{x:1955,y:1120,w:215,h:145,k:'crate'},
+{x:680,y:1450,w:130,h:110,k:'crate'},{x:1790,y:1455,w:170,h:80,k:'wall'}]; obstacles=obstacles.map(o=>makeCover(o));}
+function reset(){
+ buildLevel();player={x:1250,y:810,r:18,hp:100,maxHp:100,vx:0,vy:0,angle:0,weapon:0,
+  mods:{receiver:0,barrel:0,damage:0,trigger:0,fireControl:0,mag:0,projectiles:0,penetration:0,reloadSpeed:0,blast:0,knife:0,grenadePower:0,grenadeRange:0,grenadeMag:0,grenadeReload:0,grenadeCycle:0},
+  modules:{laser:false,grenade:false,power:false,explosive:false,bayonet:false},laserOn:false,explosiveOn:false,bayonetOn:false,secondary:'aim',
+  roll:0,rollMax:.78,rollMode:'slide',rollDx:0,rollDy:0,rollCd:0,invul:0,slideTurn:0,fireCd:0,secondaryCd:0,slash:0,slashDir:0,slashHits:new Set(),
+  reload:0,gun:14,gunReserve:Infinity,grenades:5,grenadeReserve:Infinity,grenadeReload:0,throwKnives:Infinity,step:0,meleeCd:0,slashKind:'knife',triggerQueue:0,triggerExpiry:0,fireMode:'semi',burstShots:0};
+ enemies=[];bullets=[];grenades=[];knives=[];particles=[];texts=[];clock=0;wave=0;kills=0;score=0;credits=0;
+ shopOpen=false;shopTab='gun';shopMode='between';coverSpawnTimer=12;toSpawn=0;spawnTimer=0;nextWaveTimer=1.1;shake=0;
+ fireHeld=false;altHeld=false;secondaryPending=false;ended=false;keys.clear();cam.x=player.x-sw/2;cam.y=player.y-sh/2;
+}
+const RECEIVERS=[
+ {name:'9mm · COMPACT',damage:26,interval:.085,clip:14,reserve:120,spread:.066,velocity:1260,barrel:19,reload:1.08},
+ {name:'5.56 · CARBINE',damage:43,interval:.115,clip:20,reserve:120,spread:.055,velocity:1530,barrel:29,reload:1.43},
+ {name:'7.62 · BATTLE',damage:73,interval:.16,clip:12,reserve:84,spread:.048,velocity:1690,barrel:37,reload:1.86}
+];
+const OPTIONS=[
+ {id:'receiver',name:'CALIBER / RECEIVER',price:550,step:400,max:2,detail:'9mm → 5.56 → 7.62. More damage, but slower cycling and reloading.'},
+ {id:'damage',name:'REINFORCED RECEIVER',price:210,step:135,detail:'+7 projectile damage per tier'},
+ {id:'trigger',name:'TRIGGER RESET',price:275,step:155,detail:'Faster mechanical cycling for follow-up shots and automatic bursts. +18% per level'},
+ {id:'fireControl',name:'SELECT-FIRE TRIGGER',price:470,step:0,max:1,detail:'ONE purchase unlocks SEMI, 3-ROUND BURST and FULL AUTO. Press F to switch freely; fully refundable.'},
+ {id:'projectiles',name:'SHOT PELLET PACK',price:345,step:215,max:7,detail:'Fire additional pellets from one cartridge, like buckshot. Extra pellets never consume extra ammunition.'},
+ {id:'reloadSpeed',name:'FAST MAG CHANGE',price:210,step:145,detail:'Reload 16% faster per tier'},
+ {id:'mag',name:'MAGAZINE EXTENSION',price:185,step:100,detail:'+4 rounds per tier'},
+ {id:'barrel',name:'PRECISION BARREL',price:225,step:135,detail:'Improved accuracy and muzzle velocity'},
+ {id:'penetration',name:'PENETRATOR CORE',price:305,step:165,detail:'Pass through +1 extra enemy per tier'},
+ {id:'blast',name:'GRENADE BLAST RADIUS',price:350,step:165,detail:'+25 blast radius per tier',requires:'grenade'},
+ {id:'grenadePower',name:'GRENADE EXPLOSIVE CHARGE',price:310,step:160,detail:'+25 blast damage per tier; more cover damage',requires:'grenade'},
+ {id:'grenadeRange',name:'GRENADE LAUNCH RANGE',price:275,step:130,max:5,detail:'+110 lob range per tier',requires:'grenade'},
+ {id:'grenadeMag',name:'GRENADE FEED CAPACITY',price:295,step:175,max:5,detail:'+1 loaded grenade per tier',requires:'grenade'},
+ {id:'grenadeReload',name:'GRENADE LOADING SPEED',price:245,step:135,detail:'15% faster grenade reload per tier',requires:'grenade'},
+ {id:'grenadeCycle',name:'GRENADE FIRING MECHANISM',price:275,step:150,detail:'15% faster follow-up grenade shots per tier',requires:'grenade'},
+ {id:'knife',name:'MELEE EDGE',price:190,step:105,detail:'+15 slash damage per tier'}
+];
+const MODULES=[
+ {id:'grenade',name:'UNDERBARREL GRENADE',price:475,detail:'Lobbed grenade · bounces only off arena edges · 5 per clip'},
+ {id:'power',name:'POWER SHOT',price:410,detail:'3-round charged burst, high damage, +2 penetration'},
+ {id:'laser',name:'RED LASER SIGHT',price:300,detail:'Equip / unequip a visible laser sight [L]'},
+ {id:'explosive',name:'EXPLOSIVE ROUNDS',price:650,detail:'Toggleable ammunition; small blasts damage enemies and chip cover'},
+ {id:'bayonet',name:'BAYONET ATTACHMENT',price:330,detail:'E quick melee: more reach and damage than the basic buttstock strike'}
+];
+const BASE_GRENADE_CLIP=5,BASE_GRENADE_RANGE=680;
+function gunSpec(){return RECEIVERS[player.mods.receiver]}
+function clipSize(){return gunSpec().clip+player.mods.mag*4}
+function projectileCount(){return 1+player.mods.projectiles}
+const FIRE_MODES=['semi','burst','auto'];
+function fireModeLabel(){return player.fireMode==='auto'?'AUTO':player.fireMode==='burst'?'3-RD BURST':'SEMI'}
+function setFireMode(mode){const tier=FIRE_MODES.indexOf(mode);if(tier<0||(tier>0&&!player.mods.fireControl))return false;player.fireMode=mode;player.burstShots=0;player.triggerQueue=0;sound('buy');syncUI(1);return true}
+function cycleFireMode(){const unlocked=player.mods.fireControl?FIRE_MODES:['semi'];return setFireMode(unlocked[(unlocked.indexOf(player.fireMode)+1)%unlocked.length])}
+function gunInterval(){return Math.max(.045,gunSpec().interval/(1+.18*player.mods.trigger))}
+function reloadDuration(){return Math.max(.34,gunSpec().reload*Math.pow(.84,player.mods.reloadSpeed))}
+function grenadeClipSize(){return BASE_GRENADE_CLIP+player.mods.grenadeMag}
+function grenadeRange(){return BASE_GRENADE_RANGE+110*player.mods.grenadeRange}
+function grenadeDamage(){return 100+player.mods.grenadePower*25}
+function grenadeRadius(){return 137+player.mods.blast*25}
+function grenadeReloadDuration(){return Math.max(.38,1.6*Math.pow(.85,player.mods.grenadeReload))}
+function grenadeInterval(){return Math.max(.15,.76*Math.pow(.85,player.mods.grenadeCycle))}
+function grenadeStats(){return `${grenadeClipSize()} LOADED · ${grenadeRange()} RANGE · ${grenadeRadius()} BLAST RADIUS · ${grenadeDamage()} DAMAGE · ${grenadeReloadDuration().toFixed(2)}s RELOAD`}
+function startGrenadeReload(){if(player.grenadeReload>0||player.grenades>=grenadeClipSize()||player.grenadeReserve<=0)return false;player.grenadeReload=grenadeReloadDuration();sound('dry');return true}
+function refillWeapons(){player.reload=0;player.gun=clipSize();player.gunReserve=Infinity;player.grenades=grenadeClipSize();player.grenadeReserve=Infinity;player.grenadeReload=0;player.throwKnives=Infinity;player.secondaryCd=0;player.fireCd=0;player.triggerQueue=0;player.burstShots=0;player.meleeCd=0}
+function normalizeMagazine(){if(player.gun>clipSize()){player.gunReserve+=player.gun-clipSize();player.gun=clipSize()}
+ if(player.grenades>grenadeClipSize()){player.grenadeReserve+=player.grenades-grenadeClipSize();player.grenades=grenadeClipSize()}}
+function upgradeCost(opt,lvl){return opt.price+opt.step*lvl}
+function selectedAltName(){return player.secondary==='grenade'?'GRENADE LAUNCHER':player.secondary==='power'?'POWER SHOT':'PRECISION AIM'}
+// The blueprint illustrations are vector images generated inside the page.
+// No network requests, fonts or image files are required.
+const ICON_SHAPES={
+ receiver:`<rect x="25" y="25" width="67" height="28" rx="5"/><path d="M34 25v-9h24v9M47 53v13h21l-8-13M92 32h17M92 45h13"/><path d="M31 34h53M36 43h23"/>`,
+ damage:`<rect x="12" y="27" width="46" height="25" rx="5"/><path d="M58 40h24M71 29l18 11-18 11M97 21v14M90 28h14M98 48v16M90 56h15"/>`,
+ fireControl:`<rect x="10" y="25" width="98" height="27" rx="5"/><path d="M25 18v41M60 18v41M92 18v41"/><circle cx="25" cy="38" r="5" fill="currentColor"/><path d="M48 64h29M69 57l8 7-8 7"/>`,
+ trigger:`<path d="M17 29h66v14H17zM47 43v11q0 12 12 13M33 43l-6 17h21"/><path d="M90 24l12 11-12 11M95 35H64"/>`,
+ reloadSpeed:`<rect x="47" y="20" width="24" height="43" rx="4"/><path d="M55 29h9M55 38h9M55 47h9M25 38a36 36 0 0 1 22-25M43 8l7 5-5 8M95 43a36 36 0 0 1-22 25M77 72l-8-5 6-8"/>`,
+ mag:`<rect x="41" y="18" width="32" height="48" rx="4"/><path d="M48 27h18M48 36h18M48 45h18M48 54h18M25 35h9M80 35h10M85 29v12M99 29v12"/>`,
+ barrel:`<rect x="16" y="33" width="78" height="13" rx="3"/><path d="M94 29v21M103 32v15M24 29v-7h26v7M33 46v11h20M94 39h17"/>`,
+ penetration:`<circle cx="44" cy="38" r="18"/><circle cx="44" cy="38" r="8"/><circle cx="91" cy="38" r="16"/><path d="M12 38h100M104 30l8 8-8 8"/>`,
+ projectiles:`<path d="M12 30h28v19H12zM40 34h8M40 45h8"/><path d="M50 38L98 17M50 39l50-1M50 40l48 20"/><circle cx="102" cy="15" r="4"/><circle cx="106" cy="38" r="4"/><circle cx="102" cy="62" r="4"/>`,
+ blast:`<circle cx="60" cy="39" r="9"/><circle cx="60" cy="39" r="20" stroke-dasharray="4 5"/><circle cx="60" cy="39" r="31" stroke-dasharray="4 8"/><path d="M56 31l5 8-6 8"/>`,
+ grenadePower:`<path d="M56 19h15v7M50 23h27l4 30q-12 20-36 0zM49 34h30"/><path d="M94 20l-7 12 12-1-8 14M30 25l-9 13 13-1-8 14"/>`,
+ grenadeRange:`<path d="M15 59Q57-20 105 59" stroke-dasharray="5 5"/><circle cx="22" cy="47" r="7"/><path d="M92 51l13 8-13 8M80 59h24"/>`,
+ grenadeMag:`<rect x="19" y="22" width="20" height="35" rx="9"/><rect x="50" y="22" width="20" height="35" rx="9"/><rect x="81" y="22" width="20" height="35" rx="9"/><path d="M24 18h10M55 18h10M86 18h10M29 29v21M60 29v21M91 29v21"/>`,
+ grenadeReload:`<path d="M42 22h32v33q-16 15-32 0zM52 22v-9h12v9M50 33h17"/><path d="M16 45a42 42 0 0 0 21 23M31 59l7 10-12 2M104 33a42 42 0 0 0-20-22M90 9l-8 1 4 11"/>`,
+ grenadeCycle:`<path d="M21 30h44v18H21zM65 39h15M78 29l11 10-11 10"/><circle cx="96" cy="38" r="13"/><path d="M96 30v9l7 4"/>`,
+ knife:`<path d="M19 51l53-35 15 10-45 44zM35 52l8 10M23 56l-6 7M14 52l7 8"/><path d="M65 22l11 7"/>`,
+ grenade:`<path d="M56 13h15v9M50 22h28l4 26Q78 68 64 68T46 48zM50 35h28M57 45h14"/><path d="M75 16l15-5"/>`,
+ power:`<path d="M14 38h43M49 28l27 10-27 10M80 21l25 17-25 17M88 29l10 9-10 9"/>`,
+ laser:`<path d="M16 30h48v18H16zM64 35h13v8H64zM77 39h29"/><circle cx="108" cy="39" r="4" fill="currentColor"/><path d="M29 48v8h23"/>`,
+ explosive:`<path d="M14 45h40l10-8-10-8H14zM69 14l6 15 16-7-7 16 16 8-18 4 3 17-14-11-13 11 2-18"/>`,
+ bayonet:`<rect x="12" y="35" width="58" height="11" rx="3"/><path d="M70 35l23-19 11 6-16 17 17 3-12 9-23-5z"/>`,
+ aim:`<circle cx="61" cy="39" r="22"/><circle cx="61" cy="39" r="10"/><path d="M61 5v18M61 55v18M27 39h18M77 39h18"/>`,
+ gun:`<path d="M16 31h81v17H16zM38 48v18h23l-5-18M94 31h12M25 25h27v6M71 37h15"/>`
+};
+const GROUPS=[{id:'gun',name:'PRIMARY WEAPON',icon:'gun',tag:'CALIBER, SHOT & FIRE MODES'},{id:'grenade',name:'GRENADE LAB',icon:'grenade',tag:'BLAST, RANGE & RELOADING'},{id:'modules',name:'ATTACHMENTS',icon:'laser',tag:'EQUIP YOUR BUILD'}];
+function iconArt(id,level=0){
+ // The projectile illustration changes as the pellet count increases.
+ let glyph=ICON_SHAPES[id]||ICON_SHAPES.gun;
+ if(id==='projectiles'){
+  const n=clamp(level+1,1,8),fan=Array.from({length:n},(_,i)=>{
+    const dy=n===1?0:(i-(n-1)/2)*Math.min(12,55/(n-1));
+    return `<path d="M44 39L${Math.round(97-Math.abs(dy)*.2)} ${Math.round(39+dy)}"/><circle cx="${Math.round(102-Math.abs(dy)*.2)}" cy="${Math.round(39+dy)}" r="${n>5?2.4:3.4}" fill="currentColor"/>`;
+  }).join('');
+  glyph=`<path d="M14 30h30v18H14zM23 30v18M44 34h5M44 44h5"/>${fan}`;
+ }
+ return `<svg class="item-illustration" viewBox="0 0 120 78" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><g fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">${glyph}</g></svg>`;
+}
+function statText(o,lvl){
+ const curr=player.mods[o.id],next=curr+1;const r=gunSpec();
+ switch(o.id){
+  case 'projectiles':return {now:`${projectileCount()} pellet${projectileCount()===1?'':'s'} / shot`,next:o.max===lvl?'MAX':`${projectileCount()+1} pellets / shot`,hint:`1 cartridge per shot, regardless of pellet count`};
+  case 'fireControl':return {now:lvl?'ALL 3 MODES UNLOCKED':'SEMI ONLY',next:lvl?'MAX':'SEMI + BURST + AUTO',hint:'Buy once; press F to cycle all 3 modes. Refund for full price.'};
+  case 'receiver':return {now:r.name,next:lvl===2?'MAX':RECEIVERS[next].name,hint:`${r.damage} base damage · ${r.reload.toFixed(2)}s base reload`};
+  case 'damage':return {now:`${r.damage+curr*7} damage / projectile`,next:`${r.damage+next*7} damage / projectile`};
+  case 'trigger':return {now:`${Math.round(60/gunInterval())} RPM max`,next:`${Math.round(60/Math.max(.045,r.interval/(1+.18*next)))} RPM max`};
+  case 'reloadSpeed':return {now:`${reloadDuration().toFixed(2)}s reload`,next:`${Math.max(.34,r.reload*Math.pow(.84,next)).toFixed(2)}s reload`};
+  case 'mag':return {now:`${clipSize()} cartridges`,next:`${clipSize()+4} cartridges`};
+  case 'barrel':return {now:`${Math.round(r.velocity+curr*75)} velocity`,next:`${Math.round(r.velocity+next*75)} velocity`};
+  case 'penetration':return {now:`${curr+1} enemies per bullet`,next:`${next+1} enemies per bullet`};
+  case 'blast':return {now:`${grenadeRadius()} radius`,next:`${grenadeRadius()+25} radius`};
+  case 'grenadePower':return {now:`${grenadeDamage()} grenade damage`,next:`${grenadeDamage()+25} damage`};
+  case 'grenadeRange':return {now:`${grenadeRange()} distance`,next:o.max===lvl?'MAX':`${grenadeRange()+110} distance`};
+  case 'grenadeMag':return {now:`${grenadeClipSize()} grenades / mag`,next:o.max===lvl?'MAX':`${grenadeClipSize()+1} grenades / mag`};
+  case 'grenadeReload':return {now:`${grenadeReloadDuration().toFixed(2)}s reload`,next:`${Math.max(.38,1.6*Math.pow(.85,next)).toFixed(2)}s reload`};
+  case 'grenadeCycle':return {now:`${grenadeInterval().toFixed(2)}s launcher cycle`,next:`${Math.max(.15,.76*Math.pow(.85,next)).toFixed(2)}s cycle`};
+  case 'knife':return {now:`${44+curr*15} slash damage`,next:`${44+next*15} slash damage`};
+ }
+ return {now:`Level ${lvl}`,next:`Level ${next}`};
+}
+function shopCard(id,title,sub,body,category,level=0,stats=null){
+ const icon=iconArt(id,level), stat=stats?`<div class="shop-effect"><span>${stats.now}</span><span class="upgrade-arrow">→</span><span class="next-stat">${stats.next}</span></div>${stats.hint?`<div class="shop-footnote">${stats.hint}</div>`:''}`:'';
+ return `<article class="shop-card"><div class="card-upper"><div class="shop-visual">${icon}</div><div class="shop-identity"><div class="shop-owned">${category}</div><h3>${title}</h3></div></div><p>${sub}</p>${stat}${body}</article>`;
+}
+function buildUpgradeCard(o){
+ const lvl=player.mods[o.id],maxed=o.max!==undefined&&lvl>=o.max,cost=upgradeCost(o,lvl),refund=lvl?upgradeCost(o,lvl-1):0;
+ const next=o.id==='receiver'?(lvl===0?'5.56 CARBINE':lvl===1?'7.62 BATTLE':'MAX RECEIVER'):('LV '+(lvl+1));
+ const track=Array.from({length:Math.min(7,o.max||5)},(_,i)=>`<span class="level-pip ${i<Math.min(lvl,o.max||5)?'filled':''}"></span>`).join('');
+ return shopCard(o.id,o.name,o.detail,`<div class="card-level"><span>LEVEL ${lvl}${o.max!==undefined?' / '+o.max:''}</span><div class="level-pips">${track}</div></div><div class="card-actions"><button type="button" class="shop-buy" data-mod="${o.id}" ${maxed||credits<cost?'disabled':''}>${maxed?'MAXED':`+ UPGRADE · $${cost.toLocaleString()}`}<small>${!maxed?' → '+next:''}</small></button><button type="button" class="shop-buy shop-refund" data-refund="${o.id}" ${lvl===0?'disabled':''} title="Downgrade one tier and refund the full price">− <span>REFUND</span><small>$${refund.toLocaleString()}</small></button></div>`,o.requires?'GRENADE PART':'GUN MODIFICATION',lvl,statText(o,lvl));
+}
+function buildModuleCard(o){
+ const own=player.modules[o.id];let body='';
+ if(!own)body=`<div class="shop-unowned">NOT OWNED</div><button type="button" class="shop-buy" data-module-buy="${o.id}" ${credits<o.price?'disabled':''}>+ BUY ATTACHMENT · $${o.price.toLocaleString()}</button>`;
+ else{
+  const active=o.id==='laser'?player.laserOn:o.id==='explosive'?player.explosiveOn:o.id==='bayonet'?player.bayonetOn:player.secondary===o.id;
+  body=`<div class="shop-owned module-status">✓ OWNED ${active?' · EQUIPPED':''}</div>`;
+  if(['laser','explosive','bayonet'].includes(o.id))body+=`<button type="button" class="shop-buy toggle" data-module-toggle="${o.id}">${active?'− UNEQUIP':'+ EQUIP'} · FREE</button>`;
+  else body+=`<button type="button" class="shop-buy toggle" data-secondary="${o.id}">${active?'✓ SELECTED':'EQUIP SECONDARY'} · FREE</button>`;
+  body+=`<button type="button" class="shop-buy shop-refund" data-module-refund="${o.id}">↩ SELL · FULL REFUND $${o.price.toLocaleString()}</button>`;
+ }
+ return shopCard(o.id,o.name,o.detail,body,'EQUIPMENT / MODULE');
+}
+
+function treeNodeShell(id,title,kicker,iconId,body,x,y,classes=''){
+ const levelForIcon=id==='projectiles'?player.mods.projectiles:0;
+ return `<article class="tree-node ${classes}" data-node="${id}" style="left:${x}px;top:${y}px"><div class="tree-head"><div class="tree-icon">${iconArt(iconId||id,levelForIcon)}</div><div class="tree-titlewrap"><div class="tree-kicker">${kicker}</div><h3>${title}</h3></div></div>${body}</article>`;
+}
+function treeStatLine(label,value){return `<div class="tree-statline"><span>${label}</span><b>${value}</b></div>`}
+function optionIcon(id){return id==='receiver'?'receiver':id==='damage'?'damage':id==='trigger'?'trigger':id==='fireControl'?'fireControl':id==='projectiles'?'projectiles':id==='reloadSpeed'?'reloadSpeed':id==='mag'?'mag':id==='barrel'?'barrel':id==='penetration'?'penetration':id==='blast'?'blast':id==='grenadePower'?'grenadePower':id==='grenadeRange'?'grenadeRange':id==='grenadeMag'?'grenadeMag':id==='grenadeReload'?'grenadeReload':id==='grenadeCycle'?'grenadeCycle':id==='knife'?'knife':'gun'}
+function buildTreeUpgradeNode(o,x,y,kicker='WEAPON MOD'){
+ const lvl=player.mods[o.id],needs=o.requires&&!player.modules[o.requires],maxed=o.max!==undefined&&lvl>=o.max;
+ const cost=upgradeCost(o,lvl),refund=lvl?upgradeCost(o,lvl-1):0,st=statText(o,lvl);
+ let body='';
+ if(needs){
+  body+=treeStatLine('CURRENT',st.now)+`<div class="tree-locked-banner">REQUIRES ${o.requires.toUpperCase()} MODULE</div>`;
+  return treeNodeShell(o.id,o.name,kicker,optionIcon(o.id),body,x,y,'locked');
+ }
+ body+=treeStatLine('CURRENT',st.now);
+ body+=treeStatLine('NEXT',st.next);
+ if(st.hint)body+=`<div class="tree-hint">${st.hint}</div>`;
+ body+=`<div class="tree-level">LEVEL ${lvl}${o.max!==undefined?` / ${o.max}`:''}</div>`;
+ body+=`<div class="tree-actions"><button type="button" class="shop-buy" data-mod="${o.id}" ${maxed||credits<cost?'disabled':''}>${maxed?'MAXED':`+ UPGRADE<small>$${cost.toLocaleString()}</small>`}</button><button type="button" class="shop-buy shop-refund" data-refund="${o.id}" ${lvl===0?'disabled':''}>− REFUND<small>$${refund.toLocaleString()}</small></button></div>`;
+ return treeNodeShell(o.id,o.name,kicker,optionIcon(o.id),body,x,y,'upgrade');
+}
+function buildTreeModuleNode(m,x,y,kicker='MODULE'){
+ const owned=!!player.modules[m.id];
+ const active=m.id==='laser'?player.laserOn:m.id==='explosive'?player.explosiveOn:m.id==='bayonet'?player.bayonetOn:player.secondary===m.id;
+ let body=`<p>${m.detail}</p>`;
+ if(!owned){
+  body+=`<div class="tree-status warn">LOCKED · COST $${m.price.toLocaleString()}</div><div class="tree-actions single"><button type="button" class="shop-buy" data-module-buy="${m.id}" ${credits<m.price?'disabled':''}>+ BUY MODULE</button></div>`;
+  return treeNodeShell(m.id,m.name,kicker,m.id,body,x,y,'locked');
+ }
+ body+=`<div class="tree-status">OWNED${active?' · EQUIPPED':''}</div>`;
+ if(['laser','explosive','bayonet'].includes(m.id)) body+=`<div class="tree-actions"><button type="button" class="shop-buy toggle" data-module-toggle="${m.id}">${active?'UNEQUIP':'EQUIP'}<small>FREE</small></button><button type="button" class="shop-buy shop-refund" data-module-refund="${m.id}">SELL<small>$${m.price.toLocaleString()}</small></button></div>`;
+ else body+=`<div class="tree-actions"><button type="button" class="shop-buy toggle" data-secondary="${m.id}">${active?'SELECTED':'SET SECONDARY'}<small>FREE</small></button><button type="button" class="shop-buy shop-refund" data-module-refund="${m.id}">SELL<small>$${m.price.toLocaleString()}</small></button></div>`;
+ return treeNodeShell(m.id,m.name,kicker,m.id,body,x,y,'module');
+}
+function buildAimNode(x,y){
+ const active=player.secondary==='aim';
+ const body=`<p>Tighten shot spread with right-click. Your default alternate ability.</p><div class="tree-status">${active?'SELECTED':'STARTER ABILITY'}</div><div class="tree-actions single"><button type="button" class="shop-buy toggle ${active?'active-mode':''}" data-secondary="aim">${active?'✓ EQUIPPED':'EQUIP AIM'}</button></div>`;
+ return treeNodeShell('aim','PRECISION AIM','SECONDARY', 'aim', body, x, y, active?'':'');
+}
+function buildFireModeNode(x,y){
+ const modes=FIRE_MODES.map((mode,i)=>`<button type="button" data-fire-mode="${mode}" class="shop-buy toggle ${player.fireMode===mode?'active-mode':''}" ${i>0&&!player.mods.fireControl?'disabled':''}>${mode==='burst'?'BURST':mode==='auto'?'AUTO':'SEMI'}</button>`).join('');
+ const st=statText(OPTIONS.find(o=>o.id==='fireControl'),player.mods.fireControl);
+ const body=treeStatLine('SYSTEM',player.mods.fireControl?'ALL MODES READY':'SEMI ONLY')+`<div class="tree-hint">One purchase unlocks SEMI, BURST and AUTO. Press F in combat to cycle them.</div><div class="tree-actions single"><button type="button" class="shop-buy" data-mod="fireControl" ${player.mods.fireControl||credits<upgradeCost(OPTIONS.find(o=>o.id==='fireControl'),0)?'disabled':''}>${player.mods.fireControl?'UNLOCKED':'+ BUY SELECT-FIRE'}${player.mods.fireControl?'':`<small>$${upgradeCost(OPTIONS.find(o=>o.id==='fireControl'),0).toLocaleString()}</small>`}</button></div><div class="tree-actions">${modes}</div><div class="tree-actions single"><button type="button" class="shop-buy shop-refund" data-refund="fireControl" ${player.mods.fireControl?'':'disabled'}>− REFUND SELECT-FIRE<small>$${upgradeCost(OPTIONS.find(o=>o.id==='fireControl'),0).toLocaleString()}</small></button></div>`;
+ return treeNodeShell('fireControl','SELECT-FIRE TRIGGER','FIRE CONTROL','fireControl',body,x,y,player.mods.fireControl?'':'');
+}
+function buildGrenadeHub(x,y){
+ const mod=MODULES.find(m=>m.id==='grenade');
+ if(!player.modules.grenade){
+  const body=`<p>Unlock the underbarrel launcher to open its whole branch: blast, damage, range, capacity, reload, and cycle speed.</p><div class="tree-status warn">LOCKED · COST $${mod.price.toLocaleString()}</div><div class="tree-actions single"><button type="button" class="shop-buy" data-module-buy="grenade" ${credits<mod.price?'disabled':''}>+ BUY GRENADE MODULE</button></div>`;
+  return treeNodeShell('grenade','GRENADE SYSTEM','ALT WEAPON','grenade',body,x,y,'hub locked');
+ }
+ const active=player.secondary==='grenade';
+ const body=`<p>Lobbed arc over cover. Bounces only off map edges. Explosions tear up the environment.</p>${treeStatLine('LOADED',`${player.grenades} / ${grenadeClipSize()}`)}${treeStatLine('RESERVE',player.grenadeReserve===Infinity?'∞':String(player.grenadeReserve))}<div class="tree-actions"><button type="button" class="shop-buy toggle" data-secondary="grenade">${active?'SELECTED':'SET SECONDARY'}<small>FREE</small></button><button type="button" class="shop-buy shop-refund" data-module-refund="grenade">SELL<small>$${mod.price.toLocaleString()}</small></button></div>`;
+ return treeNodeShell('grenade','GRENADE SYSTEM','ALT WEAPON','grenade',body,x,y,'hub');
+}
+function buildCoreNode(x,y){
+ const body=`<p>Build one firearm from compact pistol to battle rifle. Click any connected node to buy upgrades or refund them in full.</p>${treeStatLine('RECEIVER',gunSpec().name)}${treeStatLine('SHOT',`${projectileCount()} pellet${projectileCount()===1?'':'s'} / cartridge`)}${treeStatLine('MODE',fireModeLabel())}${treeStatLine('RELOAD',`${reloadDuration().toFixed(2)}s · ${clipSize()} rounds`)}<div class="tree-status">$${credits.toLocaleString()} CREDITS AVAILABLE</div>`;
+ return treeNodeShell('core','WEAPON CORE','MODULAR PLATFORM','gun',body,x,y,'root');
+}
+function buildAttachmentHub(x,y){
+ const body=`<p>Manage your active modules, ammo type, laser, melee hardware, and alternate firing abilities from this branch.</p><div class="tree-status">LASER ${player.modules.laser?(player.laserOn?'ON':'OFF'):'LOCKED'} · EXPLOSIVE ${player.modules.explosive?(player.explosiveOn?'ON':'OFF'):'LOCKED'}</div>`;
+ return treeNodeShell('attachments','ATTACHMENT HUB','UTILITY BRANCH','laser',body,x,y,'hub');
+}
+
+function compactNode(id,iconId,x,y,label,{locked=false,active=false,root=false,hub=false,theme='',levelText='' }={}){
+ const cls=['tree-compact-node']; if(locked)cls.push('locked'); if(active)cls.push('active'); if(root)cls.push('root'); if(hub)cls.push('branch-hub');if(theme)cls.push('branch-'+theme); if(selectedTreeNode===id)cls.push('selected');
+ return `<button type="button" class="${cls.join(' ')}" data-select-node="${id}" style="left:${x}px;top:${y}px" title="${label}"><span class="mini-icon">${iconArt(iconId, id==='projectiles'?player.mods.projectiles:0)}</span>${levelText?`<span class="tree-node-level">${levelText}</span>`:''}<span class="tree-node-label">${label}</span></button>`;
+}
+function buildCompactSkillTree(){
+ // Category hubs create visual groupings, not dependencies. Only grenade upgrades need the purchased launcher.
+ const pos={
+  core:[600,475],
+  receiverHub:[310,240],receiver:[140,110],damage:[140,305],
+  fireHub:[270,475],trigger:[115,440],fireControl:[115,570],
+  feedHub:[515,745],mag:[485,940],reloadSpeed:[650,940],
+  ballisticsHub:[690,205],barrel:[535,70],projectiles:[695,70],penetration:[850,110],
+  grenade:[945,465],blast:[1080,285],grenadePower:[1110,465],grenadeRange:[1110,625],grenadeMag:[980,815],grenadeReload:[810,820],grenadeCycle:[800,615],
+  attachments:[255,825],laser:[95,770],explosive:[95,960],bayonet:[245,1020],power:[380,1035],aim:[355,655],knife:[110,655]
+ };
+ const branches=[
+  ['core','receiverHub'],['receiverHub','receiver'],['receiverHub','damage'],
+  ['core','fireHub'],['fireHub','trigger'],['fireHub','fireControl'],
+  ['core','feedHub'],['feedHub','mag'],['feedHub','reloadSpeed'],
+  ['core','ballisticsHub'],['ballisticsHub','barrel'],['ballisticsHub','projectiles'],['ballisticsHub','penetration'],
+  ['core','grenade'],['grenade','blast'],['grenade','grenadePower'],['grenade','grenadeRange'],['grenade','grenadeMag'],['grenade','grenadeReload'],['grenade','grenadeCycle'],
+  ['core','attachments'],['attachments','laser'],['attachments','explosive'],['attachments','bayonet'],['attachments','power'],['attachments','aim'],['attachments','knife']
+ ];
+ const grenadeMods=new Set(['blast','grenadePower','grenadeRange','grenadeMag','grenadeReload','grenadeCycle']);
+ const lockedEdge=b=>(grenadeMods.has(b)&&!player.modules.grenade)||(['grenade','laser','explosive','bayonet','power'].includes(b)&&!player.modules[b]);
+ const lines=branches.map(([a,b])=>{const [x1,y1]=pos[a],[x2,y2]=pos[b];return `<line class="${a==='core'?'category-link':'branch-link'} ${lockedEdge(b)?'locked':''}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" />`;}).join('');
+ const hub=(id,icon,label,theme)=>compactNode(id,icon,...pos[id],label,{hub:true,theme});
+ const lvl=id=>player.mods[id]>0?String(player.mods[id]):'';
+ const nodes=[
+  compactNode('core','gun',...pos.core,'CORE',{root:true}),
+  hub('receiverHub','receiver','RECEIVERS','receiver'),
+  compactNode('receiver','receiver',...pos.receiver,'CALIBER',{levelText:lvl('receiver')}),
+  compactNode('damage','damage',...pos.damage,'DAMAGE',{levelText:lvl('damage')}),
+  hub('fireHub','fireControl','FIRE CONTROL','fire'),
+  compactNode('trigger','trigger',...pos.trigger,'TRIGGER',{levelText:lvl('trigger')}),
+  compactNode('fireControl','fireControl',...pos.fireControl,'FIRE MODES',{active:!!player.mods.fireControl}),
+  hub('feedHub','reloadSpeed','AMMO FEED','feed'),
+  compactNode('mag','mag',...pos.mag,'MAG SIZE',{levelText:lvl('mag')}),
+  compactNode('reloadSpeed','reloadSpeed',...pos.reloadSpeed,'RELOAD',{levelText:lvl('reloadSpeed')}),
+  hub('ballisticsHub','barrel','BALLISTICS','ballistics'),
+  compactNode('barrel','barrel',...pos.barrel,'BARREL',{levelText:lvl('barrel')}),
+  compactNode('projectiles','projectiles',...pos.projectiles,'PELLETS',{levelText:lvl('projectiles')}),
+  compactNode('penetration','penetration',...pos.penetration,'PEN',{levelText:lvl('penetration')}),
+  compactNode('grenade','grenade',...pos.grenade,'LAUNCHER',{locked:!player.modules.grenade,active:player.secondary==='grenade',theme:'grenade',hub:true}),
+  compactNode('blast','blast',...pos.blast,'BLAST',{locked:!player.modules.grenade,levelText:lvl('blast')}),
+  compactNode('grenadePower','grenadePower',...pos.grenadePower,'CHARGE',{locked:!player.modules.grenade,levelText:lvl('grenadePower')}),
+  compactNode('grenadeRange','grenadeRange',...pos.grenadeRange,'RANGE',{locked:!player.modules.grenade,levelText:lvl('grenadeRange')}),
+  compactNode('grenadeMag','grenadeMag',...pos.grenadeMag,'G-CAP',{locked:!player.modules.grenade,levelText:lvl('grenadeMag')}),
+  compactNode('grenadeReload','grenadeReload',...pos.grenadeReload,'G-RELOAD',{locked:!player.modules.grenade,levelText:lvl('grenadeReload')}),
+  compactNode('grenadeCycle','grenadeCycle',...pos.grenadeCycle,'G-CYCLE',{locked:!player.modules.grenade,levelText:lvl('grenadeCycle')}),
+  hub('attachments','laser','ATTACHMENTS','modules'),
+  compactNode('laser','laser',...pos.laser,'LASER',{locked:!player.modules.laser,active:player.modules.laser&&player.laserOn}),
+  compactNode('explosive','explosive',...pos.explosive,'EXPLOSIVE',{locked:!player.modules.explosive,active:player.modules.explosive&&player.explosiveOn}),
+  compactNode('bayonet','bayonet',...pos.bayonet,'BAYONET',{locked:!player.modules.bayonet,active:player.modules.bayonet&&player.bayonetOn}),
+  compactNode('power','power',...pos.power,'POWER SHOT',{locked:!player.modules.power,active:player.secondary==='power'}),
+  compactNode('aim','aim',...pos.aim,'AIM',{active:player.secondary==='aim'}),
+  compactNode('knife','knife',...pos.knife,'MELEE',{levelText:lvl('knife')})
+ ].join('');
+ return `<div class="tree-map-viewport" id="treeViewport" aria-label="Draggable, forked weapon upgrade map"><div class="tree-map-stage" id="treeStage"><svg class="tree-map-svg" viewBox="0 0 1200 1120" preserveAspectRatio="none" aria-hidden="true">${lines}</svg>${nodes}</div><div class="tree-map-hint">DRAG TO PAN · SCROLL TO ZOOM · CLICK TO INSPECT</div><div class="tree-zoom-controls" aria-label="Skill tree zoom controls"><button type="button" data-tree-zoom="in" aria-label="Zoom in">+</button><output id="treeZoomLabel" aria-live="off">100%</output><button type="button" data-tree-zoom="out" aria-label="Zoom out">−</button><button type="button" data-tree-reset title="Center map and reset zoom">⌖ RESET VIEW</button></div><aside class="tree-popup" id="treePopup" hidden><button type="button" class="tree-popup-close" data-tree-close aria-label="Close upgrade details">×</button><div class="tree-popup-body" id="treePopupBody"></div></aside></div>`;
+}
+function renderDetailUpgrade(o,kicker='WEAPON MOD'){
+ const lvl=player.mods[o.id],needs=o.requires&&!player.modules[o.requires],maxed=o.max!==undefined&&lvl>=o.max,cost=upgradeCost(o,lvl),refund=lvl?upgradeCost(o,lvl-1):0,st=statText(o,lvl);
+ const lockHtml=needs?`<div class="tree-empty-note">Requires the ${o.requires.toUpperCase()} module first.</div>`:'';
+ return `<div class="tree-detail-top"><div class="tree-icon-large">${iconArt(optionIcon(o.id),o.id==='projectiles'?player.mods.projectiles:0)}</div><div><div class="tree-detail-kicker">${kicker}</div><div class="tree-detail-title">${o.name}</div></div></div><div class="tree-detail-desc">${o.detail}</div><div class="tree-mini-stats">${treeStatLine('CURRENT',st.now)}${treeStatLine('NEXT',st.next)}</div>${st.hint?`<div class="tree-hint">${st.hint}</div>`:''}<div class="tree-status">LEVEL ${lvl}${o.max!==undefined?` / ${o.max}`:''}</div>${lockHtml}${needs?'':`<div class="tree-detail-actions"><button type="button" class="shop-buy" data-mod="${o.id}" ${maxed||credits<cost?'disabled':''}>${maxed?'MAXED':`+ UPGRADE<small>$${cost.toLocaleString()}</small>`}</button><button type="button" class="shop-buy shop-refund" data-refund="${o.id}" ${lvl===0?'disabled':''}>− REFUND<small>$${refund.toLocaleString()}</small></button></div>`}`;
+}
+function renderDetailModule(m,kicker='MODULE'){
+ const owned=!!player.modules[m.id]; const active=m.id==='laser'?player.laserOn:m.id==='explosive'?player.explosiveOn:m.id==='bayonet'?player.bayonetOn:player.secondary===m.id;
+ let actions='';
+ if(!owned) actions=`<div class="tree-status warn">LOCKED · $${m.price.toLocaleString()}</div><div class="tree-detail-actions single"><button type="button" class="shop-buy" data-module-buy="${m.id}" ${credits<m.price?'disabled':''}>+ BUY MODULE</button></div>`;
+ else if(['laser','explosive','bayonet'].includes(m.id)) actions=`<div class="tree-status">OWNED${active?' · EQUIPPED':''}</div><div class="tree-detail-actions"><button type="button" class="shop-buy toggle" data-module-toggle="${m.id}">${active?'UNEQUIP':'EQUIP'}<small>FREE</small></button><button type="button" class="shop-buy shop-refund" data-module-refund="${m.id}">SELL<small>$${m.price.toLocaleString()}</small></button></div>`;
+ else actions=`<div class="tree-status">OWNED${active?' · SELECTED':''}</div><div class="tree-detail-actions"><button type="button" class="shop-buy toggle" data-secondary="${m.id}">${active?'SELECTED':'SET SECONDARY'}<small>FREE</small></button><button type="button" class="shop-buy shop-refund" data-module-refund="${m.id}">SELL<small>$${m.price.toLocaleString()}</small></button></div>`;
+ return `<div class="tree-detail-top"><div class="tree-icon-large">${iconArt(m.id)}</div><div><div class="tree-detail-kicker">${kicker}</div><div class="tree-detail-title">${m.name}</div></div></div><div class="tree-detail-desc">${m.detail}</div>${actions}`;
+}
+function renderTreeDetailPanel(){
+ const id=selectedTreeNode;
+ const hubInfo={
+  receiverHub:['RECEIVER & POWER','Caliber and damage are separate upgrades. Increasing caliber does not unlock damage, and vice versa.','receiver'],
+  fireHub:['FIRE CONTROL','Trigger reset and select-fire are independent. Buy either one directly.','fireControl'],
+  feedHub:['AMMUNITION & HANDLING','Magazine capacity and reload speed fork from the same hub. Neither requires upgrading the other. Reserve ammunition is unlimited; magazine reloads still matter.','mag'],
+  ballisticsHub:['BALLISTICS','Barrel velocity, shotgun-style pellets, and penetration can be upgraded independently.','barrel']
+ };
+ if(hubInfo[id]){const [title,description,art]=hubInfo[id];return `<div class="tree-detail-top"><div class="tree-icon-large">${iconArt(art)}</div><div><div class="tree-detail-kicker">INDEPENDENT BRANCH</div><div class="tree-detail-title">${title}</div></div></div><div class="tree-detail-desc">${description}</div><div class="tree-empty-note">Pick any connected symbol to open its purchase and refund controls. Connection lines show categories, not purchase prerequisites.</div>`;}
+
+ if(id==='core') return `<div class="tree-detail-top"><div class="tree-icon-large">${iconArt('gun')}</div><div><div class="tree-detail-kicker">MODULAR PLATFORM</div><div class="tree-detail-title">WEAPON CORE</div></div></div><div class="tree-detail-desc">Your entire build radiates from this weapon core. Pick any upgrade directly. Lines represent categories, not requirements—except grenade upgrades, which need the grenade module.</div><div class="tree-mini-stats">${treeStatLine('RECEIVER',gunSpec().name)}${treeStatLine('PELLETS',`${projectileCount()} / cartridge`)}${treeStatLine('FIRE MODE',fireModeLabel())}${treeStatLine('MAG / RELOAD',`${clipSize()} · ${reloadDuration().toFixed(2)}s`)}${treeStatLine('ALT ABILITY',selectedAltName())}</div><div class="tree-help"><div class="tree-chip"><b>Hover</b> or click nodes to inspect them</div><div class="tree-chip"><b>Refund</b> any tier for full value</div></div>`;
+ if(id==='attachments') return `<div class="tree-detail-top"><div class="tree-icon-large">${iconArt('laser')}</div><div><div class="tree-detail-kicker">UTILITY BRANCH</div><div class="tree-detail-title">ATTACHMENT HUB</div></div></div><div class="tree-detail-desc">This branch handles equipment and alternate abilities. Lasers, explosive rounds, bayonet hardware, power shot, and precision aim all connect here.</div><div class="tree-mini-stats">${treeStatLine('LASER',player.modules.laser?(player.laserOn?'ON':'OWNED'):'LOCKED')}${treeStatLine('EXPLOSIVE',player.modules.explosive?(player.explosiveOn?'ON':'OWNED'):'LOCKED')}${treeStatLine('MELEE BONUS',player.modules.bayonet?'BAYONET READY':'BUTTSTOCK ONLY')}</div>`;
+ if(id==='aim') return `<div class="tree-detail-top"><div class="tree-icon-large">${iconArt('aim')}</div><div><div class="tree-detail-kicker">STARTER SECONDARY</div><div class="tree-detail-title">PRECISION AIM</div></div></div><div class="tree-detail-desc">Tightens your spread while aiming. This is your default secondary mode if other secondary modules are sold or not selected.</div><div class="tree-status">${player.secondary==='aim'?'CURRENTLY SELECTED':'AVAILABLE'}</div><div class="tree-detail-actions single"><button type="button" class="shop-buy toggle ${player.secondary==='aim'?'active-mode':''}" data-secondary="aim">${player.secondary==='aim'?'✓ EQUIPPED':'EQUIP AIM'}</button></div>`;
+ if(id==='fireControl') return renderFireControlDetail();
+ if(id==='grenade') return renderGrenadeHubDetail();
+ const opt=OPTIONS.find(o=>o.id===id); if(opt) return renderDetailUpgrade(opt, opt.requires?'GRENADE LAB':'WEAPON MOD');
+ const mod=MODULES.find(m=>m.id===id); if(mod) return renderDetailModule(mod, ['power'].includes(id)?'ALT ABILITY':'ATTACHMENT');
+ return `<div class="tree-empty-note">Select a node.</div>`;
+}
+function renderFireControlDetail(){
+ const unlocked=!!player.mods.fireControl; const buyCost=upgradeCost(OPTIONS.find(o=>o.id==='fireControl'),0); const modes=FIRE_MODES.map((mode,i)=>`<button type="button" data-fire-mode="${mode}" class="shop-buy toggle ${player.fireMode===mode?'active-mode':''}" ${i>0&&!unlocked?'disabled':''}>${mode==='burst'?'BURST':mode==='auto'?'AUTO':'SEMI'}</button>`).join('');
+ return `<div class="tree-detail-top"><div class="tree-icon-large">${iconArt('fireControl')}</div><div><div class="tree-detail-kicker">FIRE CONTROL</div><div class="tree-detail-title">SELECT-FIRE TRIGGER</div></div></div><div class="tree-detail-desc">One purchase unlocks SEMI, 3-round BURST, and FULL AUTO. Press F in combat to cycle through any unlocked modes.</div><div class="tree-mini-stats">${treeStatLine('SYSTEM',unlocked?'ALL MODES UNLOCKED':'SEMI ONLY')}${treeStatLine('CURRENT MODE',fireModeLabel())}</div><div class="tree-detail-actions single"><button type="button" class="shop-buy" data-mod="fireControl" ${unlocked||credits<buyCost?'disabled':''}>${unlocked?'UNLOCKED':`+ BUY SELECT-FIRE<small>$${buyCost.toLocaleString()}</small>`}</button></div><div class="tree-detail-actions">${modes}</div><div class="tree-detail-actions single"><button type="button" class="shop-buy shop-refund" data-refund="fireControl" ${unlocked?'':'disabled'}>− REFUND SELECT-FIRE<small>$${buyCost.toLocaleString()}</small></button></div>`;
+}
+function renderGrenadeHubDetail(){
+ const mod=MODULES.find(m=>m.id==='grenade'); if(!player.modules.grenade) return `<div class="tree-detail-top"><div class="tree-icon-large">${iconArt('grenade')}</div><div><div class="tree-detail-kicker">ALT WEAPON</div><div class="tree-detail-title">GRENADE SYSTEM</div></div></div><div class="tree-detail-desc">Unlock the underbarrel launcher to open the full grenade branch: blast radius, explosive charge, range, capacity, reload speed, and firing cadence.</div><div class="tree-status warn">LOCKED · $${mod.price.toLocaleString()}</div><div class="tree-detail-actions single"><button type="button" class="shop-buy" data-module-buy="grenade" ${credits<mod.price?'disabled':''}>+ BUY GRENADE MODULE</button></div>`;
+ return `<div class="tree-detail-top"><div class="tree-icon-large">${iconArt('grenade')}</div><div><div class="tree-detail-kicker">ALT WEAPON</div><div class="tree-detail-title">GRENADE SYSTEM</div></div></div><div class="tree-detail-desc">Lobbed grenades arc over cover, bounce off arena edges, and shred enemies plus destructible cover. Use the surrounding branch nodes to refine its performance.</div><div class="tree-mini-stats">${treeStatLine('LOADED',`${player.grenades} / ${grenadeClipSize()}`)}${treeStatLine('RESERVE',player.grenadeReserve===Infinity?'∞':String(player.grenadeReserve))}${treeStatLine('RANGE',String(grenadeRange()))}</div><div class="tree-detail-actions"><button type="button" class="shop-buy toggle" data-secondary="grenade">${player.secondary==='grenade'?'SELECTED':'SET SECONDARY'}<small>FREE</small></button><button type="button" class="shop-buy shop-refund" data-module-refund="grenade">SELL<small>$${mod.price.toLocaleString()}</small></button></div>`;
+}
+const TREE_W=1200,TREE_H=1120,TREE_FOCUS={x:600,y:475};
+const TREE_MIN_ZOOM=.45,TREE_MAX_ZOOM=1.9;
+function defaultTreeZoom(){
+ const vp=ui.shopGrid.querySelector('#treeViewport');
+ return vp?clamp((vp.clientWidth-70)/1040,.62,.95):.85;
+}
+function applyTreePan(){
+ const stage=ui.shopGrid.querySelector('#treeStage');
+ if(stage)stage.style.transform=`translate3d(${treePan.x}px,${treePan.y}px,0) scale(${treeScale})`;
+ const label=ui.shopGrid.querySelector('#treeZoomLabel');if(label)label.textContent=Math.round(treeScale*100)+'%';
+ if(treePopupOpen)positionTreePopup();
+}
+function centerTreeView(resetZoom=false){
+ const vp=ui.shopGrid.querySelector('#treeViewport');if(!vp)return;
+ if(resetZoom)treeScale=defaultTreeZoom();
+ treePan.x=Math.round(vp.clientWidth/2-TREE_FOCUS.x*treeScale);
+ treePan.y=Math.round(vp.clientHeight/2-TREE_FOCUS.y*treeScale);
+ treePanReady=true;clampTreePan();applyTreePan();
+}
+function clampTreePan(){
+ const vp=ui.shopGrid.querySelector('#treeViewport');if(!vp)return;
+ const w=vp.clientWidth,h=vp.clientHeight,sw=TREE_W*treeScale,sh=TREE_H*treeScale;
+ const axis=(p,viewport,content)=>content<=viewport?
+  (viewport-content)/2:clamp(p,viewport-content-42,42);
+ treePan.x=axis(treePan.x,w,sw);
+ treePan.y=axis(treePan.y,h,sh);
+}
+function zoomTree(nextZoom,pointX,pointY){
+ const vp=ui.shopGrid.querySelector('#treeViewport');if(!vp)return;
+ const next=clamp(nextZoom,TREE_MIN_ZOOM,TREE_MAX_ZOOM);
+ if(Math.abs(next-treeScale)<.0001)return;
+ const wx=(pointX-treePan.x)/treeScale,wy=(pointY-treePan.y)/treeScale;
+ treeScale=next;
+ treePan.x=pointX-wx*next;treePan.y=pointY-wy*next;
+ clampTreePan();applyTreePan();
+}
+function positionTreePopup(){
+ const vp=ui.shopGrid.querySelector('#treeViewport'),node=ui.shopGrid.querySelector(`[data-select-node="${selectedTreeNode}"]`),popup=ui.shopGrid.querySelector('#treePopup');
+ if(!vp||!node||!popup||popup.hidden)return;
+ const v=vp.getBoundingClientRect(),n=node.getBoundingClientRect(),width=popup.offsetWidth,height=popup.offsetHeight;
+ // Open on the side with more room, and never clip through the viewport.
+ const right=n.right-v.left+13, left=n.left-v.left-width-13;
+ const x=right+width<=v.width-8?right:(left>=8?left:clamp(right,8,Math.max(8,v.width-width-8)));
+ const y=clamp((n.top+n.bottom)/2-v.top-height/2,8,Math.max(8,v.height-height-8));
+ popup.style.left=`${x}px`;popup.style.top=`${y}px`;
+}
+function updateTreeDetailPanel(){
+ const popup=ui.shopGrid.querySelector('#treePopup'),body=ui.shopGrid.querySelector('#treePopupBody');
+ if(popup&&body){popup.hidden=!treePopupOpen;if(treePopupOpen){body.innerHTML=renderTreeDetailPanel();positionTreePopup()}}
+ ui.shopGrid.querySelectorAll('[data-select-node]').forEach(n=>n.classList.toggle('selected',treePopupOpen&&n.dataset.selectNode===selectedTreeNode));
+}
+function renderShop(){
+ ui.shopBank.innerHTML=`$${credits.toLocaleString()} <small>AVAILABLE CREDITS</small>`;
+ ui.shopMessage.textContent='INDEPENDENT UPGRADE BRANCHES · INFINITE RESERVE AMMO';
+ ui.shopNote.textContent='LINES GROUP PARTS, NOT PURCHASE ORDER · GRENADES NEED THE LAUNCHER MODULE · UNLIMITED RESERVE AMMO';
+ ui.shopStats.innerHTML=`<div><small>RECEIVER</small><b>${gunSpec().name}</b></div><div><small>DAMAGE / PELLET</small><b>${gunSpec().damage+player.mods.damage*7}</b></div><div><small>PELLETS / SHOT</small><b>${projectileCount()}</b></div><div><small>FIRE RATE LIMIT</small><b>${Math.round(60/gunInterval())} RPM</b></div><div><small>MAG / RELOAD</small><b>${clipSize()} · ${reloadDuration().toFixed(2)}s</b></div><div><small>PENETRATION</small><b>${1+player.mods.penetration} target${player.mods.penetration?'s':''}</b></div><div><small>FIRE / SECONDARY</small><b>${fireModeLabel()} · ${selectedAltName()}</b></div>`;
+ ui.shopTabs.innerHTML='';ui.shopTabs.style.display='none';
+ ui.shopGrid.className='shop-grid tree-map compact';
+ ui.shopGrid.innerHTML=buildCompactSkillTree();
+ if(!treePanReady)centerTreeView(true);else {clampTreePan();applyTreePan()}
+ updateTreeDetailPanel();
+}
+
+
+ui.shopTabs.addEventListener('click',e=>{const button=e.target.closest('button[data-tab]');if(!button||!shopOpen)return;shopTab=button.dataset.tab;renderShop();});
+function openShop(mode='between'){
+ if(shopOpen)return;renderedStill=false;shopOpen=true;shopMode=mode;treePopupOpen=false;treeDrag=null;
+ if(mode==='between'){credits+=170+wave*55;bullets=[];grenades=[];knives=[]}
+ fireHeld=false;altHeld=false;secondaryPending=false;player.triggerQueue=0;player.burstShots=0;paused=true;keys.clear();showScreen(mode==='field'?'fieldShop':'shop');renderShop();syncUI(1);
+}
+
+// Wheel zooms the skill map at the cursor, not the paused game or browser page.
+ui.shopGrid.addEventListener('wheel',e=>{
+ const vp=e.target.closest('#treeViewport');if(!shopOpen||!vp)return;
+ if(e.target.closest('#treePopup'))return; // keep native scrolling in the detail popup
+ e.preventDefault();e.stopPropagation();
+ const rect=vp.getBoundingClientRect();
+ const delta=e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?vp.clientHeight:1);
+ zoomTree(treeScale*Math.exp(-delta*.0014),e.clientX-rect.left,e.clientY-rect.top);
+},{passive:false});
+
+// Map movement does not use the gameplay controls. Drag from empty space or icons.
+ui.shopGrid.addEventListener('pointerdown',e=>{
+ if(!shopOpen||e.button!==0||!e.target.closest('#treeViewport')||e.target.closest('#treePopup')||e.target.closest('[data-tree-reset]')||e.target.closest('[data-tree-zoom]'))return;
+ treeDrag={id:e.pointerId,x:e.clientX,y:e.clientY,ox:treePan.x,oy:treePan.y,moved:false};
+});
+window.addEventListener('pointermove',e=>{
+ if(!treeDrag||e.pointerId!==treeDrag.id||!shopOpen)return;
+ const dx=e.clientX-treeDrag.x,dy=e.clientY-treeDrag.y;
+ if(!treeDrag.moved&&Math.hypot(dx,dy)<=5)return;
+ treeDrag.moved=true;treePan.x=treeDrag.ox+dx;treePan.y=treeDrag.oy+dy;clampTreePan();applyTreePan();
+ const vp=ui.shopGrid.querySelector('#treeViewport');if(vp)vp.classList.add('panning');
+ if(e.cancelable)e.preventDefault();
+});
+const endTreeDrag=e=>{
+ if(!treeDrag||e.pointerId!==treeDrag.id)return;
+ if(treeDrag.moved){treeSuppressUntil=performance.now()+35;treePopupOpen=false;updateTreeDetailPanel()}
+ treeDrag=null;
+ const vp=ui.shopGrid.querySelector('#treeViewport');if(vp)vp.classList.remove('panning');
+};
+window.addEventListener('pointerup',endTreeDrag);
+window.addEventListener('pointercancel',endTreeDrag);
+ui.shopGrid.addEventListener('click',e=>{
+ if(performance.now()<treeSuppressUntil){e.preventDefault();e.stopImmediatePropagation();return}
+ if(!shopOpen)return;
+ if(e.target.closest('[data-tree-close]')){treePopupOpen=false;updateTreeDetailPanel();return}
+ if(e.target.closest('[data-tree-reset]')){centerTreeView(true);return}
+ const zoomButton=e.target.closest('[data-tree-zoom]');
+ if(zoomButton){const vp=ui.shopGrid.querySelector('#treeViewport');zoomTree(treeScale*(zoomButton.dataset.treeZoom==='in'?1.2:1/1.2),vp.clientWidth/2,vp.clientHeight/2);return}
+ const node=e.target.closest('[data-select-node]');
+ if(node){selectedTreeNode=node.dataset.selectNode;treePopupOpen=true;updateTreeDetailPanel();return}
+ if(e.target.closest('#treeViewport')&&!e.target.closest('#treePopup')){treePopupOpen=false;updateTreeDetailPanel()}
+});
+ui.shopGrid.addEventListener('click',e=>{
+ const b=e.target.closest('button');if(!b||b.disabled||!shopOpen)return;
+ const optId=b.dataset.mod||b.dataset.refund;
+ if(b.dataset.fireMode){if(!setFireMode(b.dataset.fireMode))return;}else if(optId){
+  const o=OPTIONS.find(v=>v.id===optId);if(!o||o.requires&&!player.modules[o.requires])return;
+  const lvl=player.mods[o.id];
+  if(b.dataset.refund){if(lvl===0)return;player.mods[o.id]=lvl-1;credits+=upgradeCost(o,lvl-1)}
+  else{if(o.max!==undefined&&lvl>=o.max)return;const cost=upgradeCost(o,lvl);if(credits<cost)return;credits-=cost;player.mods[o.id]++}
+  if(o.id==='fireControl'){if(!player.mods.fireControl)player.fireMode='semi';player.burstShots=0;player.triggerQueue=0;}
+  normalizeMagazine();
+ }else if(b.dataset.moduleBuy){
+  const o=MODULES.find(v=>v.id===b.dataset.moduleBuy);if(!o||player.modules[o.id]||credits<o.price)return;
+  credits-=o.price;player.modules[o.id]=true;
+  if(o.id==='grenade'||o.id==='power')player.secondary=o.id;
+  if(o.id==='laser')player.laserOn=true;if(o.id==='explosive')player.explosiveOn=true;if(o.id==='bayonet')player.bayonetOn=true;
+ }else if(b.dataset.moduleRefund){
+  const o=MODULES.find(v=>v.id===b.dataset.moduleRefund);if(!o||!player.modules[o.id])return;
+  player.modules[o.id]=false;credits+=o.price;
+  if(player.secondary===o.id)player.secondary='aim';
+  if(o.id==='grenade'){
+   for(const opt of OPTIONS.filter(v=>v.requires==='grenade')){for(let lvl=0;lvl<player.mods[opt.id];lvl++)credits+=upgradeCost(opt,lvl);player.mods[opt.id]=0;}
+   normalizeMagazine();
+  }
+  if(o.id==='laser')player.laserOn=false;if(o.id==='explosive')player.explosiveOn=false;if(o.id==='bayonet')player.bayonetOn=false;
+ }else if(b.dataset.secondary){
+  const mode=b.dataset.secondary;if(mode!=='aim'&&!player.modules[mode])return;
+  player.secondary=mode;
+ }else if(b.dataset.moduleToggle){
+  const id=b.dataset.moduleToggle;if(!player.modules[id])return;
+  if(id==='laser')player.laserOn=!player.laserOn;
+  if(id==='explosive')player.explosiveOn=!player.explosiveOn; if(id==='bayonet')player.bayonetOn=!player.bayonetOn;
+ }else return;
+ sound('buy');renderShop();syncUI(1);
+});
+function toggleLaser(){if(!player.modules.laser)return;player.laserOn=!player.laserOn;sound('buy');syncUI(1)}
+function selectSecondary(mode){if(mode!=='aim'&&!player.modules[mode])return;player.secondary=mode;secondaryPending=false;sound('buy');syncUI(1)}
+function closeFieldShop(){renderedStill=false;shopOpen=false;paused=false;ui.screen.classList.add('hidden');fireHeld=false;altHeld=false;secondaryPending=false;player.triggerQueue=0;player.burstShots=0;keys.clear()}
+function toggleTabShop(){if(!started||ended)return;if(shopOpen){if(shopMode==='field')closeFieldShop();return}openShop('field')}
+function showScreen(type){
+ renderedStill=false;ui.screen.classList.remove('hidden');
+ ui.shop.classList.toggle('show',type==='shop'||type==='fieldShop');ui.screen.querySelector('.modal').classList.toggle('shop-mode',type==='shop'||type==='fieldShop');
+ if(type==='shop'||type==='fieldShop'){
+  ui.kicker.textContent=type==='fieldShop'?'TACTICAL PAUSE // WAVE '+String(wave).padStart(2,'0'):'ARMORY // WAVE '+String(wave).padStart(2,'0')+' COMPLETE';
+  ui.title.innerHTML=type==='fieldShop'?'PAUSED <span>ARMORY</span>':'FIELD <span>ARMORY</span>';
+  ui.intro.textContent='Drag to explore · scroll to zoom at the cursor · click a symbol for its upgrade menu. Magazine size and reload speed remain independent.';
+  ui.legend.style.display='none';ui.start.textContent=type==='fieldShop'?'RESUME WAVE '+String(wave).padStart(2,'0')+' →':'BEGIN WAVE '+String(wave+1).padStart(2,'0')+' →';
+  ui.hint.textContent=type==='fieldShop'?'TAB or ESC to resume · Buy or downgrade freely':'Move through the skill web freely; all magazines refill next wave';
+ }else if(type==='gameover'){
+  ui.kicker.textContent='MISSION TERMINATED';ui.title.innerHTML='OPERATIVE <span>DOWN</span>';ui.intro.innerHTML=`Reached wave <strong>${wave}</strong>, eliminated <strong>${kills}</strong> hostiles, scored <strong>${score.toLocaleString()}</strong> points.`;ui.legend.style.display='none';ui.start.textContent='REDEPLOY →';ui.hint.textContent='New runs start with a 9mm and a knife';
+ }else if(type==='pause'){
+  ui.kicker.textContent='OPERATION SUSPENDED';ui.title.innerHTML='ON <span>HOLD</span>';ui.intro.textContent='Your operative is paused. Resume when ready.';ui.legend.style.display='grid';ui.start.textContent='RESUME OPERATION →';ui.hint.textContent='ESC resumes · TAB opens armory';
+ }else{
+  ui.kicker.textContent='OPERATION // MODULAR ARSENAL';ui.title.innerHTML='STRIKE <span>VECTOR</span>';ui.intro.textContent='One evolving gun. Fire buckshot-style pellets without extra ammo cost, unlock all three fire modes with one purchase, then press Space to slide while firing.';ui.legend.style.display='grid';ui.start.textContent='DEPLOY OPERATIVE →';ui.hint.textContent='WASD move · SPACE slide/dodge · E melee · SHIFT sprint · ALT crouch · F fire mode · TAB armory';
+ }
+}
+function begin(){lastShiftTap=-Infinity;renderedStill=false;if(shopOpen){const cleared=shopMode==='between';closeFieldShop();if(cleared)nextWave();sound('buy');return}if(!started||ended){reset();started=true}paused=false;ui.screen.classList.add('hidden');sound('dodge')}
+ui.start.addEventListener('click',begin);ui.sound.addEventListener('click',()=>{soundOn=!soundOn;ui.sound.textContent=soundOn?'♪ SOUND ON':'♪ SOUND OFF'});
+function switchWeapon(n){if(!started||paused||ended||(n!==0&&n!==2))return;if(player.weapon===n)return;player.weapon=n;player.fireCd=Math.min(player.fireCd,.10);player.slash=0;player.triggerQueue=0;player.burstShots=0;secondaryPending=false;sound('dry')}
+window.addEventListener('keydown',e=>{const c=e.code;
+ if(c==='Tab'&&started&&!ended){e.preventDefault();if(!e.repeat)toggleTabShop();return}
+ if(started&&!ended&&!(e.altKey&&c==='F4')){
+  const combo=((e.ctrlKey||e.metaKey)&&!['ControlLeft','ControlRight','MetaLeft','MetaRight'].includes(c))||(e.altKey&&!['AltLeft','AltRight'].includes(c))||['F1','F2','F3','F5','F6','F7','F8','F9','F10','F11','F12'].includes(c);
+  if(combo){e.preventDefault();e.stopPropagation()}
+ }
+ if(['Space','AltLeft','AltRight','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyR'].includes(c)&&started&&!ended)e.preventDefault();
+ if(c==='Escape'){
+  if(!started||ended)return;
+  if(shopOpen){if(shopMode==='field')closeFieldShop();return}
+  paused=!paused;if(paused){lastShiftTap=-Infinity;fireHeld=false;altHeld=false;secondaryPending=false;keys.clear();showScreen('pause')}else ui.screen.classList.add('hidden');return;
+ }
+ if(c==='Enter'&&(!started||ended||paused)){begin();return}
+ if((e.ctrlKey||e.metaKey)&&c!=='AltRight')return;
+ // Shift is sprint only. Space begins the combat slide/dodge.
+ keys.add(c);if(paused||ended)return;
+ if(c==='Digit1')switchWeapon(2);else if(c==='Digit2')switchWeapon(0);
+ else if(c==='Digit3')selectSecondary('aim');else if(c==='Digit4')selectSecondary('grenade');else if(c==='Digit5')selectSecondary('power');
+ else if(c==='KeyF'&&!e.repeat)cycleFireMode();else if(c==='KeyR')reload();else if(c==='KeyL'&&!e.repeat)toggleLaser();else if(c==='KeyX'&&!e.repeat&&player.modules.explosive){player.explosiveOn=!player.explosiveOn;sound('buy');syncUI(1)}else if(c==='Space'&&!e.repeat)startSlide();else if(c==='KeyE'&&!e.repeat)quickMelee();
+});
+
+window.addEventListener('keyup',e=>{if((e.code==='AltLeft'||e.code==='AltRight')&&started&&!ended)e.preventDefault();keys.delete(e.code)});
+window.addEventListener('blur',()=>{lastShiftTap=-Infinity;keys.clear();fireHeld=false;altHeld=false;secondaryPending=false;if(player)player.burstShots=0});document.addEventListener('visibilitychange',()=>{if(document.hidden){lastShiftTap=-Infinity;keys.clear();fireHeld=false;altHeld=false;secondaryPending=false}});
+function aimWorld(){return{x:mouse.x+cam.x,y:mouse.y+cam.y}}function mouseAim(){const m=aimWorld(),dx=m.x-player.x,dy=m.y-player.y;return Math.atan2(dy,dx)}
+// Mouse buttons are tracked from individual down/up events. `event.buttons`
+// is deliberately not used: some browsers/trackpads report an inconsistent
+// bitmask during a right+left chord or when crossing the canvas boundary.
+// RMB alone only equips a modifier. A newly completed RMB+LMB chord queues
+// exactly one secondary shot; it never activates from RMB by itself.
+function updateMousePosition(e){mouse.x=e.clientX;mouse.y=e.clientY;mouse.active=true}
+function pressPrimaryTrigger(){
+ if(player.weapon===2){shoot();return}
+ if(altHeld&&player.secondary!=='aim')return;
+ if(player.fireMode==='burst'){
+  // Complete a 3-shot burst from a single click, even if LMB is released.
+  if(player.burstShots===0&&player.reload<=0){
+   player.burstShots=Math.min(3,player.gun);
+   if(player.burstShots>0&&shoot())player.burstShots--;
+  }
+ }else if(!shoot()&&player.fireMode==='semi'&&player.fireCd>0&&player.reload<=0){
+  player.triggerQueue=Math.min(2,player.triggerQueue+1);
+  player.triggerExpiry=clock+.20;
+ }
+}
+function handleMouseDown(e){
+ if(e.button!==0&&e.button!==2)return;
+ if(paused||ended||e.target.closest('button'))return;
+ e.preventDefault();updateMousePosition(e);
+ if(e.button===2){
+  if(!altHeld){
+   altHeld=true;altStart=clock;
+   if(fireHeld&&player.secondary!=='aim'){
+    secondaryPending=true;player.burstShots=0;player.triggerQueue=0;
+   }
+  }
+ }else if(!fireHeld){
+  fireHeld=true;
+  if(altHeld&&player.secondary!=='aim')secondaryPending=true;
+  else pressPrimaryTrigger();
+ }
+ if(fireHeld&&altHeld&&secondaryPending&&shoot())secondaryPending=false;
+}
+function handleMouseUp(e){
+  if(e.button!==0&&e.button!==2)return;
+  if(e.button===0)fireHeld=false;
+  else altHeld=false;
+  // Releasing either button cancels an unfulfilled alternate attack.
+  secondaryPending=false;
+}
+// Capture at the window so releases outside the canvas don't strand a button.
+window.addEventListener('mousedown',handleMouseDown,true);
+window.addEventListener('mouseup',handleMouseUp,true);
+window.addEventListener('mousemove',updateMousePosition);
+window.addEventListener('contextmenu',e=>{
+  // macOS control-click and certain mouse drivers synthesize contextmenu.
+  if(started&&!ended){e.preventDefault();e.stopImmediatePropagation()}
+},true);
+// Prevent Ctrl/Meta click browser gestures from selecting or dragging the canvas.
+for(const name of ['click','auxclick','dragstart','selectstart']){
+ canvas.addEventListener(name,e=>{if(started&&!ended){e.preventDefault();if(e.ctrlKey||e.metaKey)e.stopPropagation()}},true);
+}
+canvas.addEventListener('pointerdown',e=>{
+ if(started&&!paused&&!ended&&(e.ctrlKey||e.metaKey))e.preventDefault();
+},true);
+canvas.addEventListener('auxclick',e=>{if(e.button===2)e.preventDefault()});
+canvas.addEventListener('wheel',e=>{e.preventDefault();if(paused||ended)return;switchWeapon(player.weapon===0?2:0)},{passive:false});
+function collidesCircleRect(x,y,r,rect){let qx=clamp(x,rect.x,rect.x+rect.w),qy=clamp(y,rect.y,rect.y+rect.h);return (x-qx)**2+(y-qy)**2<(r*r)}
+const COVER_CELL=12;
+function makeCover(o){
+ o.cell=COVER_CELL;o.cols=Math.ceil(o.w/COVER_CELL);o.rows=Math.ceil(o.h/COVER_CELL);
+ o.cellHp=new Float32Array(o.cols*o.rows);
+ const hp=o.k==='crate'?22:39;
+ o.cellHp.fill(hp);o.hp=o.maxHp=o.cellHp.length*hp;
+ o.hit=0;o.newborn=o.newborn||0;o.dirty=true;
+ o.texture=document.createElement('canvas');o.texture.width=Math.ceil(o.w);o.texture.height=Math.ceil(o.h);
+ return o;
+}
+function cellIsSolid(o,c,r){return c>=0&&r>=0&&c<o.cols&&r<o.rows&&o.cellHp[r*o.cols+c]>0}
+function pointCover(o,x,y){
+ if(x<o.x||x>=o.x+o.w||y<o.y||y>=o.y+o.h)return false;
+ return cellIsSolid(o,Math.floor((x-o.x)/o.cell),Math.floor((y-o.y)/o.cell));
+}
+function circleHitsCover(x,y,r,o){
+ if(x+r<o.x||y+r<o.y||x-r>o.x+o.w||y-r>o.y+o.h)return false;
+ const c0=Math.max(0,Math.floor((x-r-o.x)/o.cell)),c1=Math.min(o.cols-1,Math.floor((x+r-o.x)/o.cell));
+ const r0=Math.max(0,Math.floor((y-r-o.y)/o.cell)),r1=Math.min(o.rows-1,Math.floor((y+r-o.y)/o.cell));
+ for(let row=r0;row<=r1;row++)for(let col=c0;col<=c1;col++){
+  if(!cellIsSolid(o,col,row))continue;
+  const cx=o.x+col*o.cell,cy=o.y+row*o.cell;
+  if(collidesCircleRect(x,y,r,{x:cx,y:cy,w:Math.min(o.cell,o.x+o.w-cx),h:Math.min(o.cell,o.y+o.h-cy)}))return true;
+ }
+ return false;
+}
+function intersectsCover(x,y,r){
+ for(const o of obstacles)if(circleHitsCover(x,y,r,o))return o;
+ return null;
+}
+function damageCover(o,damage,x,y){
+ if(!o||o.hp<=0||!Number.isFinite(damage))return;
+ const ix=clamp(x,o.x,o.x+o.w-.01),iy=clamp(y,o.y,o.y+o.h-.01);
+ const radius=clamp(11+damage*.24,13,67);
+ let lost=0,removed=0;
+ const c0=Math.max(0,Math.floor((ix-radius-o.x)/o.cell)),c1=Math.min(o.cols-1,Math.floor((ix+radius-o.x)/o.cell));
+ const r0=Math.max(0,Math.floor((iy-radius-o.y)/o.cell)),r1=Math.min(o.rows-1,Math.floor((iy+radius-o.y)/o.cell));
+ for(let row=r0;row<=r1;row++)for(let col=c0;col<=c1;col++){
+  const idx=row*o.cols+col,old=o.cellHp[idx];if(old<=0)continue;
+  const px=clamp(ix,o.x+col*o.cell,o.x+Math.min((col+1)*o.cell,o.w));
+  const py=clamp(iy,o.y+row*o.cell,o.y+Math.min((row+1)*o.cell,o.h));
+  // Distance to the near edge rather than cell centre gives edge chips.
+  const d=Math.hypot(ix-px,iy-py);
+  if(d>radius)continue;
+  const actual=Math.min(old,damage*(1-.78*d/radius));
+  o.cellHp[idx]=Math.max(0,old-actual);
+  if(o.cellHp[idx]<=.05){o.cellHp[idx]=0;removed++}
+  lost+=old-o.cellHp[idx];
+ }
+ if(lost<=0)return;
+ o.hp=Math.max(0,o.hp-lost);o.hit=.16;if(removed)o.dirty=true;
+ if(o.hp<1){obstacles.splice(obstacles.indexOf(o),1);burst(ix,iy,Math.min(20,4+removed),'#b8cbc9',155);}
+ else if(removed&&Math.random()<.75)burst(ix,iy,Math.min(7,2+removed),'#b8cbc9',100);
+}
+function repaintCover(o){
+ const g=o.texture.getContext('2d');g.clearRect(0,0,o.w,o.h);
+ g.fillStyle=o.k==='crate'?'#314a50':'#293f4c';
+ g.fillRect(0,0,o.w,o.h);g.lineWidth=2;g.strokeStyle=o.k==='crate'?'#5d7c76':'#536e7c';g.strokeRect(1,1,o.w-2,o.h-2);
+ if(o.k==='crate'){
+  g.strokeStyle='rgba(173,210,201,.16)';g.lineWidth=1.4;g.beginPath();g.moveTo(10,10);g.lineTo(o.w-10,o.h-10);g.moveTo(o.w-10,10);g.lineTo(10,o.h-10);g.stroke();g.strokeRect(12,12,o.w-24,o.h-24);
+ }else{g.fillStyle='#4c6975';g.fillRect(12,11,o.w-24,5);g.fillStyle='#223845';g.fillRect(12,o.h-19,o.w-24,7)}
+ // Punch out fully-destroyed cells, allowing genuine paths through the cover.
+ g.globalCompositeOperation='destination-out';
+ for(let row=0;row<o.rows;row++)for(let col=0;col<o.cols;col++)if(!cellIsSolid(o,col,row)){
+  g.fillRect(col*o.cell,row*o.cell,o.cell+.4,o.cell+.4);
+ }
+ g.globalCompositeOperation='source-over';
+ // Light edges around physical holes make the chipped profile legible.
+ g.fillStyle=o.k==='crate'?'#91b1a6':'#718b95';
+ for(let row=0;row<o.rows;row++)for(let col=0;col<o.cols;col++){
+  if(!cellIsSolid(o,col,row))continue;
+  const x=col*o.cell,y=row*o.cell,w=Math.min(o.cell,o.w-x),h=Math.min(o.cell,o.h-y);
+  if(!cellIsSolid(o,col,row-1))g.fillRect(x,y,w,1.7);
+  if(!cellIsSolid(o,col-1,row))g.fillRect(x,y,1.7,h);
+ }
+ o.dirty=false;
+}
+function rayCoverDistance(x,y,dx,dy,length){
+ // Ray/rectangle slab rejection ensures only the actually crossed cover
+ // cells are tested; unlike the old 7px laser loop this is not O(range * covers).
+ const ux=dx/(Math.hypot(dx,dy)||1),uy=dy/(Math.hypot(dx,dy)||1);
+ let nearest=length;
+ for(const o of obstacles){
+  let enter=0,leave=nearest;
+  if(Math.abs(ux)<1e-9){if(x<o.x||x>o.x+o.w)continue}
+  else {let t1=(o.x-x)/ux,t2=(o.x+o.w-x)/ux;if(t1>t2)[t1,t2]=[t2,t1];enter=Math.max(enter,t1);leave=Math.min(leave,t2)}
+  if(Math.abs(uy)<1e-9){if(y<o.y||y>o.y+o.h)continue}
+  else {let t1=(o.y-y)/uy,t2=(o.y+o.h-y)/uy;if(t1>t2)[t1,t2]=[t2,t1];enter=Math.max(enter,t1);leave=Math.min(leave,t2)}
+  if(leave<enter||leave<0||enter>nearest)continue;
+  for(let t=Math.max(0,enter)+.4;t<=Math.min(nearest,leave)+.001;t+=6){
+   if(pointCover(o,x+ux*t,y+uy*t)){nearest=t;break}
+  }
+ }
+ return nearest;
+}
+
+function spawnCover(n=1){
+ let created=0;
+ for(let i=0;i<n&&obstacles.length<29;i++){
+  for(let attempt=0;attempt<80;attempt++){
+   const a=rand(0,TAU),d=rand(250,780),k=Math.random()<.70?'crate':'wall',w=Math.round(rand(64,122)),h=Math.round(rand(60,109));
+   const x=clamp(player.x+Math.cos(a)*d-w/2,95,WORLD.w-w-95),y=clamp(player.y+Math.sin(a)*d-h/2,95,WORLD.h-h-95);
+   const cx=x+w/2,cy=y+h/2;
+   if(Math.hypot(player.x-cx,player.y-cy)<230||enemies.some(e=>!e.dead&&Math.hypot(e.x-cx,e.y-cy)<Math.max(w,h)+75)||obstacles.some(o=>x<o.x+o.w+38&&x+w+38>o.x&&y<o.y+o.h+38&&y+h+38>o.y))continue;
+   const hp=k==='crate'?145:360;
+   obstacles.push(makeCover({x,y,w,h,k,newborn:.7}));burst(cx,cy,9,'#75b9b5',90);created++;break;
+  }
+ }
+ return created;
+}
+function blocked(x,y,r){if(x<r+44||y<r+44||x>WORLD.w-r-44||y>WORLD.h-r-44)return true;return !!intersectsCover(x,y,r)}
+function canSee(x1,y1,x2,y2){const dx=x2-x1,dy=y2-y1,range=Math.hypot(dx,dy);return rayCoverDistance(x1,y1,dx,dy,range-12)>=range-14}
+function moveBody(b,dx,dy){if(!blocked(b.x+dx,b.y,b.r))b.x+=dx;if(!blocked(b.x,b.y+dy,b.r))b.y+=dy}
+function reload(){
+ if(player.roll>0)return;
+ if(player.weapon===0&&player.secondary==='grenade')startGrenadeReload();
+ if(player.weapon!==0||player.reload>0||player.gun>=clipSize()||player.gunReserve<=0)return;
+ player.reload=reloadDuration();player.fireCd=0;sound('dry');
+}
+function quickMelee(){
+ if(!player||paused||ended||player.meleeCd>0)return false;
+ player.slash=.18;player.slashDir=mouseAim();player.slashKind=player.weapon===2?'knife':'quick';
+ player.slashHits.clear();player.slashCoverDone=false;player.meleeCd=player.weapon===2?.35:.44;
+ sound('knife');hitSlash();
+ burst(player.x+Math.cos(player.slashDir)*30,player.y+Math.sin(player.slashDir)*30,5,'#a3f5e5',75);
+ return true;
+}
+function startSlide(){
+ if(!player||paused||ended||player.rollCd>0||player.roll>0)return false;
+ let vx=(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),vy=(keys.has('KeyS')?1:0)-(keys.has('KeyW')?1:0);
+ if(!vx&&!vy){vx=Math.cos(player.angle);vy=Math.sin(player.angle)}
+ const n=Math.hypot(vx,vy)||1;
+ player.rollDx=vx/n;player.rollDy=vy/n;
+ player.rollMode='slide';player.rollMax=.78;player.roll=player.rollMax;
+ player.rollCd=2;player.invul=.10;player.slideTurn=0;
+ player.reload=0;player.reloadWeapon=null;
+ sound('dodge');
+ for(let i=0;i<12;i++)particle(player.x-player.rollDx*19,player.y-player.rollDy*19,rand(-115,115)-player.rollDx*140,rand(-115,115)-player.rollDy*140,.35,'#b1a78e',rand(1,4));
+ return true;
+}
+function particle(x,y,vx,vy,life,color,r=2){if(particles.length>=250)particles.shift();particles.push({x,y,vx,vy,life,max:life,color,r})}function burst(x,y,n,color,force=170){for(let i=0;i<n;i++){let a=Math.random()*TAU,v=rand(force*.2,force);particle(x,y,Math.cos(a)*v,Math.sin(a)*v,rand(.12,.65),color,rand(1.2,4))}}function floatText(x,y,text,color='#f8cf8c'){if(texts.length>=45)texts.shift();texts.push({x,y,text,color,t:0,max:.85})}
+// Reflect a future impact coordinate across arena edges, for an accurate landing marker.
+function reflectCoord(v,min,max){const span=max-min;let p=(v-min)%(2*span);if(p<0)p+=2*span;return min+(p<=span?p:2*span-p)}
+function rebound(v,speed,min,max){
+ let bounces=0;
+ while((v<min||v>max)&&bounces<8){
+  if(v<min)v=2*min-v;else v=2*max-v;
+  speed=-speed;bounces++;
+ }
+ return {position:clamp(v,min,max),speed,bounces};
+}
+function launchGrenade(){
+ if(player.grenadeReload>0)return false;
+ if(player.grenades<=0){startGrenadeReload();return false}
+ player.grenades--;player.secondaryCd=grenadeInterval();if(player.grenades===0)startGrenadeReload();
+ const target=aimWorld(),dx=target.x-player.x,dy=target.y-player.y,distance=Math.hypot(dx,dy),range=Math.min(distance,grenadeRange());
+ const dur=Math.max(.36,range/830),vx=(dx/(distance||1))*range/dur,vy=(dy/(distance||1))*range/dur,sx=player.x,sy=player.y;
+ const tx=reflectCoord(sx+vx*dur,58,WORLD.w-58),ty=reflectCoord(sy+vy*dur,58,WORLD.h-58);
+ grenades.push({sx,sy,x:sx,y:sy,vx,vy,tx,ty,t:0,dur,fuse:Math.max(1.3,dur+.12),r:8,trail:[],radius:grenadeRadius(),damage:grenadeDamage(),bounces:0});sound('grenade');shake=Math.max(shake,2.5);return true;
+}
+function fireBullet(a,spread,power=false,showEffects=true){
+ const spec=gunSpec(),angle=a+rand(-spread,spread),speed=spec.velocity+player.mods.barrel*75;
+ const damage=(spec.damage+player.mods.damage*7)*(power?2.65:1),pierce=player.mods.penetration+(power?2:0),color=power?'#ffca8c':player.explosiveOn?'#ffc07d':'#a1fff0';
+ bullets.push({x:player.x+Math.cos(a)*29,y:player.y+Math.sin(a)*29,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,t:1,damage,friend:true,color,r:power?4.7:3,pierce,trace:power,explosive:player.explosiveOn});
+ if(showEffects){burst(player.x+Math.cos(a)*29,player.y+Math.sin(a)*29,power?10:4,'#ffe6a4',power?210:130);shake=Math.max(shake,power?5:1.8);
+ sound(power?'sniper':player.mods.receiver===2?'rifle':'pistol');}
+}
+function shoot(){
+ const secondaryAttack=altHeld&&(player.weapon===2||(player.weapon===0&&player.secondary!=='aim'));
+ if(paused||ended)return false;
+ if(secondaryAttack&&player.secondaryCd>0)return false;
+ if(!secondaryAttack&&player.fireCd>0)return false;
+ const a=mouseAim(),crouch=isCrouching(),running=keys.has('ShiftLeft')||keys.has('ShiftRight');
+ const movementSpread=(crouch?.36:running?1.75:1);
+ if(player.weapon===2){
+  if(altHeld){player.secondaryCd=.48;throwKnife();return true}
+  player.fireCd=.34;player.slash=.20;player.slashDir=a;player.slashKind='knife';player.slashHits.clear();player.slashCoverDone=false;sound('knife');hitSlash();return true;
+ }
+ if(secondaryAttack&&player.secondary==='grenade')return launchGrenade();
+ if(player.reload>0)return false;
+ const power=secondaryAttack&&player.secondary==='power';
+ // Each shell / cartridge produces a cluster of pellets. Power shot uses
+ // 3 cartridges TOTAL for the whole volley, not per pellet.
+ const cartridgesPerShot=power?3:1;
+ if(player.gun<cartridgesPerShot){reload();if(player.reload<=0)sound('dry');return false}
+ const projectiles=projectileCount();
+ player.gun-=cartridgesPerShot;
+ const aim=altHeld&&player.secondary==='aim';
+ const spread=gunSpec().spread*movementSpread/(1+player.mods.barrel*.22)*(aim?.16:1)*(power?.28:1);
+ const fanAngle=projectiles>1?Math.min(.26,.068+.018*(projectiles-2)):0;
+ for(let i=0;i<projectiles;i++){
+  const offset=projectiles>1?(i-(projectiles-1)/2)*fanAngle:0;
+  fireBullet(a+offset,spread*(projectiles>1?.72:1),power,i===0);
+ }
+ if(power){player.secondaryCd=1.05;player.fireCd=.28;}else{player.fireCd=gunInterval()*(aim?1.23:1)}
+ if(player.gun<=0)reload();
+ return true;
+}
+function hitSlash(){
+ const isGunStrike=player.slashKind==='quick'&&player.weapon===0;
+ const bayonet=isGunStrike&&player.modules.bayonet&&player.bayonetOn;
+ const reach=isGunStrike?(bayonet?112:79):99,damage=isGunStrike?(bayonet?57:30)+player.mods.knife*12:44+player.mods.knife*15;
+ for(const e of enemies){
+  if(e.hp<=0||player.slashHits.has(e))continue;
+  const dx=e.x-player.x,dy=e.y-player.y,d=Math.hypot(dx,dy),raw=Math.atan2(dy,dx)-player.slashDir,da=Math.atan2(Math.sin(raw),Math.cos(raw));
+  if(d<reach&&Math.abs(da)<(bayonet?.7:1.05)){
+   player.slashHits.add(e);hurtEnemy(e,damage,e.x,e.y);
+   e.x+=Math.cos(player.slashDir)*14;e.y+=Math.sin(player.slashDir)*14;
+  }
+ }
+ // A buttstock or bayonet can also chip a bit of destructible cover.
+ if(!player.slashCoverDone){
+  const impactX=player.x+Math.cos(player.slashDir)*(reach-12),impactY=player.y+Math.sin(player.slashDir)*(reach-12);
+  const cover=intersectsCover(impactX,impactY,13);
+  if(cover)damageCover(cover,bayonet?56:27,impactX,impactY);
+  player.slashCoverDone=true;
+ }
+}
+function throwKnife(){if(player.throwKnives<=0){sound('dry');return}player.throwKnives--;const a=mouseAim(),charge=clamp((clock-altStart)/.65,0,1);knives.push({x:player.x+Math.cos(a)*25,y:player.y+Math.sin(a)*25,vx:Math.cos(a)*(920+charge*340),vy:Math.sin(a)*(920+charge*340),angle:a,t:.8,damage:58+charge*46+0});burst(player.x,player.y,4,'#d4f6fb',160);sound('knife')}
+function hurtEnemy(e,damage,x,y){e.hp-=damage;e.flash=.10;burst(x,y,7,e.type==='rusher'?'#ffb176':'#dfc1ff',180);if(e.hp<=0){kills++;credits+=e.type==='rusher'?42:58;score+=e.type==='rusher'?125:175;burst(e.x,e.y,15,e.type==='rusher'?'#ed9871':'#bd99fa',240);floatText(e.x,e.y-26,'+'+(e.type==='rusher'?125:175));e.dead=true;sound('hit')}}
+function hurtPlayer(damage){if(player.invul>0||player.hp<=0)return;player.hp=Math.max(0,player.hp-damage);player.invul=.47;shake=Math.max(shake,7);burst(player.x,player.y,13,'#ff857d',190);sound('hit');if(player.hp<=0){ended=true;paused=true;fireHeld=false;altHeld=false;secondaryPending=false;showScreen('gameover')}}
+function boom(x,y,r=137,damage=100){shake=Math.max(shake,12);burst(x,y,50,'#ffa66b',440);burst(x,y,25,'#fff3c2',220);particles.push({x,y,vx:0,vy:0,life:.35,max:.35,color:'#ffaa70',r,ring:true});for(const e of enemies){let d=Math.hypot(e.x-x,e.y-y);if(d<r+e.r){hurtEnemy(e,Math.round(damage*(1-clamp(d/r,0,.8)*.45)),e.x,e.y);const a=Math.atan2(e.y-y,e.x-x);e.x+=Math.cos(a)*Math.max(0,28-d*.06);e.y+=Math.sin(a)*Math.max(0,28-d*.06)}}for(const o of [...obstacles]){const qx=clamp(x,o.x,o.x+o.w),qy=clamp(y,o.y,o.y+o.h),d=Math.hypot(x-qx,y-qy);if(d<r)damageCover(o,Math.max(30,Math.round(200*(1-d/r*.48))),qx,qy)}sound('grenade')}
+function smallExplosion(x,y,b,skip){
+ if(!b.explosive)return;
+ burst(x,y,11,'#ffb57e',125);
+ const radius=46;
+ for(const e of enemies){if(e.dead||e===skip)continue;const d=Math.hypot(e.x-x,e.y-y);if(d<radius+e.r)hurtEnemy(e,Math.round(b.damage*.35*(1-Math.min(.7,d/(radius+e.r)))),e.x,e.y)}
+ for(const o of obstacles){const qx=clamp(x,o.x,o.x+o.w),qy=clamp(y,o.y,o.y+o.h);if(Math.hypot(x-qx,y-qy)<radius)damageCover(o,Math.max(14,b.damage*.5),qx,qy)}
+}
+function spawnEnemy(){let x,y,tries=0;do{const a=rand(0,TAU),r=rand(Math.max(sw,sh)*.66,Math.max(sw,sh)*.84+180);x=clamp(player.x+Math.cos(a)*r,75,WORLD.w-75);y=clamp(player.y+Math.sin(a)*r,75,WORLD.h-75);tries++}while((blocked(x,y,23)||Math.hypot(x-player.x,y-player.y)<420)&&tries<75);if(blocked(x,y,23))return;const rusher=Math.random()<clamp(.47+wave*.017,.47,.70);enemies.push({x,y,r:rusher?17:19,type:rusher?'rusher':'gunner',hp:rusher?65+wave*5:88+wave*6,maxHp:rusher?65+wave*5:88+wave*6,spd:rusher?rand(140,160)+wave*3:rand(90,109)+wave*2,fire:rand(.3,1.7),flash:0,hitCd:0,sway:rand(0,TAU),dead:false})}
+
+function nextWave(){wave++;toSpawn=4+wave*3;spawnTimer=.15;nextWaveTimer=-1;player.hp=Math.min(100,player.hp+(wave===1?0:22));if(wave>1)refillWeapons();spawnCover(Math.min(3,1+Math.floor(wave/3)));coverSpawnTimer=rand(11,17);ui.banner.innerHTML=`INCOMING HOSTILES<strong>WAVE ${String(wave).padStart(2,'0')}</strong>`;ui.banner.classList.add('show');bannerUntil=clock+1.8}
+function update(dt){clock+=dt;shake=Math.max(0,shake-25*dt);if(ui.banner.classList.contains('show')&&clock>bannerUntil)ui.banner.classList.remove('show');if(nextWaveTimer>0){nextWaveTimer-=dt;if(nextWaveTimer<=0)nextWave()}if(wave>0){coverSpawnTimer-=dt;if(coverSpawnTimer<=0){spawnCover(Math.random()<.45?2:1);coverSpawnTimer=rand(12,19)}}for(const o of obstacles){o.hit=Math.max(0,(o.hit||0)-dt);o.newborn=Math.max(0,(o.newborn||0)-dt)}if(toSpawn>0){spawnTimer-=dt;if(spawnTimer<=0){if(enemies.length<48){spawnEnemy();toSpawn--;spawnTimer=clamp(1.0-wave*.047,.40,1.0)}else spawnTimer=.35}}
+const c=isCrouching(),run=(keys.has('ShiftLeft')||keys.has('ShiftRight'))&&!c,movingX=(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),movingY=(keys.has('KeyS')?1:0)-(keys.has('KeyW')?1:0),norm=Math.hypot(movingX,movingY)||1;player.angle=mouseAim();player.step+=dt*(run?15:c?4:9)*Math.min(1,Math.hypot(movingX,movingY));player.fireCd=Math.max(0,player.fireCd-dt);player.secondaryCd=Math.max(0,player.secondaryCd-dt);player.rollCd=Math.max(0,player.rollCd-dt);player.meleeCd=Math.max(0,player.meleeCd-dt);player.invul=Math.max(0,player.invul-dt);player.slash=Math.max(0,player.slash-dt);
+if(player.reload>0){player.reload-=dt;if(player.reload<=0){player.reload=0;const num=Math.min(clipSize()-player.gun,player.gunReserve);player.gun+=num;player.gunReserve-=num}}
+if(player.grenadeReload>0){player.grenadeReload-=dt;if(player.grenadeReload<=0){player.grenadeReload=0;const count=Math.min(grenadeClipSize()-player.grenades,player.grenadeReserve);player.grenades+=count;player.grenadeReserve-=count;sound('buy')}}
+if(player.roll>0){
+ player.roll=Math.max(0,player.roll-dt);
+ const progress=1-player.roll/player.rollMax;
+ // Low-profile slide with momentum loss and gentle steering.
+ if(movingX||movingY){
+  const steer=.8*dt;
+  const bx=player.rollDx*(1-steer)+(movingX/norm)*steer;
+  const by=player.rollDy*(1-steer)+(movingY/norm)*steer;
+  const len=Math.hypot(bx,by)||1;player.rollDx=bx/len;player.rollDy=by/len;
+ }
+ const speed=700-455*progress;
+ moveBody(player,player.rollDx*speed*dt,player.rollDy*speed*dt);
+ if(Math.random()<.60)particle(player.x-player.rollDx*24+rand(-8,8),player.y-player.rollDy*24+rand(-8,8),-player.rollDx*rand(60,170),-player.rollDy*rand(60,170),.25,'#c8a88d',rand(1,3));
+}
+else{let speed=c?130:run?360:238;if(altHeld&&player.weapon===0&&player.secondary==='aim')speed*=.72;if(altHeld&&player.weapon===2)speed*=.76;moveBody(player,movingX/norm*speed*dt,movingY/norm*speed*dt)}
+cam.x+=((player.x-sw/2)-cam.x)*Math.min(1,dt*8);cam.y+=((player.y-sh/2)-cam.y)*Math.min(1,dt*8);
+if(fireHeld&&altHeld&&(player.weapon===2||(player.weapon===0&&player.secondary!=='aim'))){
+ if(secondaryPending&&shoot())secondaryPending=false;
+}else if(player.weapon===0){
+ if(player.burstShots>0&&player.fireCd<=0&&player.reload<=0){
+  if(shoot())player.burstShots--;else player.burstShots=0;
+ }
+ if(player.fireMode==='auto'&&fireHeld&&player.fireCd<=0&&player.reload<=0){shoot()}
+ else if(player.fireMode==='semi'&&player.triggerQueue>0){
+  if(clock>player.triggerExpiry)player.triggerQueue=0;
+  else if(player.fireCd<=0&&player.reload<=0){if(shoot())player.triggerQueue--;}
+ }
+}
+if(player.slash>0)hitSlash();
+for(const e of enemies){if(e.dead)continue;const prevEX=e.x,prevEY=e.y;e.flash=Math.max(0,e.flash-dt);e.hitCd=Math.max(0,e.hitCd-dt);e.fire-=dt;const dx=player.x-e.x,dy=player.y-e.y,d=Math.hypot(dx,dy)||1,dirX=dx/d,dirY=dy/d;
+ if((e.losTimer||0)<=0){e.visible=(d<1000)&&canSee(e.x,e.y,player.x,player.y);e.losTimer=.13+Math.random()*.07}
+ else e.losTimer-=dt;
+ const clear=!!e.visible;if(e.type==='rusher'){moveBody(e,dirX*e.spd*dt,dirY*e.spd*dt);if(d<e.r+player.r+6&&e.hitCd<=0){hurtPlayer(12);e.hitCd=.65}}else{let desired=d>320?1:d<215?-1:0;if(!clear)desired=1;const sid=Math.sin(clock*.8+e.sway)*.3;moveBody(e,(dirX*desired+(-dirY)*sid)*e.spd*dt,(dirY*desired+dirX*sid)*e.spd*dt);if(clear&&d<780&&e.fire<=0){e.fire=Math.max(.65,1.45-wave*.05)+rand(0,.5);let a=Math.atan2(dy,dx)+rand(-.12,.12);bullets.push({x:e.x+dirX*22,y:e.y+dirY*22,vx:Math.cos(a)*530,vy:Math.sin(a)*530,t:1.8,damage:10,friend:false,color:'#fc7b76',r:4,pierce:0})}}if((e.type==='rusher'||!clear||d>380)&&Math.hypot(e.x-prevEX,e.y-prevEY)<dt*5){e.stuck=(e.stuck||0)+dt;if(e.stuck>3.3){for(let j=0;j<30;j++){const angle=rand(0,TAU),range=rand(340,580),tx=clamp(player.x+Math.cos(angle)*range,85,WORLD.w-85),ty=clamp(player.y+Math.sin(angle)*range,85,WORLD.h-85);if(!blocked(tx,ty,e.r)&&!enemies.some(other=>other!==e&&dist(other,{x:tx,y:ty})<45)){burst(e.x,e.y,7,'#889ab1',100);e.x=tx;e.y=ty;burst(tx,ty,7,'#889ab1',90);break;}}e.stuck=0;}}else e.stuck=0;}
+enemies=enemies.filter(e=>!e.dead);
+for(let i=bullets.length-1;i>=0;i--){
+ const b=bullets[i];b.t-=dt;
+ const steps=Math.max(1,Math.ceil(Math.hypot(b.vx*dt,b.vy*dt)/10));
+ let removed=false;
+ for(let s=0;s<steps;s++){
+  b.x+=b.vx*dt/steps;b.y+=b.vy*dt/steps;
+  const impact=intersectsCover(b.x,b.y,b.r);if(b.t<=0||impact||b.x<b.r+44||b.y<b.r+44||b.x>WORLD.w-b.r-44||b.y>WORLD.h-b.r-44){if(impact)damageCover(impact,b.friend?b.damage*(b.trace?1.25:1):b.damage*.8,b.x,b.y);if(b.friend&&b.explosive)smallExplosion(b.x,b.y,b,null);burst(b.x,b.y,3,b.color,75);removed=true;break}
+  if(b.friend){
+   // Remember each enemy a projectile has already hit, preventing repeated
+   // damage while travelling through that enemy's collision circle.
+   if(!b.hitEnemies)b.hitEnemies=new Set();
+   for(const e of enemies){
+    if(e.dead||b.hitEnemies.has(e)||Math.hypot(e.x-b.x,e.y-b.y)>e.r+b.r)continue;
+    b.hitEnemies.add(e);
+    hurtEnemy(e,b.damage,b.x,b.y);
+    if(b.explosive)smallExplosion(b.x,b.y,b,e);
+    if(b.pierce>0){b.pierce--;}else{removed=true;}
+    break;
+   }
+  }else if(Math.hypot(player.x-b.x,player.y-b.y)<(player.roll>0&&player.rollMode==='slide'?9:player.r)+b.r){
+   hurtPlayer(b.damage);removed=true;
+  }
+  if(removed)break;
+ }
+ if(removed)bullets.splice(i,1);
+}
+for(let i=grenades.length-1;i>=0;i--){
+ const g=grenades[i];const step=Math.min(dt,Math.max(0,g.dur-g.t));g.t+=step;
+ // Cover and enemies do not impede the elevated lob. Only arena borders bounce.
+ const nx=rebound(g.x+g.vx*step,g.vx,58,WORLD.w-58);
+ const ny=rebound(g.y+g.vy*step,g.vy,58,WORLD.h-58);
+ g.x=nx.position;g.y=ny.position;g.vx=nx.speed;g.vy=ny.speed;
+ if(nx.bounces||ny.bounces){g.bounces+=nx.bounces+ny.bounces;burst(g.x,g.y,4,'#f8cf9d',90)}
+ if(g.t>=g.dur-0.00001||g.t>=g.fuse){boom(g.x,g.y,g.radius,g.damage);grenades.splice(i,1)}
+}
+for(let i=knives.length-1;i>=0;i--){const k=knives[i];k.t-=dt;let dead=false,steps=Math.max(1,Math.ceil(Math.hypot(k.vx*dt,k.vy*dt)/14));for(let s=0;s<steps;s++){k.x+=k.vx*dt/steps;k.y+=k.vy*dt/steps;const o=intersectsCover(k.x,k.y,5);if(k.t<=0||o||k.x<49||k.y<49||k.x>WORLD.w-49||k.y>WORLD.h-49){if(o)damageCover(o,k.damage*.45,k.x,k.y);dead=true;burst(k.x,k.y,3,'#c9f0ed',70);break}for(const e of enemies){if(e.dead)continue;if(Math.hypot(k.x-e.x,k.y-e.y)<e.r+7){hurtEnemy(e,k.damage,k.x,k.y);dead=true;break}}if(dead)break}if(dead)knives.splice(i,1)}
+for(let i=particles.length-1;i>=0;i--){let p=particles[i];p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=Math.max(0,1-dt*3);p.vy*=Math.max(0,1-dt*3);if(p.life<=0)particles.splice(i,1)}for(let i=texts.length-1;i>=0;i--){let t=texts[i];t.t+=dt;t.y-=30*dt;if(t.t>t.max)texts.splice(i,1)}
+if(toSpawn===0&&enemies.length===0&&nextWaveTimer<0&&!shopOpen)openShop()
+}
+function rr(x,y,w,h,r=8){ctx.beginPath();ctx.roundRect(x,y,w,h,r)}
+function bg(){ctx.fillStyle='#0a1720';ctx.fillRect(0,0,sw,sh);ctx.save();ctx.translate(-cam.x,-cam.y);ctx.fillStyle='#10222c';ctx.fillRect(0,0,WORLD.w,WORLD.h);
+let left=Math.floor(cam.x/80)*80,top=Math.floor(cam.y/80)*80;ctx.strokeStyle='rgba(126,195,195,.055)';ctx.lineWidth=1;ctx.beginPath();for(let x=left;x<cam.x+sw+90;x+=80){ctx.moveTo(x,Math.max(0,cam.y-20));ctx.lineTo(x,Math.min(WORLD.h,cam.y+sh+20))}for(let y=top;y<cam.y+sh+90;y+=80){ctx.moveTo(Math.max(0,cam.x-20),y);ctx.lineTo(Math.min(WORLD.w,cam.x+sw+20),y)}ctx.stroke();
+ctx.strokeStyle='rgba(105,168,172,.15)';ctx.lineWidth=2;ctx.setLineDash([12,15]);ctx.strokeRect(50,50,WORLD.w-100,WORLD.h-100);ctx.setLineDash([]);
+for(let i=0;i<20;i++){let x=150+(i*311)%2170,y=105+(i*241)%1480;ctx.fillStyle='rgba(109,178,181,.055)';ctx.fillRect(x,y,60,3);ctx.fillRect(x+28,y-20,3,44)}
+for(const o of obstacles){
+ if(o.x>cam.x+sw+40||o.y>cam.y+sh+40||o.x+o.w<cam.x-40||o.y+o.h<cam.y-40)continue;
+ if(o.dirty)repaintCover(o);
+ ctx.globalAlpha=.42;ctx.drawImage(o.texture,o.x+7,o.y+8);
+ ctx.globalAlpha=1;ctx.drawImage(o.texture,o.x,o.y);
+ if(o.hit>0){ctx.globalAlpha=o.hit*1.7;ctx.fillStyle='#b7e1dd';ctx.fillRect(o.x,o.y,o.w,o.h);ctx.globalAlpha=1;}
+ if(o.hp<o.maxHp*.98){ctx.fillStyle='#101b20';ctx.fillRect(o.x+7,o.y-8,o.w-14,4);ctx.fillStyle=o.hp/o.maxHp<.35?'#ef8c7b':'#8ad7c2';ctx.fillRect(o.x+7,o.y-8,(o.w-14)*o.hp/o.maxHp,4)}
+ if(o.newborn>0){ctx.strokeStyle=`rgba(117,255,217,${o.newborn*.55})`;ctx.lineWidth=3;ctx.strokeRect(o.x-5,o.y-5,o.w+10,o.h+10)}
+}
+
+ctx.restore()}
+function drawEntities(){ctx.save();ctx.translate(-cam.x,-cam.y);
+for(const g of grenades){
+ const p=clamp(g.t/g.dur,0,1),height=Math.sin(p*Math.PI)*52;
+ ctx.fillStyle='#f8c28c30';ctx.beginPath();ctx.ellipse(g.x,g.y,11,6,0,0,TAU);ctx.fill();
+ ctx.fillStyle='#f0b170';ctx.beginPath();ctx.arc(g.x,g.y-height,7,0,TAU);ctx.fill();
+ ctx.strokeStyle='#fce5bc';ctx.lineWidth=2;ctx.stroke();
+ ctx.strokeStyle='#e7a56e66';ctx.lineWidth=1.6;ctx.setLineDash([5,8]);ctx.beginPath();ctx.arc(g.tx,g.ty,g.radius,0,TAU);ctx.stroke();ctx.setLineDash([]);
+}
+for(const b of bullets){ctx.strokeStyle=b.color;ctx.globalAlpha=b.friend?.84:.75;ctx.lineWidth=b.trace?4:2.6;ctx.beginPath();ctx.moveTo(b.x-b.vx*.018,b.y-b.vy*.018);ctx.lineTo(b.x,b.y);ctx.stroke();ctx.globalAlpha=1;ctx.fillStyle=b.color;ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,TAU);ctx.fill()}
+for(const k of knives){ctx.save();ctx.translate(k.x,k.y);ctx.rotate(k.angle);ctx.strokeStyle='#ebf8f4';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(-10,0);ctx.lineTo(15,0);ctx.stroke();ctx.strokeStyle='#68dcbf';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-15,0);ctx.lineTo(-9,0);ctx.stroke();ctx.restore()}
+for(const e of enemies){ctx.fillStyle='#050f17aa';ctx.beginPath();ctx.ellipse(e.x+4,e.y+8,e.r+5,e.r*.75,0,0,TAU);ctx.fill();let a=Math.atan2(player.y-e.y,player.x-e.x);ctx.save();ctx.translate(e.x,e.y);ctx.rotate(a);ctx.fillStyle=e.flash>0?'#ffffff':e.type==='rusher'?'#fa996c':'#b696eb';ctx.strokeStyle=e.type==='rusher'?'#ffb17e':'#d7c3ff';ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,0,e.r,0,TAU);ctx.fill();ctx.stroke();ctx.fillStyle='#1c2732';rr(7,-5,e.type==='rusher'?12:22,10,3);ctx.fill();ctx.fillStyle='#fff4de';ctx.fillRect(12,-2,6,4);ctx.restore();if(e.hp<e.maxHp){ctx.fillStyle='#132329';ctx.fillRect(e.x-23,e.y-e.r-14,46,4);ctx.fillStyle=e.type==='rusher'?'#f6a36f':'#c6a1ff';ctx.fillRect(e.x-23,e.y-e.r-14,46*Math.max(0,e.hp/e.maxHp),4)}}
+const a=player.angle,roll=player.roll>0,sliding=roll,crouch=isCrouching(),running=keys.has('ShiftLeft')||keys.has('ShiftRight');
+// Slides show a flattened body, a skid trail and independently aiming weapon.
+if(sliding){
+ const travel=Math.atan2(player.rollDy,player.rollDx);
+ ctx.save();ctx.translate(player.x,player.y);ctx.rotate(travel);
+ ctx.fillStyle='#070e15a9';ctx.beginPath();ctx.ellipse(-8,7,40,14,0,0,TAU);ctx.fill();
+ ctx.strokeStyle='#c8b08c';ctx.lineWidth=2;ctx.setLineDash([12,7]);
+ for(let i=-1;i<=1;i++){ctx.beginPath();ctx.moveTo(-70,i*9);ctx.lineTo(-27,i*9);ctx.stroke()}ctx.setLineDash([]);
+ ctx.fillStyle='#4b8e89';rr(-28,-10,54,20,9);ctx.fill();ctx.strokeStyle='#a4e2d2';ctx.lineWidth=2;ctx.stroke();
+ ctx.fillStyle='#173b44';rr(-11,-9,24,18,5);ctx.fill();
+ ctx.fillStyle='#d0ebd9';ctx.beginPath();ctx.arc(22,0,8,0,TAU);ctx.fill();ctx.restore();
+}
+ctx.save();ctx.translate(player.x,player.y);ctx.rotate(a);
+ctx.fillStyle='rgba(0,0,0,.32)';ctx.beginPath();ctx.ellipse(3,8,24,18,0,0,TAU);ctx.fill();if(player.invul>0&&Math.floor(clock*16)%2===0)ctx.globalAlpha=.45;
+if(!roll){ctx.fillStyle='#1b5460';ctx.beginPath();ctx.arc(0,0,crouch?14:19,0,TAU);ctx.fill();ctx.strokeStyle='#a8ffe5';ctx.lineWidth=3;ctx.stroke();ctx.fillStyle='#8ef4d9';rr(-12,-15,20,30,7);ctx.fill();ctx.fillStyle='#173f4a';rr(-7,-9,17,19,5);ctx.fill();ctx.fillStyle='#5ce7ce';ctx.fillRect(-14,-11,6,8);ctx.fillRect(-14,4,6,8)}
+// Weapon rotates toward the mouse independently of the sliding body.
+ctx.fillStyle='#c7fff2';rr(5,-5,player.weapon===2?14:gunSpec().barrel+player.mods.barrel*3,player.weapon===2?8:10,3);ctx.fill();ctx.fillStyle='#316772';rr(7,-5,16,10,2);ctx.fill();
+if(sliding){ctx.strokeStyle='#8ae9df';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(2,-10);ctx.lineTo(19,-5);ctx.stroke()}
+ctx.restore();
+if(player.slash>0){const gunStrike=player.slashKind==='quick'&&player.weapon===0;
+ ctx.strokeStyle=gunStrike?`rgba(255,207,126,${Math.min(1,player.slash/.18)})`:`rgba(188,255,241,${Math.min(1,player.slash/.2)})`;
+ ctx.lineWidth=gunStrike?9:12;ctx.beginPath();ctx.arc(player.x,player.y,gunStrike?(player.bayonetOn?102:71):75,player.slashDir-(gunStrike?.65:.95),player.slashDir+(gunStrike?.65:.95));ctx.stroke()}
+if(player.weapon===0&&player.laserOn){
+ const ax=Math.cos(a),ay=Math.sin(a);let length=1100;
+ length=rayCoverDistance(player.x,player.y,ax,ay,1100);
+ ctx.save();ctx.strokeStyle='rgba(255,55,66,.22)';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(player.x+ax*27,player.y+ay*27);ctx.lineTo(player.x+ax*length,player.y+ay*length);ctx.stroke();ctx.strokeStyle='#ff4e60';ctx.lineWidth=1.35;ctx.beginPath();ctx.moveTo(player.x+ax*27,player.y+ay*27);ctx.lineTo(player.x+ax*length,player.y+ay*length);ctx.stroke();ctx.fillStyle='#ff646b';ctx.beginPath();ctx.arc(player.x+ax*length,player.y+ay*length,3.5,0,TAU);ctx.fill();ctx.restore();
+}
+if(altHeld&&player.weapon===0&&player.secondary==='grenade'){
+ const aim=aimWorld(),dx=aim.x-player.x,dy=aim.y-player.y,d=Math.hypot(dx,dy)||1,range=Math.min(d,grenadeRange());
+ const rawX=player.x+dx/d*range,rawY=player.y+dy/d*range;
+ const tx=reflectCoord(rawX,58,WORLD.w-58),ty=reflectCoord(rawY,58,WORLD.h-58);
+ ctx.strokeStyle='#ffc48185';ctx.lineWidth=1.6;ctx.setLineDash([9,11]);ctx.beginPath();ctx.moveTo(player.x,player.y);ctx.lineTo(rawX,rawY);ctx.stroke();ctx.setLineDash([]);
+ ctx.strokeStyle='#ffc17d';ctx.beginPath();ctx.arc(tx,ty,8,0,TAU);ctx.stroke();ctx.fillStyle='#ffc481';ctx.font='bold 11px system-ui';ctx.fillText('LOB · ARENA-EDGE BOUNCE',tx+13,ty-13)
+}
+if(altHeld&&player.weapon===2){let charge=clamp((clock-altStart)/.65,0,1);ctx.strokeStyle='#8df7d5aa';ctx.lineWidth=2+charge*2;ctx.setLineDash([7,8]);ctx.beginPath();ctx.moveTo(player.x+Math.cos(a)*28,player.y+Math.sin(a)*28);ctx.lineTo(player.x+Math.cos(a)*690,player.y+Math.sin(a)*690);ctx.stroke();ctx.setLineDash([]);ctx.strokeStyle='#7af4d4';ctx.lineWidth=3;ctx.beginPath();ctx.arc(player.x,player.y,27,-Math.PI/2,-Math.PI/2+charge*TAU);ctx.stroke()}
+for(const p of particles){if(p.x<cam.x-100||p.x>cam.x+sw+100||p.y<cam.y-100||p.y>cam.y+sh+100)continue;ctx.globalAlpha=clamp(p.life/p.max,0,1);if(p.ring){ctx.strokeStyle=p.color;ctx.lineWidth=5*(p.life/p.max);ctx.beginPath();ctx.arc(p.x,p.y,p.r*(1-p.life/p.max),0,TAU);ctx.stroke()}else{ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.r*(.5+p.life/p.max*.5),0,TAU);ctx.fill()}}ctx.globalAlpha=1;
+for(const t of texts){ctx.globalAlpha=1-t.t/t.max;ctx.fillStyle=t.color;ctx.font='bold 15px system-ui';ctx.textAlign='center';ctx.fillText(t.text,t.x,t.y)}ctx.globalAlpha=1;ctx.restore()}
+function reticle(){
+ if(!mouse.active)return;const x=mouse.x,y=mouse.y,crouch=isCrouching(),running=keys.has('ShiftLeft')||keys.has('ShiftRight');
+ const r=player.weapon===2?13:(altHeld&&player.secondary==='aim'?7:crouch?10:running?21:15)+Math.max(0,projectileCount()-1)*1.25;
+ ctx.save();ctx.translate(x,y);ctx.strokeStyle=player.weapon===0&&altHeld&&player.secondary!=='aim'?'#ffd193':'#a1ffe2';ctx.lineWidth=1.6;ctx.beginPath();ctx.arc(0,0,r,0,TAU);ctx.stroke();ctx.beginPath();ctx.moveTo(-r-10,0);ctx.lineTo(-r+3,0);ctx.moveTo(r-3,0);ctx.lineTo(r+10,0);ctx.moveTo(0,-r-10);ctx.lineTo(0,-r+3);ctx.moveTo(0,r-3);ctx.lineTo(0,r+10);ctx.stroke();ctx.fillStyle=ctx.strokeStyle;ctx.fillRect(-1,-1,2,2);ctx.restore();
+}
+let uiTimer=0;function syncUI(dt){
+ uiTimer-=dt;if(uiTimer>0)return;uiTimer=.06;
+ ui.wave.textContent=String(wave).padStart(2,'0');ui.kills.textContent=String(kills).padStart(3,'0');ui.score.textContent=String(score).padStart(5,'0');ui.credits.textContent='$'+credits.toLocaleString();ui.health.textContent=String(player.hp);ui.hpfill.style.width=player.hp+'%';ui.dodge.textContent=player.roll>0?'SLIDING':player.rollCd>0?player.rollCd.toFixed(1)+'s':'READY';ui.dodge.style.color=player.rollCd>0?'#e9b27f':'#c5faf0';
+ if(player.weapon===2){ui.weapon.textContent='COMBAT KNIFE';ui.weaponSlot.textContent='01 / MELEE · '+(toSpawn+enemies.length)+' HOSTILES LEFT';ui.ammo.innerHTML=(player.throwKnives===Infinity?'∞':player.throwKnives)+' <small>THROWING KNIVES</small>';ui.alt.textContent='SPACE / LMB · SLASH · RMB + LMB · THROW';return}
+ ui.weapon.textContent=gunSpec().name+(projectileCount()>1?' · ×'+projectileCount()+' PELLETS':'')+' · '+fireModeLabel();ui.weaponSlot.textContent='02 / CUSTOM FIREARM · '+(toSpawn+enemies.length)+' HOSTILES LEFT';
+ ui.ammo.innerHTML=player.reload>0?`<span style="font-size:16px;color:#ffbf87">RELOADING ${player.reload.toFixed(1)}s</span>`:`${player.gun} <small>/ ${player.gunReserve===Infinity?'∞':player.gunReserve}</small>`;
+ const laser=player.laserOn?' · LASER ON [L]':'',explosive=player.modules.explosive?' · EXPLOSIVE '+(player.explosiveOn?'ON':'OFF')+' [X]':'';
+ const sec=player.secondary==='aim'?(altHeld?'PRECISION AIM ACTIVE':'RMB · PRECISION AIM'):
+ player.secondary==='grenade'?(player.grenadeReload>0?'GRENADE RELOAD '+player.grenadeReload.toFixed(1)+'s':altHeld?'RMB + LMB · LAUNCH GRENADE ('+player.grenades+' / '+(player.grenadeReserve===Infinity?'∞':player.grenadeReserve)+')':'RMB + LMB · GRENADE LAUNCHER'):
+ (altHeld?'RMB + LMB · POWER SHOT (3 ROUNDS)':'RMB + LMB · POWER SHOT');
+ ui.alt.textContent=sec+laser+explosive+' · SPACE STRIKE'+(player.bayonetOn?' (BAYONET)':'');
+}
+function draw(){const sx=shake?rand(-shake,shake):0,sy=shake?rand(-shake,shake):0;ctx.save();ctx.translate(sx,sy);bg();drawEntities();ctx.restore();if(started)reticle()}
+let frameErrors=0;
+function loop(t){
+ try{
+  const dt=Math.min((t-last)/1000||0,.035);last=t;
+  if(!paused&&!ended){update(dt);syncUI(dt);renderedStill=false}
+  else if(!started){clock+=dt*.22}
+  if(player&&(!paused&&!ended||!renderedStill)){draw();renderedStill=paused||ended}
+  frameErrors=0;
+ }catch(err){
+  console.error('STRIKE VECTOR frame error',err);
+  if(++frameErrors>=2){
+   paused=true;ended=true;fireHeld=false;altHeld=false;secondaryPending=false;
+   showScreen('gameover');ui.title.textContent='TECHNICAL ERROR';
+   ui.intro.textContent='The game encountered an unexpected error. Press REDEPLOY to restart.';
+  }
+ }
+ requestAnimationFrame(loop);
+}reset();showScreen('title');requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
