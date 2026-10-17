@@ -532,7 +532,7 @@ function buildLevel(){
 
 function reset(){
  buildLevel();player={x:1250,y:810,r:18,hp:100,maxHp:100,vx:0,vy:0,angle:0,weapon:0,
-  mods:{receiver:0,barrel:0,damage:0,trigger:0,fireControl:0,mag:0,projectiles:0,penetration:0,reloadSpeed:0,blast:0,knife:0,grenadePower:0,grenadeRange:0,grenadeMag:0,grenadeReload:0,grenadeCycle:0,shieldCapacity:0,shieldRegen:0,shieldDelay:0,armor:0},
+  mods:{receiver:0,barrel:0,damage:0,trigger:0,fireControl:0,mag:0,projectiles:0,penetration:0,reloadSpeed:0,blast:0,knife:0,grenadePower:0,grenadeRange:0,grenadeMag:0,grenadeReload:0,grenadeCycle:0,shieldCapacity:0,shieldRegen:0,shieldDelay:0,armor:0,dodgeCooldown:0},
   modules:{laser:false,grenade:false,power:false,explosive:false,bayonet:false},laserOn:false,explosiveOn:false,bayonetOn:false,secondary:'aim',
   shield:0,shieldHitAt:-999,roll:0,rollMax:.78,rollMode:'slide',rollDx:0,rollDy:0,rollCd:0,invul:0,slideTurn:0,fireCd:0,secondaryCd:0,slash:0,slashDir:0,slashHits:new Set(),
   reload:0,gun:14,gunReserve:Infinity,grenades:5,grenadeReserve:Infinity,grenadeReload:0,throwKnives:Infinity,step:0,meleeCd:0,slashKind:'knife',triggerQueue:0,triggerExpiry:0,fireMode:'semi',burstShots:0};
@@ -565,7 +565,8 @@ const OPTIONS=[
  {id:'shieldCapacity',name:'ENERGY SHIELD ARRAY',price:340,step:190,max:5,detail:'+35 regenerating shield points per tier. New capacity immediately charges.'},
  {id:'shieldRegen',name:'SHIELD RECHARGE',price:290,step:170,max:5,detail:'+6 shield per second per tier, once shield capacity is installed.'},
  {id:'shieldDelay',name:'SHIELD RECOVERY TIMER',price:265,step:160,max:5,detail:'Each tier shortens the delay after damage by 0.5 seconds (minimum 1 second).'},
- {id:'armor',name:'REINFORCED ARMOR',price:320,step:190,max:5,detail:'Reduces health damage passing through shields by 7% per tier (up to 35%).'}
+ {id:'armor',name:'REINFORCED ARMOR',price:320,step:190,max:5,detail:'Reduces health damage passing through shields by 7% per tier (up to 35%).'},
+ {id:'dodgeCooldown',name:'DODGE RECOVERY',price:245,step:140,max:5,detail:'Each tier reduces slide/dodge cooldown by 0.2 seconds, from 2.0 to 1.0 seconds.'}
 ];
 const MODULES=[
  {id:'grenade',name:'UNDERBARREL GRENADE',price:475,detail:'Lobbed grenade · bounces only off arena edges · 5 per clip'},
@@ -584,6 +585,7 @@ function shieldDelayTime(mods=player.mods){return Math.max(1,3.5-.5*(mods.shield
 function shieldProtection(mods=player.mods){return Math.min(.35,.07*(mods.armor||0))}
 function barrelSpread(level=player.mods.barrel){return gunSpec().spread*Math.pow(.68,level)}
 function pelletFan(level=player.mods.barrel){return Math.pow(.79,level)}
+function dodgeCooldown(level=player.mods.dodgeCooldown){return Math.max(1,2-.2*level)}
 function projectileRadius(receiver=player.mods.receiver,power=false){return (3.2+receiver*1.55)*(power?1.4:1)}
 function absorbDamage(target,amount){
  const mods=target.defense||target.mods||player.mods,incoming=Math.max(0,amount);
@@ -636,6 +638,7 @@ const ICON_SHAPES={
  shieldCapacity:`<path d="M60 9l34 14v24q-6 20-34 28Q32 67 26 47V23zM60 22v37M41 41h38"/>`,
  shieldRegen:`<path d="M60 12l29 12v23q-6 17-29 24-23-7-29-24V24zM35 14a36 36 0 0 1 48 2M79 9l4 7-8 1"/><path d="M43 43h34M60 28v30"/>`,
  shieldDelay:`<path d="M60 10l30 14v23q-8 20-30 27-22-7-30-27V24z"/><circle cx="60" cy="43" r="17"/><path d="M60 30v14l9 6M45 14l-7-8M75 14l7-8"/>`,
+ dodgeCooldown:`<path d="M62 8A32 32 0 1 0 94 40"/><path d="M79 10L97 10 97 28M59 23v18l14 11M28 68l12-12"/>`,
  armor:`<path d="M27 25l20-14h26l20 14-8 39-25 13-25-13zM48 12v52M72 12v52M35 50h50M27 25h66"/>`,
  knife:`<path d="M19 51l53-35 15 10-45 44zM35 52l8 10M23 56l-6 7M14 52l7 8"/><path d="M65 22l11 7"/>`,
  grenade:`<path d="M56 13h15v9M50 22h28l4 26Q78 68 64 68T46 48zM50 35h28M57 45h14"/><path d="M75 16l15-5"/>`,
@@ -682,6 +685,7 @@ function statText(o,lvl){
    case 'shieldRegen':return {now:`${shieldRate()} shield / sec`,next:`${shieldMax()>0?shieldRate()+6:0} shield / sec`};
    case 'shieldDelay':return {now:`${shieldDelayTime().toFixed(1)}s delay`,next:`${Math.max(1,shieldDelayTime()-.5).toFixed(1)}s delay`};
    case 'armor':return {now:`${Math.round(shieldProtection()*100)}% health resistance`,next:`${Math.round(Math.min(.35,.07*next)*100)}% resistance`};
+   case 'dodgeCooldown':return {now:`${dodgeCooldown(curr).toFixed(1)}s recovery`,next:`${dodgeCooldown(next).toFixed(1)}s recovery`};
  }
  return {now:`Level ${lvl}`,next:`Level ${next}`};
 }
@@ -713,7 +717,7 @@ function treeNodeShell(id,title,kicker,iconId,body,x,y,classes=''){
  return `<article class="tree-node ${classes}" data-node="${id}" style="left:${x}px;top:${y}px"><div class="tree-head"><div class="tree-icon">${iconArt(iconId||id,levelForIcon)}</div><div class="tree-titlewrap"><div class="tree-kicker">${kicker}</div><h3>${title}</h3></div></div>${body}</article>`;
 }
 function treeStatLine(label,value){return `<div class="tree-statline"><span>${label}</span><b>${value}</b></div>`}
-function optionIcon(id){return id==='receiver'?'receiver':id==='damage'?'damage':id==='trigger'?'trigger':id==='fireControl'?'fireControl':id==='projectiles'?'projectiles':id==='reloadSpeed'?'reloadSpeed':id==='mag'?'mag':id==='barrel'?'barrel':id==='penetration'?'penetration':id==='blast'?'blast':id==='grenadePower'?'grenadePower':id==='grenadeRange'?'grenadeRange':id==='grenadeMag'?'grenadeMag':id==='grenadeReload'?'grenadeReload':id==='grenadeCycle'?'grenadeCycle':id==='knife'?'knife':['shieldCapacity','shieldRegen','shieldDelay','armor'].includes(id)?id:'gun'}
+function optionIcon(id){return id==='receiver'?'receiver':id==='damage'?'damage':id==='trigger'?'trigger':id==='fireControl'?'fireControl':id==='projectiles'?'projectiles':id==='reloadSpeed'?'reloadSpeed':id==='mag'?'mag':id==='barrel'?'barrel':id==='penetration'?'penetration':id==='blast'?'blast':id==='grenadePower'?'grenadePower':id==='grenadeRange'?'grenadeRange':id==='grenadeMag'?'grenadeMag':id==='grenadeReload'?'grenadeReload':id==='grenadeCycle'?'grenadeCycle':id==='knife'?'knife':['shieldCapacity','shieldRegen','shieldDelay','armor','dodgeCooldown'].includes(id)?id:'gun'}
 function buildTreeUpgradeNode(o,x,y,kicker='WEAPON MOD'){
  const lvl=player.mods[o.id],needs=o.requires&&!player.modules[o.requires],maxed=o.max!==undefined&&lvl>=o.max;
  const cost=upgradeCost(o,lvl),refund=lvl?upgradeCost(o,lvl-1):0,st=statText(o,lvl);
@@ -786,7 +790,7 @@ function buildCompactSkillTree(){
   ballisticsHub:[690,205],barrel:[535,70],projectiles:[695,70],penetration:[850,110],
   grenade:[945,465],blast:[1080,285],grenadePower:[1110,465],grenadeRange:[1110,625],grenadeMag:[980,815],grenadeReload:[810,820],grenadeCycle:[800,615],
   attachments:[255,825],laser:[95,770],explosive:[95,960],bayonet:[245,1020],power:[380,1035],aim:[355,655],knife:[110,655],
-   defenseHub:[1270,820],shieldCapacity:[1270,575],shieldRegen:[1460,690],shieldDelay:[1460,940],armor:[1270,1090]
+   defenseHub:[1270,820],shieldCapacity:[1270,575],shieldRegen:[1460,690],shieldDelay:[1460,940],armor:[1270,1090],dodgeCooldown:[1100,1090]
  };
  const branches=[
   ['core','receiverHub'],['receiverHub','receiver'],['receiverHub','damage'],
@@ -795,7 +799,7 @@ function buildCompactSkillTree(){
   ['core','ballisticsHub'],['ballisticsHub','barrel'],['ballisticsHub','projectiles'],['ballisticsHub','penetration'],
   ['core','grenade'],['grenade','blast'],['grenade','grenadePower'],['grenade','grenadeRange'],['grenade','grenadeMag'],['grenade','grenadeReload'],['grenade','grenadeCycle'],
   ['core','attachments'],['attachments','laser'],['attachments','explosive'],['attachments','bayonet'],['attachments','power'],['attachments','aim'],['attachments','knife'],
-   ['core','defenseHub'],['defenseHub','shieldCapacity'],['defenseHub','shieldRegen'],['defenseHub','shieldDelay'],['defenseHub','armor']
+   ['core','defenseHub'],['defenseHub','shieldCapacity'],['defenseHub','shieldRegen'],['defenseHub','shieldDelay'],['defenseHub','armor'],['defenseHub','dodgeCooldown']
  ];
  const grenadeMods=new Set(['blast','grenadePower','grenadeRange','grenadeMag','grenadeReload','grenadeCycle']);
  const lockedEdge=b=>(grenadeMods.has(b)&&!player.modules.grenade)||(['grenade','laser','explosive','bayonet','power'].includes(b)&&!player.modules[b]);
@@ -835,7 +839,8 @@ function buildCompactSkillTree(){
    compactNode('shieldCapacity','shieldCapacity',...pos.shieldCapacity,'SHIELD',{levelText:lvl('shieldCapacity')}),
    compactNode('shieldRegen','shieldRegen',...pos.shieldRegen,'REGEN',{levelText:lvl('shieldRegen')}),
    compactNode('shieldDelay','shieldDelay',...pos.shieldDelay,'RECOVERY',{levelText:lvl('shieldDelay')}),
-   compactNode('armor','armor',...pos.armor,'ARMOR',{levelText:lvl('armor')})
+   compactNode('armor','armor',...pos.armor,'ARMOR',{levelText:lvl('armor')}),
+   compactNode('dodgeCooldown','dodgeCooldown',...pos.dodgeCooldown,'DODGE CD',{levelText:lvl('dodgeCooldown')})
  ].join('');
  return `<div class="tree-map-viewport" id="treeViewport" aria-label="Draggable, forked weapon upgrade map"><div class="tree-map-stage" id="treeStage"><svg class="tree-map-svg" viewBox="0 0 1540 1200" preserveAspectRatio="none" aria-hidden="true">${lines}</svg>${nodes}</div><div class="tree-map-hint">DRAG TO PAN · SCROLL TO ZOOM · CLICK TO INSPECT</div><div class="tree-zoom-controls" aria-label="Skill tree zoom controls"><button type="button" data-tree-zoom="in" aria-label="Zoom in">+</button><output id="treeZoomLabel" aria-live="off">100%</output><button type="button" data-tree-zoom="out" aria-label="Zoom out">−</button><button type="button" data-tree-reset title="Center map and reset zoom">⌖ RESET VIEW</button></div><aside class="tree-popup" id="treePopup" hidden><button type="button" class="tree-popup-close" data-tree-close aria-label="Close upgrade details">×</button><div class="tree-popup-body" id="treePopupBody"></div></aside></div>`;
 }
@@ -1056,6 +1061,7 @@ ui.shopGrid.addEventListener('click',e=>{
   if(b.dataset.refund){if(lvl===0)return;player.mods[o.id]=lvl-1;credits+=upgradeCost(o,lvl-1)}
   else{if(o.max!==undefined&&lvl>=o.max)return;const cost=upgradeCost(o,lvl);if(credits<cost)return;credits-=cost;player.mods[o.id]++}
   if(o.id==='fireControl'){if(!player.mods.fireControl)player.fireMode='semi';player.burstShots=0;player.triggerQueue=0;}
+   if(o.id==='dodgeCooldown')player.rollCd=Math.min(player.rollCd,dodgeCooldown());
    if(o.id==='shieldCapacity'){const previousMax=35*lvl,newMax=shieldMax();player.shield=clamp(player.shield+Math.max(0,newMax-previousMax),0,newMax);}
   normalizeMagazine();
  }else if(b.dataset.moduleBuy){
@@ -1555,7 +1561,7 @@ function startSlide(){
  const n=Math.hypot(vx,vy)||1;
  player.rollDx=vx/n;player.rollDy=vy/n;
  player.rollMode='slide';player.rollMax=.78;player.roll=player.rollMax;
- player.rollCd=2;player.invul=.10;player.slideTurn=0;
+ player.rollCd=dodgeCooldown();player.invul=.10;player.slideTurn=0;
  // Preserve any reload already in progress during the dash.
  sound('dodge');
  for(let i=0;i<12;i++)particle(player.x-player.rollDx*19,player.y-player.rollDy*19,rand(-115,115)-player.rollDx*140,rand(-115,115)-player.rollDy*140,.35,'#b1a78e',rand(1,4));
