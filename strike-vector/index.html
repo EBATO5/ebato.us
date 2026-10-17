@@ -994,7 +994,7 @@ function updateTreeDetailPanel(){
 function renderShop(){
  ui.shopBank.innerHTML=`$${credits.toLocaleString()} <small>AVAILABLE CREDITS</small>`;
  ui.shopMessage.textContent='INDEPENDENT UPGRADE BRANCHES · INFINITE RESERVE AMMO';
- ui.shopNote.textContent='SHIELDS RECHARGE AFTER DAMAGE · ARMOR REDUCES HEALTH DAMAGE · ALL BRANCHES CAN BE REFUNDED';
+ ui.shopNote.textContent='100% REFUNDS ON ALL TIERS AND MODULES · SHIELDS RECHARGE AFTER DAMAGE · ARMOR REDUCES HEALTH DAMAGE';
  ui.shopStats.innerHTML=`<div><small>RECEIVER</small><b>${gunSpec().name}</b></div><div><small>DAMAGE / PELLET</small><b>${gunSpec().damage+player.mods.damage*7}</b></div><div><small>PELLETS / SHOT</small><b>${projectileCount()}</b></div><div><small>FIRE RATE LIMIT</small><b>${Math.round(60/gunInterval())} RPM</b></div><div><small>MAG / RELOAD</small><b>${clipSize()} · ${reloadDuration().toFixed(2)}s</b></div><div><small>PENETRATION</small><b>${1+player.mods.penetration} target${player.mods.penetration?'s':''}</b></div><div><small>FIRE / SECONDARY</small><b>${fireModeLabel()} · ${selectedAltName()}</b></div><div><small>SHIELD / RECHARGE</small><b>${Math.ceil(player.shield)} / ${shieldMax()} · ${shieldRate()}/s</b></div><div><small>ARMOR</small><b>${Math.round(shieldProtection()*100)}% RESIST</b></div><div><small>MAX HEALTH</small><b>${maxHealth()} HP</b></div>`;
  ui.shopTabs.innerHTML='';ui.shopTabs.style.display='none';
  ui.shopGrid.className='shop-grid tree-map compact';
@@ -1116,7 +1116,7 @@ ui.shopGrid.addEventListener('click',e=>{
   else{if(o.max!==undefined&&lvl>=o.max)return;const cost=upgradeCost(o,lvl);if(credits<cost)return;credits-=cost;player.mods[o.id]++}
   if(o.id==='fireControl'){if(!player.mods.fireControl)player.fireMode='semi';player.burstShots=0;player.triggerQueue=0;}
    if(o.id==='dodgeCooldown')player.rollCd=clamp(player.rollCd*dodgeCooldown()/dodgeCooldown(lvl),0,dodgeCooldown());
-   if(o.id==='maxHealth'){player.maxHp=maxHealth();player.hp=b.dataset.refund?Math.min(player.hp,player.maxHp):Math.min(player.maxHp,player.hp+25);}
+   if(o.id==='maxHealth'){player.maxHp=maxHealth();player.hp=b.dataset.refund?Math.min(player.hp,player.maxHp):player.hp>0?Math.min(player.maxHp,player.hp+25):0;}
    if(o.id==='shieldCapacity'){const previousMax=35*lvl,newMax=shieldMax();player.shield=clamp(player.shield+Math.max(0,newMax-previousMax),0,newMax);}
   normalizeMagazine();
  }else if(b.dataset.moduleBuy){
@@ -2050,7 +2050,7 @@ function netHandleHostData(conn,msg){
     const prevMax=shieldMax(r.defense),next={};
     for(const key of ['shieldCapacity','shieldRegen','shieldDelay','armor','maxHealth'])next[key]=clamp(Math.floor(Number(msg.defense[key])||0),0,5);
     const oldHealthCap=maxHealth(r.defense);r.defense=next;r.shieldMax=shieldMax(next);
-     const newHealthCap=maxHealth(next);r.hp=clamp((r.hp||0)+Math.max(0,newHealthCap-oldHealthCap),0,newHealthCap);
+     const newHealthCap=maxHealth(next);r.hp=r.hp>0?clamp(r.hp+Math.max(0,newHealthCap-oldHealthCap),0,newHealthCap):0;
     r.shield=clamp((r.shield||0)+Math.max(0,r.shieldMax-prevMax),0,r.shieldMax);
    }
    return;
