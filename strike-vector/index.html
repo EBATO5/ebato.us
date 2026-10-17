@@ -2007,17 +2007,21 @@ function netAddBot(){
  const bot={id,name:'BOT '+net.botSeq,team,x:0,y:0,r:18,hp:100,respawn:0,shotCd:1,a:0};
  net.bots.push(bot);netPlaceBot(bot);netSendRoster();
 }
-function netRemoveBot(){if(net.mode==='host'&&net.bots.length){net.bots.pop();netSendRoster();}}
+function netRemoveBot(id){if(net.mode!=='host'||!net.bots.length)return;
+ const idx=typeof id==='string'?net.bots.findIndex(b=>b.id===id):net.bots.length-1;
+ if(idx<0)return;
+ net.bots.splice(idx,1);netSendRoster();
+}
 function netAssignTeam(id,team){
  if(net.mode!=='host'||!['cyan','orange'].includes(team))return;
  if(id==='host'){netTeam(team);return;}
  const bot=net.bots.find(b=>b.id===id);
- if(bot){if(bot.team===team)return;bot.team=team;netPlaceBot(bot);netSendRoster();return;}
+ if(bot){if(bot.team===team)return;bot.team=team;if(net.phase==='match')netPlaceBot(bot);netSendRoster();return;}
  const r=net.remotes.get(id);if(!r||r.team===team)return;
  r.team=team;
  if(net.phase==='match'){const p=netGoalSpawn(team);r.x=p.x;r.y=p.y;r.hp=maxHealth(r.defense);r.shield=shieldMax(r.defense);r.shieldHitAt=-999;r.respawn=0;r.invulUntil=clock+1.5;}
  netMsg(net.clients.get(id),{t:'assignment',team});
- if(net.phase==='match')netMsg(net.clients.get(id),{t:'health',hp:r.hp,shield:r.shield,respawn:0,x:r.x,y:r.y});
+ if(net.phase==='match')netMsg(net.clients.get(id),{t:'health',hp:r.hp,maxHp:maxHealth(r.defense),shield:r.shield,respawn:0,x:r.x,y:r.y});
  netSendRoster();
 }
 function netRenderTeamBoard(){
@@ -2027,18 +2031,19 @@ function netRenderTeamBoard(){
   el.innerHTML=items.filter(p=>p.team===team).map(p=>{
    const name=safeName(p.name).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
    const id=encodeURIComponent(p.id),target=team==='cyan'?'orange':'cyan';
-   return `<div class="net-team-member" data-member-id="${id}" draggable="${host}"><div><strong>${p.bot?'⚙ ':''}${name}${p.host?' ★':''}</strong><small>${p.bot?'AI PUCK PLAYER':'HUMAN'}${Number.isFinite(p.hp)?' · HP '+Math.ceil(p.hp):''}</small></div>${host?`<button type="button" data-assign-team="${target}" data-assign-id="${id}">MOVE → ${target.toUpperCase()}</button>`:''}</div>`;
+   return `<div class="net-team-member" data-member-id="${id}" draggable="${host}"><div><strong>${p.bot?'⚙ ':''}${name}${p.host?' ★':''}</strong><small>${p.bot?'AI PUCK PLAYER':'HUMAN'}${Number.isFinite(p.hp)?' · HP '+Math.ceil(p.hp):''}</small></div>${host?`<button type="button" data-assign-team="${target}" data-assign-id="${id}">MOVE → ${target.toUpperCase()}</button>${p.bot?`<button type="button" data-remove-bot="${id}" title="Remove this bot immediately">REMOVE AI</button>`:''}`:''}</div>`;
   }).join('')||'<span class="net-bot-note">Drop a player here</span>';
  }
  $net('netBotCount').textContent=net.bots.length+' AI · '+items.length+'/8 TOTAL';
  $net('netAddBot').disabled=!host||net.clients.size+net.bots.length>=7;
  $net('netRemoveBot').disabled=!host||!net.bots.length;
 }
-$net('netAddBot').addEventListener('click',netAddBot);
-$net('netRemoveBot').addEventListener('click',netRemoveBot);
+$net('netAddBot').addEventListener('click',()=>netAddBot());
+$net('netRemoveBot').addEventListener('click',()=>netRemoveBot());
 $net('netTeamBoard').addEventListener('click',e=>{
  const b=e.target.closest('[data-assign-team]');
  if(b&&net.mode==='host')netAssignTeam(decodeURIComponent(b.dataset.assignId),b.dataset.assignTeam);
+  const remove=e.target.closest('[data-remove-bot]');if(remove&&net.mode==='host')netRemoveBot(decodeURIComponent(remove.dataset.removeBot));
 });
 $net('netTeamBoard').addEventListener('dragstart',e=>{
  const card=e.target.closest('.net-team-member');if(!card||net.mode!=='host'){e.preventDefault();return;}
