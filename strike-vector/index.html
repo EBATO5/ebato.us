@@ -561,7 +561,7 @@ const OPTIONS=[
  {id:'grenadeMag',name:'GRENADE FEED CAPACITY',price:295,step:175,max:5,detail:'+1 loaded grenade per tier',requires:'grenade'},
  {id:'grenadeReload',name:'GRENADE LOADING SPEED',price:245,step:135,detail:'15% faster grenade reload per tier',requires:'grenade'},
  {id:'grenadeCycle',name:'GRENADE FIRING MECHANISM',price:275,step:150,detail:'15% faster follow-up grenade shots per tier',requires:'grenade'},
- {id:'knife',name:'MELEE EDGE',price:190,step:105,detail:'+26 knife slash, +18 buttstock, +22 bayonet, and +18 thrown-knife damage per tier. Fully refundable.'},
+ {id:'knife',name:'MELEE EDGE',price:190,step:105,detail:'+26 knife slash, +20 buttstock, +24 bayonet, and +18 thrown-knife damage per tier. Fully refundable.'},
  {id:'shieldCapacity',name:'ENERGY SHIELD ARRAY',price:340,step:190,max:5,detail:'+35 regenerating shield points per tier. New capacity immediately charges.'},
  {id:'shieldRegen',name:'SHIELD RECHARGE',price:290,step:170,max:5,detail:'+6 shield per second per tier, once shield capacity is installed.'},
  {id:'shieldDelay',name:'SHIELD RECOVERY TIMER',price:265,step:160,max:5,detail:'Each tier shortens the delay after damage by 0.5 seconds (minimum 1 second).'},
@@ -585,7 +585,7 @@ function shieldDelayTime(mods=player.mods){return Math.max(1,3.5-.5*(mods.shield
 function shieldProtection(mods=player.mods){return Math.min(.35,.07*(mods.armor||0))}
 function barrelSpread(level=player.mods.barrel){return gunSpec().spread*Math.pow(.68,level)}
 function pelletFan(level=player.mods.barrel){return Math.pow(.79,level)}
-function meleeDamage(kind,level=player.mods.knife,bayonet=false){return kind==='knife'?80+26*level:bayonet?92+22*level:56+18*level}
+function meleeDamage(kind,level=player.mods.knife,bayonet=false){return kind==='knife'?80+26*level:bayonet?102+24*level:70+20*level}
 function dodgeCooldown(level=player.mods.dodgeCooldown){return Math.max(1,2-.2*level)}
 function projectileRadius(receiver=player.mods.receiver,power=false){return (3.2+receiver*1.55)*(power?1.4:1)}
 function absorbDamage(target,amount){
@@ -1551,7 +1551,7 @@ function quickMelee(){
  if(!player||paused||ended||player.hp<=0||player.meleeCd>0)return false;
  player.slash=.18;player.slashDir=mouseAim();player.slashKind=player.weapon===2?'knife':'quick';
  player.slashHits.clear();player.slashCoverDone=false;player.meleeCd=player.weapon===2?.35:.44;
- sound('knife');hitSlash();if(net.phase==='match')netSendMelee('quick',player.slashDir);
+ sound('knife');hitSlash();if(net.phase==='match')netSendMelee(player.slashKind==='knife'?'knife':'quick',player.slashDir);
  burst(player.x+Math.cos(player.slashDir)*30,player.y+Math.sin(player.slashDir)*30,5,'#a3f5e5',75);
  return true;
 }
@@ -1740,8 +1740,9 @@ function netAreaDamage(x,y,r,amount,owner){
 function netHostMelee(id,kind,angle){
  if(net.mode!=='host'||net.phase!=='match'||!Number.isFinite(angle))return;
  const p=id==='host'?player:net.remotes.get(id);if(!p||p.hp<=0)return;
- const bayonet=kind!=='knife'&&!!p.bayonetOn,level=clamp(Math.floor(Number(id==='host'?player.mods.knife:p.meleeTier)||0),0,40);
- const reach=kind==='knife'?99:bayonet?112:79,damage=meleeDamage(kind,level,bayonet);
+ const strikeKind=kind==='knife'||p.weapon===2?'knife':'quick';
+ const bayonet=strikeKind!=='knife'&&!!p.bayonetOn,level=clamp(Math.floor(Number(id==='host'?player.mods.knife:p.meleeTier)||0),0,40);
+ const reach=strikeKind==='knife'?99:bayonet?112:79,damage=meleeDamage(strikeKind,level,bayonet);
  const hits=(v)=>{const d=Math.hypot(v.x-p.x,v.y-p.y),a=Math.atan2(v.y-p.y,v.x-p.x);return d<reach+18&&Math.abs(Math.atan2(Math.sin(a-angle),Math.cos(a-angle)))<.9};
  if(id!=='host'&&hits(player))netPvpHit('host',damage);
  for(const [other,v] of net.remotes)if(other!==id&&hits(v))netPvpHit(other,damage);
