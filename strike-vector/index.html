@@ -1411,7 +1411,7 @@ function spawnCover(n=1){
   // A returning barrier must never materialize through a living player,
   // hostile NPC, or the puck. The same slot is retried next pulse.
   const near=(p,r)=>p&&Math.hypot(p.x-cx,p.y-cy)<Math.max(s.w,s.h)*.63+r;
-  if(near(player,48)||Array.from(net.remotes.values()).some(p=>p.hp>0&&near(p,48))||
+  if(near(player,48)||Array.from(net.remotes.values()).some(p=>p.hp>0&&near(p,48))||net.bots.some(b=>b.hp>0&&near(b,48))||
     enemies.some(e=>!e.dead&&near(e,38))||(puckEnabled&&puck&&near(puck,52)))continue;
   obstacles.push(coverFromSlot(s,.65));
   burst(cx,cy,7,'#75b9b5',80);created++;
@@ -2076,7 +2076,9 @@ function netBotAI(dt){
   const gx=goalX-puck.x,gy=WORLD.h*.5-puck.y,lg=Math.hypot(gx,gy)||1,nx=gx/lg,ny=gy/lg;
   const tx=clamp(puck.x-nx*145,90,WORLD.w-90),ty=clamp(puck.y-ny*145,90,WORLD.h-90);
   const dx=tx-b.x,dy=ty-b.y,d=Math.hypot(dx,dy);
-  if(d>12){const speed=Math.min(240,110+d*.35);moveBody(b,dx/(d||1)*speed*dt,dy/(d||1)*speed*dt);}
+  if(d>12){const speed=Math.min(240,110+d*.35),oldX=b.x,oldY=b.y;moveBody(b,dx/(d||1)*speed*dt,dy/(d||1)*speed*dt);
+   if(Math.hypot(b.x-oldX,b.y-oldY)<speed*dt*.2){const side=Number(b.id.slice(-1))%2===0?1:-1;moveBody(b,-dy/(d||1)*speed*dt*side,dx/(d||1)*speed*dt*side);}
+  }
   b.a=Math.atan2(puck.y-b.y,puck.x-b.x);
   b.shotCd=Math.max(0,(b.shotCd||0)-dt);
   const range=Math.hypot(puck.x-b.x,puck.y-b.y);
@@ -2268,7 +2270,7 @@ for(const b of bullets){ctx.strokeStyle=b.color;ctx.globalAlpha=b.friend?.84:.75
 for(const k of knives){ctx.save();ctx.translate(k.x,k.y);ctx.rotate(k.angle);ctx.strokeStyle='#ebf8f4';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(-10,0);ctx.lineTo(15,0);ctx.stroke();ctx.strokeStyle='#68dcbf';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-15,0);ctx.lineTo(-9,0);ctx.stroke();ctx.restore()}
 for(const e of enemies){ctx.fillStyle='#050f17aa';ctx.beginPath();ctx.ellipse(e.x+4,e.y+8,e.r+5,e.r*.75,0,0,TAU);ctx.fill();let a=Math.atan2(player.y-e.y,player.x-e.x);ctx.save();ctx.translate(e.x,e.y);ctx.rotate(a);ctx.fillStyle=e.flash>0?'#ffffff':e.type==='rusher'?'#fa996c':'#b696eb';ctx.strokeStyle=e.type==='rusher'?'#ffb17e':'#d7c3ff';ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,0,e.r,0,TAU);ctx.fill();ctx.stroke();ctx.fillStyle='#1c2732';rr(7,-5,e.type==='rusher'?12:22,10,3);ctx.fill();ctx.fillStyle='#fff4de';ctx.fillRect(12,-2,6,4);ctx.restore();if(e.hp<e.maxHp){ctx.fillStyle='#132329';ctx.fillRect(e.x-23,e.y-e.r-14,46,4);ctx.fillStyle=e.type==='rusher'?'#f6a36f':'#c6a1ff';ctx.fillRect(e.x-23,e.y-e.r-14,46*Math.max(0,e.hp/e.maxHp),4)}}
 if(net.phase==='match')for(const b of net.bots){
-  ctx.save();ctx.translate(b.x,b.y);ctx.rotate(b.a||0);const color=teamColor(b.team);
+  ctx.save();ctx.globalAlpha=b.hp<=0?.28:1;ctx.translate(b.x,b.y);ctx.rotate(b.a||0);const color=teamColor(b.team);
   ctx.fillStyle=b.team==='orange'?'#623e31':'#21536b';ctx.strokeStyle=color;ctx.lineWidth=3;
   ctx.beginPath();ctx.arc(0,0,18,0,TAU);ctx.fill();ctx.stroke();
   ctx.fillStyle=color;rr(7,-5,28,10,3);ctx.fill();ctx.strokeStyle='#dbfffb';ctx.lineWidth=1.5;
