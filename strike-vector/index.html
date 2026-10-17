@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
 <meta name="theme-color" content="#080e17" />
-<title>STRIKE VECTOR v1.4.6 — Shields, Armor & Precision Ballistics</title>
+<title>STRIKE VECTOR v1.4.7 — AI Puck League & Team Draft</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{color-scheme:dark;--bg:#080e17;--panel:#101b28;--border:#263746;--mint:#74f7d4;--text:#eef6f7;--muted:#8da4b3;--orange:#ffbd75}
@@ -395,6 +395,30 @@ body.touch-ready .net-btn{padding:8px 5px;font-size:10px}
 #reopenArmory.active{display:block}
 #reopenArmory:hover{background:#1c5964}
 @media(max-width:600px){#reopenArmory{top:39%;width:min(90vw,360px);font-size:11px}}
+
+/* v1.4.7 - team management and corrected skill-tree viewport dimensions */
+.tree-map-stage{width:1540px;height:1200px;transform-origin:0 0}
+.tree-map-stage .tree-map-svg{width:1540px;height:1200px}
+.tree-compact-node.branch-defense{border-color:#6ca8ec;color:#b7e5ff}
+.net-team-board{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:12px 0}
+.net-team-lane{border:1px solid #376374;border-radius:12px;min-height:116px;background:#061927bb;padding:9px}
+.net-team-lane[data-drop-team="orange"]{border-color:#866344}
+.net-team-lane.drag-over{background:#356675;border-color:#c5fff5}
+.net-team-lane h3{font-size:11px;letter-spacing:.1em;margin:2px 0 10px}
+.net-team-lane h3.cyan{color:#7df7ff}.net-team-lane h3.orange{color:#ffb86b}
+.net-team-members{display:grid;gap:6px}
+.net-team-member{background:#102e40;border:1px solid #345b68;border-radius:9px;padding:8px;display:flex;gap:6px;justify-content:space-between;align-items:center;min-width:0}
+.net-team-member[draggable="true"]{cursor:grab}
+.net-team-member strong{font-size:11px;overflow-wrap:anywhere;color:#e1faff}
+.net-team-member small{display:block;font-size:9px;color:#a3c2ca;margin-top:3px}
+.net-team-member button{border:1px solid #58828b;background:#153444;border-radius:6px;color:#e9fcfb;cursor:pointer;padding:7px;font:700 9px Oxanium,system-ui;flex:0 0 auto}
+.net-team-member button:hover{background:#256071}
+.net-bot-tools{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin:9px 0}
+.net-bot-tools button{border:1px solid #77c4be;border-radius:8px;background:#123f45;color:#d5fcf6;padding:10px 14px;cursor:pointer;font:800 11px Oxanium,system-ui}
+.net-bot-tools button:disabled{opacity:.4;cursor:not-allowed}
+.net-bot-tools span{font-size:10px;color:#ffcf96;font-weight:750}
+.net-bot-note{font-size:10px;color:#a6cacf;margin:3px 0}
+@media(max-width:460px){.net-team-board{gap:5px}.net-team-lane{padding:5px}.net-team-member{padding:5px;flex-wrap:wrap}.net-team-member button{padding:6px}.net-team-lane h3{font-size:9px}}
 </style>
 </head>
 <body>
@@ -428,16 +452,25 @@ body.touch-ready .net-btn{padding:8px 5px;font-size:10px}
  <section class="net-panel"><div class="net-kicker">EBATO // TACTICAL MATCHMAKING</div><h2 id="netLobbyTitle">STRIKE <span>VECTOR</span> / ARENA</h2>
  <p id="netLobbyStatus" aria-live="polite">Connecting…</p><div class="net-code" id="netLobbyCode">------</div>
  <div class="net-options" style="margin-top:11px"><button class="net-btn" id="netCopyInvite">COPY INVITE LINK</button><button class="net-btn" id="netLeave">LEAVE LOBBY</button></div>
- <hr class="net-separator"><div class="net-kicker">CHANGE TEAM ANY TIME</div>
+ <hr class="net-separator"><div class="net-kicker">TEAM DRAFT // DRAG OR TAP TO REASSIGN</div>
  <div class="net-options" style="margin-top:9px"><button class="net-btn" id="netChooseCyan">◉ CYAN · ATTACK RIGHT →</button><button class="net-btn" id="netChooseOrange">◉ ORANGE · ATTACK LEFT ←</button></div>
  <div class="net-kicker" style="margin-top:14px">ARENA RULES // HOST CAN CHANGE LIVE</div>
  <div class="net-rules" role="group" aria-label="Multiplayer arena options">
   <button id="netRuleNPC" class="net-rule" type="button" aria-pressed="false">◯ HOSTILE NPCS<span>Enemies pursue and shoot everyone.</span></button>
   <button id="netRuleCover" class="net-rule" type="button" aria-pressed="false">◯ DESTRUCTIBLE COVER<span>Walls and crates replenish as they break.</span></button>
   <button id="netRulePVP" class="net-rule selected" type="button" aria-pressed="true">◉ PLAYER DAMAGE<span>Hit friends, even teammates. Goal-side respawns.</span></button>
+  <button id="netRuleNpcPuck" class="net-rule selected" type="button" aria-pressed="true">◉ NPC SHOTS MOVE PUCK<span>Turn off so hostile bullets pass through the puck.</span></button>
+  <button id="netRuleTeamLock" class="net-rule" type="button" aria-pressed="false">◯ HOST-LOCKED TEAMS<span>Only the host can change teams when enabled.</span></button>
  </div>
  <div class="net-rules-help" id="netRulesHelp">Host chooses the rules. Switch teams with T. Everyone respawns near their own goal. Invite-only rooms; no account required.</div>
- <div class="net-roster" id="netRoster"></div><p>Share your room code to play together. The host controls puck, combat damage, cover, and NPC movement. Cross-network peer connectivity is still experimental.</p>
+ <div class="net-kicker" style="margin-top:14px">AI PUCK PLAYERS // HOST MANAGES LIVE</div>
+ <div class="net-bot-tools"><button type="button" id="netAddBot">+ ADD AI BOT</button><button type="button" id="netRemoveBot">− REMOVE AI BOT</button><span id="netBotCount">0 AI PLAYERS</span></div>
+ <div class="net-bot-note">Bots chase the puck and fire toward the opponent's goal. Drag a card to another team, or tap MOVE for phones.</div>
+ <div class="net-team-board" id="netTeamBoard">
+ <section class="net-team-lane" data-drop-team="cyan"><h3 class="cyan">◉ CYAN · SCORES RIGHT →</h3><div class="net-team-members" id="netCyanMembers"></div></section>
+ <section class="net-team-lane" data-drop-team="orange"><h3 class="orange">◉ ORANGE · SCORES LEFT ←</h3><div class="net-team-members" id="netOrangeMembers"></div></section>
+ </div>
+ <div class="net-roster" id="netRoster" hidden></div><p>Share your room code to play together. The host controls puck, combat damage, cover, and NPC movement. Cross-network peer connectivity is still experimental.</p>
  <button class="cta" id="netBegin" type="button">START MATCH →</button><button class="net-btn" id="netLobbyClose" type="button" hidden>CLOSE ROSTER</button>
  </section></div>
 <div class="net-dock hidden" id="netDock"><b id="netDockRoom">ROOM</b><button id="netDockTeam" type="button" title="Switch team (T)">SWAP TEAM [T]</button><button id="netDockRoster" type="button" title="Lobby / roster [P]">LOBBY [P]</button></div>
@@ -848,11 +881,11 @@ function renderGrenadeHubDetail(){
  const mod=MODULES.find(m=>m.id==='grenade'); if(!player.modules.grenade) return `<div class="tree-detail-top"><div class="tree-icon-large">${iconArt('grenade')}</div><div><div class="tree-detail-kicker">ALT WEAPON</div><div class="tree-detail-title">GRENADE SYSTEM</div></div></div><div class="tree-detail-desc">Unlock the underbarrel launcher to open the full grenade branch: blast radius, explosive charge, range, capacity, reload speed, and firing cadence.</div><div class="tree-status warn">LOCKED · $${mod.price.toLocaleString()}</div><div class="tree-detail-actions single"><button type="button" class="shop-buy" data-module-buy="grenade" ${credits<mod.price?'disabled':''}>+ BUY GRENADE MODULE</button></div>`;
  return `<div class="tree-detail-top"><div class="tree-icon-large">${iconArt('grenade')}</div><div><div class="tree-detail-kicker">ALT WEAPON</div><div class="tree-detail-title">GRENADE SYSTEM</div></div></div><div class="tree-detail-desc">Lobbed grenades arc over cover, bounce off arena edges, and shred enemies plus destructible cover. Use the surrounding branch nodes to refine its performance.</div><div class="tree-mini-stats">${treeStatLine('LOADED',`${player.grenades} / ${grenadeClipSize()}`)}${treeStatLine('RESERVE',player.grenadeReserve===Infinity?'∞':String(player.grenadeReserve))}${treeStatLine('RANGE',String(grenadeRange()))}</div><div class="tree-detail-actions"><button type="button" class="shop-buy toggle" data-secondary="grenade">${player.secondary==='grenade'?'SELECTED':'SET SECONDARY'}<small>FREE</small></button><button type="button" class="shop-buy shop-refund" data-module-refund="grenade">SELL<small>$${mod.price.toLocaleString()}</small></button></div>`;
 }
-const TREE_W=1540,TREE_H=1200,TREE_FOCUS={x:600,y:475};
+const TREE_W=1540,TREE_H=1200,TREE_FOCUS={x:775,y:570};
 const TREE_MIN_ZOOM=.45,TREE_MAX_ZOOM=1.9;
 function defaultTreeZoom(){
  const vp=ui.shopGrid.querySelector('#treeViewport');
- return vp?clamp((vp.clientWidth-70)/1040,.62,.95):.85;
+ return vp?clamp((vp.clientWidth-42)/TREE_W,.42,.88):.62;
 }
 function applyTreePan(){
  const stage=ui.shopGrid.querySelector('#treeStage');
@@ -1794,9 +1827,8 @@ function netStartMatch(){
  if(net.mode==='solo')return;
  reset();puckEnabled=true;started=true;ended=false;paused=false;shopOpen=false;toSpawn=0;nextWaveTimer=-1;enemies=[];obstacles=[];wave=1;credits=4500;net.coverClock=0;net.npcClock=0;
  player.x=netGoalSpawn(net.team).x;player.y=netGoalSpawn(net.team).y;
- // Casual arena loadout: explosives and a launcher are available immediately.
- player.modules.grenade=true;player.modules.explosive=true;player.modules.laser=true;
- player.modules.bayonet=true;player.mods.fireControl=1;player.fireMode='auto';player.explosiveOn=true;player.bayonetOn=true;player.laserOn=true;player.secondary='grenade';
+ // Start all operatives with the regular 9mm and an underbarrel grenade launcher.
+ player.modules.grenade=true;player.secondary='grenade';
  cam.x=player.x-sw*.5;cam.y=player.y-sh*.5;
  net.phase='match';net.started=true;net.sendClock=0;net.npcRemaining=net.settings.npcs&&net.mode==='host'?Math.min(28,5+wave*3):0;player.respawn=0;player.hp=100;player.invul=1.5;if(net.settings.cover&&net.mode==='host')buildLevel();
  $net('netLobby').classList.add('hidden');$net('netDock').classList.remove('hidden');
