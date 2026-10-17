@@ -190,6 +190,12 @@
 .tree-compact-node.branch-modules{border-color:#9d91b8;color:#e0d2ff}
 .tree-compact-node.branch-receiver{border-color:#7da6a1;color:#bdf6e5}
 .tree-compact-node:focus-visible{outline:3px solid #e2ffd0;outline-offset:4px}
+.tree-compact-node.can-afford:not(.locked){border:2px solid #89ffe0;color:#dcfff5;box-shadow:0 0 0 3px rgba(68,255,207,.17),0 0 23px rgba(61,239,206,.34),inset 0 0 16px rgba(61,239,206,.10)}
+.tree-compact-node.can-afford:not(.locked):after{content:'+';position:absolute;top:-10px;right:-10px;background:#82fbd7;color:#083831;font:bold 15px Oxanium,system-ui;width:20px;height:20px;display:grid;place-items:center;border-radius:50%;box-shadow:0 0 12px rgba(116,255,220,.5)}
+.tree-compact-node.maxed{filter:saturate(.65);border-color:#748a94}
+.tree-compact-node.locked{opacity:.63}
+@media(prefers-reduced-motion:no-preference){.tree-compact-node.can-afford:not(.locked){animation:affordableGlow 2.3s ease-in-out infinite alternate}@keyframes affordableGlow{from{box-shadow:0 0 0 2px rgba(68,255,207,.12),0 0 12px rgba(61,239,206,.16)}to{box-shadow:0 0 0 3px rgba(68,255,207,.24),0 0 23px rgba(61,239,206,.38)}}}
+
 .tree-map-svg .category-link{stroke:#588e91;stroke-width:3;stroke-dasharray:none;opacity:.85}
 .tree-map-svg .branch-link{stroke:#3d6873;stroke-width:2.5;opacity:.75}
 .tree-map-svg .branch-link.locked{stroke:#53515b;stroke-dasharray:6 7;opacity:.5}
@@ -494,14 +500,14 @@ body.touch-ready .net-btn{padding:8px 5px;font-size:10px}
  <div class="net-rules" role="group" aria-label="Multiplayer arena options">
   <button id="netRuleNPC" class="net-rule" type="button" aria-pressed="false">◯ HOSTILE NPCS<span>Enemies pursue and shoot everyone.</span></button>
   <button id="netRuleCover" class="net-rule" type="button" aria-pressed="false">◯ DESTRUCTIBLE COVER<span>Walls and crates replenish as they break.</span></button>
-  <button id="netRulePVP" class="net-rule selected" type="button" aria-pressed="true">◉ PLAYER DAMAGE<span>Hit friends, even teammates. Goal-side respawns.</span></button>
+  <button id="netRulePVP" class="net-rule selected" type="button" aria-pressed="true">◉ PLAYER DAMAGE<span>Enemy teams lose health. Friendly shots and melee LAUNCH allies without health damage.</span></button>
   <button id="netRuleNpcPuck" class="net-rule selected" type="button" aria-pressed="true">◉ NPC SHOTS MOVE PUCK<span>Turn off so hostile bullets pass through the puck.</span></button>
   <button id="netRuleTeamLock" class="net-rule" type="button" aria-pressed="false">◯ HOST-LOCKED TEAMS<span>Only the host can change teams when enabled.</span></button>
  </div>
- <div class="net-rules-help" id="netRulesHelp">Host chooses the rules. Switch teams with T. Everyone respawns near their own goal. Invite-only rooms; no account required.</div>
+ <div class="net-rules-help" id="netRulesHelp">Host can edit rosters live: press P, drag/tap MOVE, add or remove AI. Teammates can be launched into the puck. Invite-only rooms; no account required.</div>
  <div class="net-kicker" style="margin-top:14px">AI PUCK PLAYERS // HOST MANAGES LIVE</div>
  <div class="net-bot-tools"><button type="button" id="netAddBot">+ ADD AI BOT</button><button type="button" id="netRemoveBot">− REMOVE AI BOT</button><span id="netBotCount">0 AI PLAYERS</span></div>
- <div class="net-bot-note">Bots chase the puck and fire toward the opponent's goal. Drag a card to another team, or tap MOVE for phones.</div>
+ <div class="net-bot-note">Bots fight, shoot, and use grenades. Host may add/remove AI and move people across teams DURING the match.</div>
  <div class="net-team-board" id="netTeamBoard">
  <section class="net-team-lane" data-drop-team="cyan"><h3 class="cyan">◉ CYAN · SCORES RIGHT →</h3><div class="net-team-members" id="netCyanMembers"></div></section>
  <section class="net-team-lane" data-drop-team="orange"><h3 class="orange">◉ ORANGE · SCORES LEFT ←</h3><div class="net-team-members" id="netOrangeMembers"></div></section>
@@ -822,9 +828,22 @@ function buildAttachmentHub(x,y){
  return treeNodeShell('attachments','ATTACHMENT HUB','UTILITY BRANCH','laser',body,x,y,'hub');
 }
 
+function nodePurchaseInfo(id){
+ const upgrade=OPTIONS.find(o=>o.id===id);
+ if(upgrade){
+  const level=player.mods[id]||0;
+  if(upgrade.requires&&!player.modules[upgrade.requires])return {locked:true};
+  if(upgrade.max!==undefined&&level>=upgrade.max)return {maxed:true};
+  const cost=upgradeCost(upgrade,level);
+  return {cost,affordable:credits>=cost};
+ }
+ const mod=MODULES.find(m=>m.id===id);
+ if(mod&&!player.modules[id])return {cost:mod.price,affordable:credits>=mod.price};
+ return {};
+}
 function compactNode(id,iconId,x,y,label,{locked=false,active=false,root=false,hub=false,theme='',levelText='' }={}){
- const cls=['tree-compact-node']; if(locked)cls.push('locked'); if(active)cls.push('active'); if(root)cls.push('root'); if(hub)cls.push('branch-hub');if(theme)cls.push('branch-'+theme); if(selectedTreeNode===id)cls.push('selected');
- return `<button type="button" class="${cls.join(' ')}" data-select-node="${id}" style="left:${x}px;top:${y}px" title="${label}"><span class="mini-icon">${iconArt(iconId, id==='projectiles'?player.mods.projectiles:0)}</span>${levelText?`<span class="tree-node-level">${levelText}</span>`:''}<span class="tree-node-label">${label}</span></button>`;
+ const available=nodePurchaseInfo(id),cls=['tree-compact-node'];if(locked||available.locked)cls.push('locked');if(available.affordable)cls.push('can-afford');if(available.maxed)cls.push('maxed');if(active)cls.push('active');if(root)cls.push('root');if(hub)cls.push('branch-hub');if(theme)cls.push('branch-'+theme);if(selectedTreeNode===id)cls.push('selected');
+ return `<button type="button" class="${cls.join(' ')}" data-select-node="${id}" style="left:${x}px;top:${y}px" title="${label}${available.cost!==undefined?' · NEXT $'+available.cost.toLocaleString():available.maxed?' · MAXED':''}"><span class="mini-icon">${iconArt(iconId, id==='projectiles'?player.mods.projectiles:0)}</span>${levelText?`<span class="tree-node-level">${levelText}</span>`:''}<span class="tree-node-label">${label}</span></button>`;
 }
 function buildCompactSkillTree(){
  // Category hubs create visual groupings, not dependencies. Only grenade upgrades need the purchased launcher.
@@ -991,6 +1010,15 @@ function updateTreeDetailPanel(){
  if(popup&&body){popup.hidden=!treePopupOpen;if(treePopupOpen){body.innerHTML=renderTreeDetailPanel();positionTreePopup()}}
  ui.shopGrid.querySelectorAll('[data-select-node]').forEach(n=>n.classList.toggle('selected',treePopupOpen&&n.dataset.selectNode===selectedTreeNode));
 }
+function refreshAffordableNodes(){
+ if(!shopOpen)return;
+ ui.shopGrid.querySelectorAll('[data-select-node]').forEach(el=>{
+  const info=nodePurchaseInfo(el.dataset.selectNode);
+  el.classList.toggle('can-afford',!!info.affordable);
+  el.classList.toggle('maxed',!!info.maxed);
+  el.title=el.dataset.selectNode.toUpperCase()+(info.cost!==undefined?' · NEXT $'+info.cost.toLocaleString():info.maxed?' · MAXED':'');
+ });
+}
 function renderShop(){
  ui.shopBank.innerHTML=`$${credits.toLocaleString()} <small>AVAILABLE CREDITS</small>`;
  ui.shopMessage.textContent='INDEPENDENT UPGRADE BRANCHES · INFINITE RESERVE AMMO';
@@ -1000,7 +1028,7 @@ function renderShop(){
  ui.shopGrid.className='shop-grid tree-map compact';
  ui.shopGrid.innerHTML=buildCompactSkillTree();
  if(!treePanReady)centerTreeView(true);else {clampTreePan();applyTreePan()}
- updateTreeDetailPanel();
+ updateTreeDetailPanel();refreshAffordableNodes();
 }
 
 
@@ -2655,7 +2683,7 @@ function reticle(){
  ctx.save();ctx.translate(x,y);ctx.strokeStyle=player.weapon===0&&altHeld&&player.secondary!=='aim'?'#ffd193':'#a1ffe2';ctx.lineWidth=1.6;ctx.beginPath();ctx.arc(0,0,r,0,TAU);ctx.stroke();ctx.beginPath();ctx.moveTo(-r-10,0);ctx.lineTo(-r+3,0);ctx.moveTo(r-3,0);ctx.lineTo(r+10,0);ctx.moveTo(0,-r-10);ctx.lineTo(0,-r+3);ctx.moveTo(0,r-3);ctx.lineTo(0,r+10);ctx.stroke();ctx.fillStyle=ctx.strokeStyle;ctx.fillRect(-1,-1,2,2);ctx.restore();
 }
 let uiTimer=0;function syncUI(dt){
- uiTimer-=dt;if(uiTimer>0)return;uiTimer=.06;
+ uiTimer-=dt;if(uiTimer>0)return;uiTimer=.06;if(shopOpen)refreshAffordableNodes();
  ui.wave.textContent=net.phase==='match'?'MP':String(wave).padStart(2,'0');ui.kills.textContent=String(kills).padStart(3,'0');ui.score.textContent=String(score).padStart(5,'0');ui.credits.textContent='$'+credits.toLocaleString();ui.puckBoard.hidden=!puckEnabled||!started;ui.puckBoard.classList.toggle('online',net.phase==='match');ui.puckBoard.querySelector('.puck-head').textContent=net.phase==='match'?'ONLINE PUCK ARENA // '+net.code:'PUCK ARENA // BONUS OBJECTIVE';ui.puckBoard.querySelector('.puck-tally').firstChild.textContent=net.phase==='match'?'CYAN ':'YOU ';ui.puckBoard.querySelector('.puck-tally span').textContent=net.phase==='match'?' ORANGE':' RIVALS';ui.puckPlayerGoals.textContent=String(teamGoals);ui.puckEnemyGoals.textContent=String(rivalGoals);if(puckEnabled&&puck){const pdx=puck.x-player.x,pdy=puck.y-player.y;const arrow=Math.abs(pdx)>Math.abs(pdy)?(pdx>=0?'→':'←'):(pdy>=0?'↓':'↑');ui.puckDirection.innerHTML=puck.respawn>0?'PUCK RESETTING…':`PUCK ${arrow} ${Math.round(Math.hypot(pdx,pdy))}m · ${net.phase==='match'?(net.team==='cyan'?'ATTACK ORANGE →':'ATTACK CYAN ←'):'SCORE IN ORANGE GOAL'} · <strong>${net.phase==='match'?'T SWAPS TEAMS':'+2,500 PTS'}</strong>`;}ui.health.textContent=player.hp<=0&&net.phase==='match'?'RESPAWN':Math.ceil(player.hp)+' / '+maxHealth();ui.hpfill.style.width=clamp(player.hp/maxHealth()*100,0,100)+'%';document.getElementById('shieldText').textContent=Math.ceil(player.shield)+' / '+shieldMax();document.getElementById('shieldfill').style.width=(shieldMax()?100*player.shield/shieldMax():0)+'%';ui.dodge.textContent=player.roll>0?'SLIDING':player.rollCd>0?player.rollCd.toFixed(1)+'s':'READY';ui.dodge.style.color=player.rollCd>0?'#e9b27f':'#c5faf0';
  if(player.weapon===2){ui.weapon.textContent='COMBAT KNIFE';ui.weaponSlot.textContent='01 / MELEE · '+(toSpawn+enemies.length)+(net.phase==='match'?' ONLINE TEAM ARENA':' HOSTILES LEFT');ui.ammo.innerHTML=(player.throwKnives===Infinity?'∞':player.throwKnives)+' <small>THROWING KNIVES</small>';ui.alt.textContent='SPACE / LMB · SLASH · RMB + LMB · THROW';return}
  ui.weapon.textContent=gunSpec().name+(projectileCount()>1?' · ×'+projectileCount()+' PELLETS':'')+' · '+fireModeLabel();ui.weaponSlot.textContent='02 / CUSTOM FIREARM · '+(toSpawn+enemies.length)+(net.phase==='match'?' ONLINE TEAM ARENA':' HOSTILES LEFT');
