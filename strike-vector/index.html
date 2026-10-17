@@ -529,16 +529,17 @@ const roundBreak={kind:'',until:0,duration:0,lastShown:-1};
 let netGrenadeSeq=0;
 const net={mode:'solo',phase:'off',peer:null,conn:null,clients:new Map(),remotes:new Map(),bots:[],botSeq:0,id:'',code:'',name:'',team:'cyan',sendClock:0,coverClock:0,npcClock:0,npcRemaining:0,connected:false,started:false,lastHostAt:0,settings:{npcs:false,cover:false,pvp:true,npcPuck:true,teamLock:false}};
 let shopTab='gun',selectedTreeNode='core',treePopupOpen=false,treePan={x:0,y:0},treeScale=1,treePanReady=false,treeDrag=null,treeSuppressUntil=0;let soundOn=true,ac=null,activeVoices=0;const soundTimes=Object.create(null);function sound(kind){if(!soundOn||activeVoices>=8)return;const now=performance.now(),limit=(kind==='hit'?65:kind==='pistol'||kind==='rifle'?36:kind==='grenade'?75:22);if(now-(soundTimes[kind]||-1000)<limit)return;soundTimes[kind]=now;try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended')ac.resume();const o=ac.createOscillator(),g=ac.createGain(),n=ac.currentTime;let f=220,d=.06,ty='triangle',vol=.027;if(kind==='pistol'){f=260;d=.085;ty='triangle';vol=.030}else if(kind==='buy'){f=650;d=.13;ty='sine';vol=.025}else if(kind==='rifle'){f=155;d=.055;ty='sawtooth';vol=.025}else if(kind==='sniper'){f=74;d=.22;ty='sawtooth';vol=.055}else if(kind==='grenade'){f=82;d=.36;ty='sawtooth';vol=.065}else if(kind==='knife'){f=450;d=.08}else if(kind==='hit'){f=90;d=.10;vol=.016}else if(kind==='dodge'){f=400;d=.13;vol=.020}else if(kind==='dry'){f=350;d=.035;vol=.014}o.type=ty;o.frequency.setValueAtTime(f,n);o.frequency.exponentialRampToValueAtTime(Math.max(28,f*.35),n+d);g.gain.setValueAtTime(vol,n);g.gain.exponentialRampToValueAtTime(.0001,n+d);o.connect(g);g.connect(ac.destination);activeVoices++;o.addEventListener('ended',()=>{activeVoices=Math.max(0,activeVoices-1);o.disconnect();g.disconnect()},{once:true});o.start(n);o.stop(n+d+.01)}catch(e){activeVoices=Math.max(0,activeVoices-1)}}
+let canvasSized=false;
 function resize(){
  // iOS Chrome uses WebKit's changing visual viewport. Measure the actual
  // CSS canvas instead of mixing 100vh with innerHeight and stretching pixels.
  const rect=canvas.getBoundingClientRect(),width=Math.max(1,Math.round(rect.width)),height=Math.max(1,Math.round(rect.height));
- if(width===sw&&height===sh&&canvas.width&&canvas.height)return;
+ if(canvasSized&&width===sw&&height===sh&&canvas.width===Math.round(sw*dpr)&&canvas.height===Math.round(sh*dpr))return;
  sw=width;sh=height;
  // Retina clarity within a bounded fill-rate budget.
  dpr=Math.max(.7,Math.min(devicePixelRatio||1,touchSupported?1.8:1.2,Math.sqrt(1450000/Math.max(1,sw*sh))));
  canvas.width=Math.round(sw*dpr);canvas.height=Math.round(sh*dpr);
- ctx.setTransform(dpr,0,0,dpr,0,0);renderedStill=false;
+ ctx.setTransform(dpr,0,0,dpr,0,0);renderedStill=false;canvasSized=true;
 }
 window.addEventListener('resize',resize);
 window.addEventListener('orientationchange',()=>requestAnimationFrame(resize));
