@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
 <meta name="theme-color" content="#080e17" />
-<title>STRIKE VECTOR v1.5.3 — Precision, Vitality & Puck Launches</title>
+<title>STRIKE VECTOR v1.5.4 — Impact Physics & Music Mixer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{color-scheme:dark;--bg:#080e17;--panel:#101b28;--border:#263746;--mint:#74f7d4;--text:#eef6f7;--muted:#8da4b3;--orange:#ffbd75}
@@ -461,6 +461,28 @@ body.touch-ready .net-btn{padding:8px 5px;font-size:10px}
  .touch-actions button{min-height:31px}
  .touch-bar{top:calc(2px + env(safe-area-inset-top,0px))}
 }
+
+/* Independent game/music mixer: accessible during play and on iPhone. */
+#audioMixToggle{position:fixed;top:81px;right:143px;z-index:12;border:1px solid #496772;color:#e0eff0;background:#142331ed;border-radius:8px;padding:6px 10px;font:800 11px Oxanium,system-ui;cursor:pointer}
+#audioMixPanel{position:fixed;z-index:32;top:118px;right:27px;width:min(315px,calc(100vw - 20px));padding:16px;border:1px solid #477f82;border-radius:12px;background:#0c202bef;box-shadow:0 20px 45px #000a;color:#dff9f4;font:700 12px Oxanium,system-ui;touch-action:pan-y;overscroll-behavior:contain}
+#audioMixPanel[hidden]{display:none}
+#audioMixPanel .audio-mix-head{display:flex;align-items:center;justify-content:space-between;color:#99f4dc;font-size:13px;letter-spacing:.07em;margin-bottom:13px}
+#audioMixPanel label:not(.audio-file){display:flex;justify-content:space-between;font-size:12px;font-weight:800;letter-spacing:.06em}
+#audioMixPanel output{color:#90edec;font-variant-numeric:tabular-nums}
+#audioMixPanel input[type=range]{display:block;width:100%;margin:9px 0 17px;accent-color:#86f6d6;min-height:25px;touch-action:pan-x;cursor:pointer}
+#audioMusicMute,.audio-mix-head button,.audio-file{border:1px solid #578b91;background:#163a42;color:#e5fff8;border-radius:8px;padding:9px 10px;font:800 11px Oxanium,system-ui;cursor:pointer}
+#audioMusicMute{width:100%;margin-bottom:10px}
+#audioMusicMute[aria-pressed=false],#sound[aria-pressed=false]{color:#aaafb5;border-color:#536575}
+.audio-mix-head button{font-size:17px;padding:3px 8px}
+#audioMixPanel .audio-source-label{font-size:10px;letter-spacing:.02em;color:#b3cdd3;margin:9px 0 12px;overflow-wrap:anywhere}
+#audioMixPanel .audio-file{display:block;text-align:center;color:#9fe7f6}
+#audioMusicFile{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+#audioMixPanel small{display:block;margin-top:12px;color:#8ab4bd;line-height:1.5;font-size:10px;font-weight:500}
+@media(pointer:coarse){
+ body.touch-ready #sound{display:block!important;z-index:13;top:auto;left:calc(50% - 48px);right:auto;bottom:calc(3px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);opacity:1;padding:5px 6px;font-size:9px}
+ body.touch-ready #audioMixToggle{top:auto;left:calc(50% + 64px);right:auto;bottom:calc(3px + env(safe-area-inset-bottom,0px));padding:5px 6px;font-size:9px}
+ body.touch-ready #audioMixPanel{top:auto;bottom:calc(39px + env(safe-area-inset-bottom,0px));right:8px;max-height:min(75dvh,445px);overflow-y:auto}
+}
 </style>
 </head>
 <body>
@@ -487,7 +509,20 @@ body.touch-ready .net-btn{padding:8px 5px;font-size:10px}
  </div>
  <div class="touch-note">TWIN STICK · AIM TO FIRE</div>
 </div>
-<button id="sound" type="button">♪ SOUND ON</button>
+<button id="sound" type="button" aria-pressed="true" title="Toggle background music">♫ MUSIC ON</button>
+<button id="audioMixToggle" type="button" aria-expanded="false" aria-controls="audioMixPanel" title="Game audio settings">⚙ MIX</button>
+<section id="audioMixPanel" hidden aria-label="Audio volume mixer">
+ <div class="audio-mix-head"><b>EBATO // AUDIO MIXER</b><button type="button" id="audioMixClose" aria-label="Close audio settings">×</button></div>
+ <label for="audioSfxVol">GAME SFX <output id="audioSfxLabel">70%</output></label>
+ <input type="range" id="audioSfxVol" min="0" max="100" step="1" value="70" aria-label="Game sound effects volume">
+ <label for="audioMusicVol">MUSIC <output id="audioMusicLabel">40%</output></label>
+ <input type="range" id="audioMusicVol" min="0" max="100" step="1" value="40" aria-label="Music volume">
+ <button type="button" id="audioMusicMute" aria-pressed="true">♫ MUSIC ON · TAP TO MUTE</button>
+ <div class="audio-source-label" id="audioTrackStatus">SONIC THE RIPSTICK MASTER · LOADING</div>
+ <label class="audio-file" for="audioMusicFile">+ IMPORT YOUR SONG (WAV / MP3)</label>
+ <input type="file" id="audioMusicFile" accept="audio/*,.mp3,.wav,.m4a,.ogg" aria-label="Choose a soundtrack audio file">
+ <small>Local imports are saved in this browser. The game loops the song automatically after you start playing.</small>
+</section>
 <div id="puckScoreboard" hidden aria-live="polite"><div class="puck-head">PUCK ARENA // BONUS OBJECTIVE</div><div class="puck-tally">YOU <b id="puckPlayerGoals">0</b><em>:</em><b id="puckEnemyGoals">0</b> <span>RIVALS</span></div><div class="puck-hint" id="puckDirection">Shoot the puck → orange goal for <strong>+2,500 points</strong></div></div>
 
 <div class="net-overlay hidden" id="netLobby" role="dialog" aria-modal="true" aria-labelledby="netLobbyTitle">
@@ -534,7 +569,86 @@ let puckEnabled=true,puck=null,teamGoals=0,rivalGoals=0,goalFlash=0;
 const roundBreak={kind:'',until:0,duration:0,lastShown:-1};
 let netGrenadeSeq=0;
 const net={mode:'solo',phase:'off',peer:null,conn:null,clients:new Map(),remotes:new Map(),bots:[],botSeq:0,id:'',code:'',name:'',team:'cyan',sendClock:0,coverClock:0,npcClock:0,npcRemaining:0,connected:false,started:false,lastHostAt:0,settings:{npcs:false,cover:false,pvp:true,npcPuck:true,teamLock:false}};
-let shopTab='gun',selectedTreeNode='core',treePopupOpen=false,treePan={x:0,y:0},treeScale=1,treePanReady=false,treeDrag=null,treeSuppressUntil=0;let soundOn=true,ac=null,activeVoices=0;const soundTimes=Object.create(null);function sound(kind){if(!soundOn||activeVoices>=8)return;const now=performance.now(),limit=(kind==='hit'?65:kind==='pistol'||kind==='rifle'?36:kind==='grenade'?75:22);if(now-(soundTimes[kind]||-1000)<limit)return;soundTimes[kind]=now;try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended')ac.resume();const o=ac.createOscillator(),g=ac.createGain(),n=ac.currentTime;let f=220,d=.06,ty='triangle',vol=.027;if(kind==='pistol'){f=260;d=.085;ty='triangle';vol=.030}else if(kind==='buy'){f=650;d=.13;ty='sine';vol=.025}else if(kind==='rifle'){f=155;d=.055;ty='sawtooth';vol=.025}else if(kind==='sniper'){f=74;d=.22;ty='sawtooth';vol=.055}else if(kind==='grenade'){f=82;d=.36;ty='sawtooth';vol=.065}else if(kind==='knife'){f=450;d=.08}else if(kind==='hit'){f=90;d=.10;vol=.016}else if(kind==='dodge'){f=400;d=.13;vol=.020}else if(kind==='dry'){f=350;d=.035;vol=.014}o.type=ty;o.frequency.setValueAtTime(f,n);o.frequency.exponentialRampToValueAtTime(Math.max(28,f*.35),n+d);g.gain.setValueAtTime(vol,n);g.gain.exponentialRampToValueAtTime(.0001,n+d);o.connect(g);g.connect(ac.destination);activeVoices++;o.addEventListener('ended',()=>{activeVoices=Math.max(0,activeVoices-1);o.disconnect();g.disconnect()},{once:true});o.start(n);o.stop(n+d+.01)}catch(e){activeVoices=Math.max(0,activeVoices-1)}}
+let shopTab='gun',selectedTreeNode='core',treePopupOpen=false,treePan={x:0,y:0},treeScale=1,treePanReady=false,treeDrag=null,treeSuppressUntil=0;let soundOn=true,ac=null,activeVoices=0;const soundTimes=Object.create(null);function sound(kind){if(!soundOn||activeVoices>=8)return;const now=performance.now(),limit=(kind==='hit'?65:kind==='pistol'||kind==='rifle'?36:kind==='grenade'?75:22);if(now-(soundTimes[kind]||-1000)<limit)return;soundTimes[kind]=now;try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended')ac.resume();const o=ac.createOscillator(),g=ac.createGain(),n=ac.currentTime;let f=220,d=.06,ty='triangle',vol=.027;if(kind==='pistol'){f=260;d=.085;ty='triangle';vol=.030}else if(kind==='buy'){f=650;d=.13;ty='sine';vol=.025}else if(kind==='rifle'){f=155;d=.055;ty='sawtooth';vol=.025}else if(kind==='sniper'){f=74;d=.22;ty='sawtooth';vol=.055}else if(kind==='grenade'){f=82;d=.36;ty='sawtooth';vol=.065}else if(kind==='knife'){f=450;d=.08}else if(kind==='hit'){f=90;d=.10;vol=.016}else if(kind==='dodge'){f=400;d=.13;vol=.020}else if(kind==='dry'){f=350;d=.035;vol=.014}o.type=ty;o.frequency.setValueAtTime(f,n);o.frequency.exponentialRampToValueAtTime(Math.max(28,f*.35),n+d);g.gain.setValueAtTime(vol*sfxVolume,n);g.gain.exponentialRampToValueAtTime(.0001,n+d);o.connect(g);g.connect(ac.destination);activeVoices++;o.addEventListener('ended',()=>{activeVoices=Math.max(0,activeVoices-1);o.disconnect();g.disconnect()},{once:true});o.start(n);o.stop(n+d+.01)}catch(e){activeVoices=Math.max(0,activeVoices-1)}}
+// In-game soundtrack controls; user imports are persisted as Blob objects in
+// IndexedDB. The published MP3 path will also work once its file is on the site.
+const audioPrefsKey='strike-vector-audio-v1';
+function audioSavedPrefs(){try{return JSON.parse(localStorage.getItem(audioPrefsKey)||'{}')||{}}catch(_){return {}}}
+const savedAudio=audioSavedPrefs();
+let sfxVolume=clamp(Number.isFinite(+savedAudio.sfxVolume)?+savedAudio.sfxVolume:.7,0,1);
+let musicVolume=clamp(Number.isFinite(+savedAudio.musicVolume)?+savedAudio.musicVolume:.4,0,1);
+let musicEnabled=savedAudio.musicEnabled!==false;
+let musicPlayPending=false,musicLocalUrl='',soundtrackInstalled=false;
+const musicAudio=new Audio();
+musicAudio.loop=true;musicAudio.preload='none';musicAudio.volume=musicVolume;
+const soundtrackUrl='./Sonic%20The%20Ripstick%20Master.mp3';
+musicAudio.src=soundtrackUrl;
+const mixPanel=document.getElementById('audioMixPanel'),mixToggle=document.getElementById('audioMixToggle');
+const mixSfx=document.getElementById('audioSfxVol'),mixMusic=document.getElementById('audioMusicVol');
+const mixFile=document.getElementById('audioMusicFile'),trackStatus=document.getElementById('audioTrackStatus');
+function saveAudioPrefs(){try{localStorage.setItem(audioPrefsKey,JSON.stringify({sfxVolume,musicVolume,musicEnabled}))}catch(_){}}
+function refreshAudioControls(){
+ document.getElementById('audioSfxLabel').textContent=Math.round(sfxVolume*100)+'%';
+ document.getElementById('audioMusicLabel').textContent=Math.round(musicVolume*100)+'%';
+ mixSfx.value=Math.round(sfxVolume*100);mixMusic.value=Math.round(musicVolume*100);
+ ui.sound.textContent=musicEnabled?'♫ MUSIC ON':'♫ MUSIC OFF';
+ ui.sound.setAttribute('aria-pressed',String(musicEnabled));
+ const mute=document.getElementById('audioMusicMute');
+ mute.textContent=musicEnabled?'♫ MUSIC ON · TAP TO MUTE':'♫ MUSIC OFF · TAP TO UNMUTE';
+ mute.setAttribute('aria-pressed',String(musicEnabled));
+ musicAudio.volume=musicVolume;
+}
+function tryMusicPlay(){
+ if(!musicEnabled||!musicVolume||!started||ended||musicPlayPending)return;
+ if(!musicAudio.paused)return;
+ musicPlayPending=true;
+ const result=musicAudio.play();
+ if(result&&typeof result.then==='function')result.catch(()=>{}).finally(()=>{musicPlayPending=false});
+ else musicPlayPending=false;
+}
+function setMusicEnabled(enabled){
+ musicEnabled=!!enabled;saveAudioPrefs();refreshAudioControls();
+ if(!musicEnabled)musicAudio.pause();
+ else tryMusicPlay();
+}
+function installMusicBlob(blob,label,store=false){
+ if(!blob||!blob.size)return;
+ if(musicLocalUrl)URL.revokeObjectURL(musicLocalUrl);
+ musicLocalUrl=URL.createObjectURL(blob);
+ const wasPlaying=!musicAudio.paused;
+ musicAudio.pause();musicAudio.src=musicLocalUrl;musicAudio.load();
+ soundtrackInstalled=true;trackStatus.textContent='LOOP READY · '+label;
+ if(wasPlaying||started)tryMusicPlay();
+ if(store){try{
+  const request=indexedDB.open('strike-vector-soundtrack',1);
+  request.onupgradeneeded=()=>request.result.createObjectStore('files');
+  request.onsuccess=()=>{const db=request.result;const tx=db.transaction('files','readwrite');tx.objectStore('files').put({blob,label},'track');tx.oncomplete=()=>db.close();};
+ }catch(_){}}
+}
+function restoreSavedMusic(){
+ if(!('indexedDB' in window))return;
+ try{
+  const request=indexedDB.open('strike-vector-soundtrack',1);
+  request.onupgradeneeded=()=>request.result.createObjectStore('files');
+  request.onsuccess=()=>{const db=request.result,tx=db.transaction('files','readonly'),record=tx.objectStore('files').get('track');
+   record.onsuccess=()=>{const saved=record.result;if(saved&&saved.blob)installMusicBlob(saved.blob,saved.label||'Saved soundtrack')};
+   tx.oncomplete=()=>db.close();
+  };
+ }catch(_){}
+}
+musicAudio.addEventListener('canplay',()=>{if(!musicLocalUrl){soundtrackInstalled=true;trackStatus.textContent='SONIC THE RIPSTICK MASTER · READY';}if(started)tryMusicPlay()});
+musicAudio.addEventListener('error',()=>{if(!musicLocalUrl)trackStatus.textContent='SONG NOT HOSTED YET · IMPORT THE PROVIDED MP3/WAV BELOW'});
+musicAudio.addEventListener('ended',()=>{if(musicEnabled)tryMusicPlay()});
+mixSfx.addEventListener('input',()=>{sfxVolume=clamp(Number(mixSfx.value)/100,0,1);saveAudioPrefs();refreshAudioControls()});
+mixMusic.addEventListener('input',()=>{musicVolume=clamp(Number(mixMusic.value)/100,0,1);saveAudioPrefs();refreshAudioControls();if(musicVolume)tryMusicPlay()});
+ui.sound.addEventListener('click',()=>setMusicEnabled(!musicEnabled));
+document.getElementById('audioMusicMute').addEventListener('click',()=>setMusicEnabled(!musicEnabled));
+mixToggle.addEventListener('click',()=>{mixPanel.hidden=!mixPanel.hidden;mixToggle.setAttribute('aria-expanded',String(!mixPanel.hidden))});
+document.getElementById('audioMixClose').addEventListener('click',()=>{mixPanel.hidden=true;mixToggle.setAttribute('aria-expanded','false')});
+mixFile.addEventListener('change',()=>{const file=mixFile.files?.[0];if(!file)return;if(!file.type.startsWith('audio/')&&!/\.(wav|mp3|ogg|m4a)$/i.test(file.name)){trackStatus.textContent='PLEASE CHOOSE AN AUDIO FILE';return;}installMusicBlob(file,file.name,true);setMusicEnabled(true)});
+document.addEventListener('pointerdown',()=>{if(started&&!ended)tryMusicPlay()},{passive:true});
+document.addEventListener('keydown',()=>{if(started&&!ended)tryMusicPlay()});
+restoreSavedMusic();refreshAudioControls();
 let canvasSized=false;
 function resize(){
  // iOS Chrome uses WebKit's changing visual viewport. Measure the actual
@@ -1194,11 +1308,11 @@ function showScreen(type){
   ui.kicker.textContent='OPERATION // MODULAR ARSENAL';ui.title.innerHTML='STRIKE <span>VECTOR</span>';ui.intro.textContent='Play survival solo, or create a live multiplayer puck arena lobby with friends. Shoot the puck, launch it with grenades, and swap teams freely. Explosions hit hardest.';ui.legend.style.display='grid';ui.start.textContent='DEPLOY OPERATIVE →';ui.hint.textContent='SOLO: Deploy operative · ONLINE: Create or join a room above · SPACE slide · E melee · T swap team';
  }
 }
-function begin(){if(roundBreak.kind)return;if(net.phase==='match'&&shopOpen){closeFieldShop();return;}if(net.mode!=='solo')return;lastShiftTap=-Infinity;renderedStill=false;if(shopOpen){const cleared=shopMode==='between';closeFieldShop();if(cleared)nextWave();sound('buy');return}if(!started||ended){reset();started=true}paused=false;ui.puckBoard.hidden=!puckEnabled;ui.screen.classList.add('hidden');sound('dodge')}
+function begin(){if(roundBreak.kind)return;if(net.phase==='match'&&shopOpen){closeFieldShop();return;}if(net.mode!=='solo')return;lastShiftTap=-Infinity;renderedStill=false;if(shopOpen){const cleared=shopMode==='between';closeFieldShop();if(cleared)nextWave();sound('buy');return}if(!started||ended){reset();started=true}paused=false;ui.puckBoard.hidden=!puckEnabled;ui.screen.classList.add('hidden');sound('dodge');tryMusicPlay()}
 ui.puckToggle.addEventListener('click',()=>{puckEnabled=!puckEnabled;ui.puckToggle.setAttribute('aria-pressed',String(puckEnabled));ui.puckToggle.textContent=puckEnabled?'◉ PUCK ARENA: ON · SHOOT THE PUCK INTO THE ORANGE GOAL':'○ PUCK ARENA: OFF · CLASSIC SURVIVAL ONLY';});
 document.getElementById('touchShopClose').addEventListener('click',()=>{if(roundBreak.kind&&shopOpen)closeFieldShop();else begin()});
 document.getElementById('reopenArmory').addEventListener('click',()=>{if(roundBreak.kind&&!shopOpen)openShop(shopMode,false)});
-ui.start.addEventListener('click',begin);ui.sound.addEventListener('click',()=>{soundOn=!soundOn;ui.sound.textContent=soundOn?'♪ SOUND ON':'♪ SOUND OFF'});
+ui.start.addEventListener('click',begin);
 function switchWeapon(n){if(!started||paused||ended||(n!==0&&n!==2))return;if(player.weapon===n)return;player.weapon=n;player.fireCd=Math.min(player.fireCd,.10);player.slash=0;player.triggerQueue=0;player.burstShots=0;secondaryPending=false;sound('dry')}
 window.addEventListener('keydown',e=>{const c=e.code;
  if((e.target instanceof HTMLInputElement)||(e.target instanceof HTMLTextAreaElement))return;
@@ -2094,7 +2208,7 @@ function netTeam(team){
 }
 function netStartMatch(){
  if(net.mode==='solo')return;
- reset();puckEnabled=true;started=true;ended=false;paused=false;shopOpen=false;toSpawn=0;nextWaveTimer=-1;enemies=[];obstacles=[];wave=1;credits=4500;net.coverClock=0;net.npcClock=0;
+ reset();puckEnabled=true;started=true;ended=false;paused=false;shopOpen=false;tryMusicPlay();toSpawn=0;nextWaveTimer=-1;enemies=[];obstacles=[];wave=1;credits=4500;net.coverClock=0;net.npcClock=0;
  player.x=netGoalSpawn(net.team).x;player.y=netGoalSpawn(net.team).y;
  // Start all operatives with the regular 9mm and an underbarrel grenade launcher.
  player.modules.grenade=true;player.secondary='grenade';
