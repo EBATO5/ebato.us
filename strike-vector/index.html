@@ -2213,6 +2213,9 @@ for(let i=bullets.length-1;i>=0;i--){
    for(const [id,r] of net.remotes)if(id!==b.owner&&r.hp>0&&Math.hypot(r.x-b.x,r.y-b.y)<19+b.r){
     netPvpHit(id,b.damage,!b.friend);if(b.explosive)smallExplosion(b.x,b.y,b,null);removed=true;break;
    }
+   if(!removed)for(const bot of net.bots)if(bot.id!==b.owner&&bot.hp>0&&Math.hypot(bot.x-b.x,bot.y-b.y)<19+b.r){
+    netBotHit(bot,b.damage);if(b.explosive)smallExplosion(b.x,b.y,b,null);removed=true;break;
+   }
   }
   if(!removed&&!b.puckOnly&&(b.friend&&b.owner&&b.owner!=='host'||!b.friend)&&Math.hypot(player.x-b.x,player.y-b.y)<(player.roll>0&&player.rollMode==='slide'?9:player.r)+b.r){
    if(net.phase!=='match'||net.mode==='host'&&(b.owner!=='host'))hurtPlayer(b.damage);removed=true;
