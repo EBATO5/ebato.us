@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
 <meta name="theme-color" content="#080e17" />
-<title>STRIKE VECTOR v1.4.1 — Arena Rules & Combat</title>
+<title>STRIKE VECTOR v1.4.2 — Mobile Twin-Stick Edition</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{color-scheme:dark;--bg:#080e17;--panel:#101b28;--border:#263746;--mint:#74f7d4;--text:#eef6f7;--muted:#8da4b3;--orange:#ffbd75}
@@ -288,6 +288,91 @@ body{font-family:Oxanium,Inter,ui-sans-serif,system-ui,sans-serif}
 
 @media(max-width:650px){.net-entry{grid-template-columns:1fr}.net-dock{top:auto;right:8px;bottom:180px;flex-wrap:wrap;max-width:200px}.net-panel{padding:16px}}
 
+
+/* v1.4.2 // mobile twin-stick combat and responsive EBATO hologram menus */
+#touchControls{display:none;position:fixed;inset:0;z-index:8;pointer-events:none;user-select:none;-webkit-user-select:none;touch-action:none}
+body.touch-ready #touchControls.active{display:block}
+.touch-stick{position:absolute;bottom:calc(15px + env(safe-area-inset-bottom,0px));width:clamp(104px,24vw,130px);height:clamp(104px,24vw,130px);border-radius:50%;border:2px solid rgba(125,247,255,.65);background:radial-gradient(circle,rgba(16,84,96,.4),rgba(5,23,39,.65));box-shadow:0 0 24px rgba(125,247,255,.1),inset 0 0 25px rgba(125,247,255,.08);pointer-events:auto;touch-action:none;display:flex;align-items:center;justify-content:center}
+#touchMove{left:calc(16px + env(safe-area-inset-left,0px))}
+#touchAim{right:calc(16px + env(safe-area-inset-right,0px));border-color:rgba(255,171,82,.7);background:radial-gradient(circle,rgba(110,60,23,.38),rgba(5,23,39,.72))}
+.touch-stick .touch-thumb{height:43%;width:43%;border-radius:50%;border:1px solid rgba(215,255,253,.82);background:rgba(125,247,255,.28);box-shadow:0 0 14px rgba(125,247,255,.17);pointer-events:none;transform:translate(0,0)}
+#touchAim .touch-thumb{border-color:rgba(255,219,173,.86);background:rgba(255,171,82,.34)}
+.touch-stick .touch-stick-label{position:absolute;top:-18px;font-weight:800;font-size:10px;letter-spacing:.15em;color:#bdeff0;pointer-events:none}
+#touchAim .touch-stick-label{color:#ffd098}
+.touch-actions{position:absolute;bottom:calc(155px + env(safe-area-inset-bottom,0px));right:calc(13px + env(safe-area-inset-right,0px));display:grid;grid-template-columns:repeat(3,51px);gap:6px;pointer-events:none}
+.touch-actions button,.touch-bar button{pointer-events:auto;touch-action:none;border-radius:10px;border:1px solid #59949d;color:#e4feff;background:rgba(6,37,54,.93);font:700 9px Oxanium,system-ui;letter-spacing:.02em;min-height:40px;cursor:pointer;box-shadow:0 5px 13px #0007}
+.touch-actions button:active,.touch-actions button.is-active,.touch-bar button:active{background:rgba(104,72,32,.95);border-color:#ffbd72;color:#fff0d4}
+.touch-actions button.special{border-color:#ffac64;color:#ffdaab}
+.touch-bar{position:absolute;left:50%;top:calc(12px + env(safe-area-inset-top,0px));transform:translateX(-50%);display:flex;gap:5px;pointer-events:none}
+.touch-bar button{padding:7px 11px;min-height:30px;font-size:9px}
+.touch-bar .mp-only{display:none}body.touch-in-mp .touch-bar .mp-only{display:block}
+.touch-note{position:absolute;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);text-align:center;font-size:9px;font-weight:800;letter-spacing:.09em;color:#9dced0;pointer-events:none;text-shadow:0 1px 5px #000}
+body.touch-ready #game{cursor:default}
+body.touch-ready .net-dock{display:none!important}
+body.touch-ready .controls{display:none!important}
+body.touch-ready #sound{top:auto;bottom:calc(4px + env(safe-area-inset-bottom,0px));left:50%;right:auto;transform:translateX(-50%);font-size:9px;opacity:.5;padding:4px;z-index:10}
+body.touch-ready #hud{padding:calc(7px + env(safe-area-inset-top,0px)) 8px 8px}
+body.touch-ready #hud .brand{font-size:12px}
+body.touch-ready #hud .subbrand{font-size:7px;letter-spacing:.05em}
+body.touch-ready .topstats{gap:7px;padding-top:0}
+body.touch-ready .statnum{font-size:13px}
+body.touch-ready .statlabel{font-size:7px;letter-spacing:.06em}
+body.touch-ready .bottom{position:absolute;top:51px;left:8px;right:8px;bottom:auto;gap:7px;align-items:flex-start}
+body.touch-ready .leftpanel,body.touch-ready .rightpanel{width:auto;flex:1;min-width:0;padding:6px 8px;border-radius:9px}
+body.touch-ready .micro{font-size:7px;letter-spacing:.08em}
+body.touch-ready .hpnum,body.touch-ready .weapon{font-size:12px}
+body.touch-ready .hpbar{height:4px;margin:3px 0 4px}
+body.touch-ready .dodge{font-size:8px}
+body.touch-ready .ammo{font-size:13px}
+body.touch-ready .ammo small{font-size:9px}
+body.touch-ready .alt{font-size:8px;min-height:0;max-height:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.touch-ready #puckScoreboard{top:116px;padding:4px 10px;max-width:96vw}
+body.touch-ready #puckScoreboard .puck-head{font-size:8px}
+body.touch-ready #puckScoreboard .puck-tally{font-size:14px}
+body.touch-ready #puckScoreboard .puck-hint{display:none}
+body.touch-ready #banner{top:30%;font-size:10px}
+body.touch-ready #banner strong{font-size:22px}
+body.touch-ready #screen{align-items:center;padding:5px 6px;overflow-y:auto;overscroll-behavior:contain}
+body.touch-ready #screen .modal{padding:15px 14px;max-height:calc(100dvh - 12px);overflow-y:auto;border-radius:13px}
+body.touch-ready .modal h1{font-size:clamp(25px,6vw,36px);margin:6px 0}
+body.touch-ready .kicker{font-size:9px}
+body.touch-ready .intro{font-size:11px;line-height:1.4;margin:8px 0}
+body.touch-ready #screen .legend{display:none!important}
+body.touch-ready .net-launch{padding:8px;margin:6px 0}
+body.touch-ready .net-launch-note{font-size:9px;margin:6px 0}
+body.touch-ready .net-launch-head{font-size:9px;margin-bottom:5px}
+body.touch-ready .net-input{font-size:13px;padding:10px}
+body.touch-ready .net-actions .net-btn{padding:10px 6px}
+body.touch-ready .cta{padding:10px;font-size:11px}
+body.touch-ready #puckModeToggle{padding:9px;margin:5px 0;font-size:10px}
+body.touch-ready .hint{font-size:9px;margin-top:5px}
+body.touch-ready .modal.shop-mode{max-height:calc(100dvh - 10px);padding:12px}
+#touchShopClose{display:none}
+body.touch-ready #touchShopClose{display:block;position:sticky;top:0;z-index:30;width:100%;padding:10px;color:#dffff9;background:#113d48;border:1px solid #79d6d4;border-radius:9px;font:700 11px Oxanium,system-ui;letter-spacing:.09em;margin-bottom:7px;cursor:pointer}
+body.touch-ready .shop-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+body.touch-ready .shop-stats>div{padding:6px}
+body.touch-ready .shop-stats b{font-size:10px}
+body.touch-ready .shop-summary{padding:7px;margin-bottom:5px}
+body.touch-ready .shop-message{font-size:10px}
+body.touch-ready .shop-bank{font-size:13px}
+body.touch-ready .tree-map-viewport{height:min(48dvh,410px);min-height:190px;touch-action:none}
+body.touch-ready .tree-map-reset{padding:7px 8px}
+body.touch-ready .tree-popup{max-height:90%;padding:12px;width:min(300px,calc(100% - 14px))}
+body.touch-ready .net-overlay{align-items:center;padding:7px;overscroll-behavior:contain}
+body.touch-ready .net-panel{padding:12px;max-height:calc(100dvh - 14px);width:100%;overscroll-behavior:contain}
+body.touch-ready .net-panel h2{font-size:20px}
+body.touch-ready .net-panel p{font-size:10px;margin:5px 0}
+body.touch-ready .net-code{padding:6px;font-size:24px}
+body.touch-ready .net-rules{grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin:5px 0}
+body.touch-ready .net-rule{padding:6px 4px;font-size:9px;min-height:56px}
+body.touch-ready .net-rule span{font-size:8px}
+body.touch-ready .net-separator{margin:7px 0}
+body.touch-ready .net-roster{margin:5px 0}
+body.touch-ready .net-kicker{font-size:9px}
+body.touch-ready .net-btn{padding:8px 5px;font-size:10px}
+@media(max-width:600px) and (orientation:portrait){.touch-bar{top:calc(156px + env(safe-area-inset-top,0px))}.touch-bar button{background:rgba(6,37,54,.96)}}
+@media(max-width:390px){.touch-actions{grid-template-columns:repeat(3,45px);gap:4px;right:7px}.touch-actions button{min-height:37px;font-size:8px}.touch-bar button{padding:5px}.touch-note{font-size:8px}}
+@media(max-height:500px){.touch-stick{width:clamp(90px,22vh,108px);height:clamp(90px,22vh,108px);bottom:calc(8px + env(safe-area-inset-bottom,0px))}.touch-actions{bottom:calc(116px + env(safe-area-inset-bottom,0px));grid-template-columns:repeat(3,44px);gap:3px}.touch-actions button{min-height:31px;font-size:8px}.touch-note{display:none}.touch-bar{top:3px}.touch-bar button{min-height:24px;font-size:8px}body.touch-ready .bottom{top:37px}body.touch-ready #hud .topbar{opacity:.5}body.touch-ready #puckScoreboard{top:80px;transform:translateX(-50%) scale(.83)}body.touch-ready #sound{display:none}}
 </style>
 </head>
 <body>
@@ -297,6 +382,23 @@ body{font-family:Oxanium,Inter,ui-sans-serif,system-ui,sans-serif}
   <div class="bottom"><div class="leftpanel"><div style="display:flex;justify-content:space-between;align-items:center"><span class="micro">OPERATIVE / HEALTH</span><span class="hpnum" id="health">100</span></div><div class="hpbar"><div class="hpfill" id="hpfill"></div></div><div class="dodge"><span>COMBAT SLIDE</span><b id="dodge">READY</b></div></div><div class="controls"><span><b>WASD</b>MOVE</span><span><b>SHIFT</b>SPRINT</span><span><b>SPACE</b>SLIDE / DODGE</span><span><b>ALT</b>CROUCH</span><span><b>E</b>MELEE</span><span><b>R</b>RELOAD</span><span><b>1 / 2</b>KNIFE / GUN</span><span><b>TAB</b>ARMORY / PAUSE</span><span><b>F</b>FIRE MODE</span><span><b>3–5</b>ALT ABILITIES</span></div><div class="rightpanel"><div class="micro" id="weaponSlot">02 / CUSTOM</div><div class="weapon" id="weapon">9mm · COMPACT</div><div class="ammo" id="ammo">14 <small>/ 120</small></div><div class="alt" id="alt">HOLD RMB · PRECISION AIM</div></div></div>
 </div>
 <div id="banner"></div>
+<div id="touchControls" aria-label="Mobile combat controls">
+ <div class="touch-bar"><button type="button" data-touch="armory">⚙ ARMORY</button><button type="button" class="mp-only" data-touch="team">⇄ TEAM</button><button type="button" class="mp-only" data-touch="roster">☷ LOBBY</button><button type="button" data-touch="pause">Ⅱ PAUSE</button></div>
+ <div class="touch-stick" id="touchMove" role="group" aria-label="Movement joystick"><span class="touch-stick-label">MOVE</span><div class="touch-thumb"></div></div>
+ <div class="touch-stick" id="touchAim" role="group" aria-label="Aim and fire joystick"><span class="touch-stick-label">AIM / FIRE</span><div class="touch-thumb"></div></div>
+ <div class="touch-actions">
+  <button type="button" class="special" data-touch="slide">↝ SLIDE</button>
+  <button type="button" data-touch="melee">⚔ MELEE</button>
+  <button type="button" class="special" data-touch="alt">✦ ALT</button>
+  <button type="button" data-touch="reload">↻ RELOAD</button>
+  <button type="button" data-touch="firemode">≋ MODE</button>
+  <button type="button" data-touch="ability">◉ SKILL</button>
+  <button type="button" data-touch="weapon">⇄ GUN</button>
+  <button type="button" data-touch="sprint">» SPRINT</button>
+  <button type="button" data-touch="crouch">⌄ CROUCH</button>
+ </div>
+ <div class="touch-note">TWIN STICK · AIM TO FIRE</div>
+</div>
 <button id="sound" type="button">♪ SOUND ON</button>
 <div id="puckScoreboard" hidden aria-live="polite"><div class="puck-head">PUCK ARENA // BONUS OBJECTIVE</div><div class="puck-tally">YOU <b id="puckPlayerGoals">0</b><em>:</em><b id="puckEnemyGoals">0</b> <span>RIVALS</span></div><div class="puck-hint" id="puckDirection">Shoot the puck → orange goal for <strong>+2,500 points</strong></div></div>
 
@@ -318,13 +420,17 @@ body{font-family:Oxanium,Inter,ui-sans-serif,system-ui,sans-serif}
  </section></div>
 <div class="net-dock hidden" id="netDock"><b id="netDockRoom">ROOM</b><button id="netDockTeam" type="button" title="Switch team (T)">SWAP TEAM [T]</button><button id="netDockRoster" type="button" title="Lobby / roster [P]">LOBBY [P]</button></div>
 
-<div id="screen"><section class="modal"><div class="kicker" id="kicker">OPERATION // ARCADE PROTOTYPE</div><h1 id="modalTitle">STRIKE <span>VECTOR</span></h1><p class="intro" id="modalIntro">Start with one 9mm pistol. Fire pellets from a single cartridge, unlock all fire modes in one purchase, and fire or strike during a slide.</p><div class="legend" id="legend"><div class="legend-item"><span class="key">WASD</span>Move / strafe</div><div class="legend-item"><span class="key">MOUSE</span>Tap for semi/burst; hold for automatic fire</div><div class="legend-item"><span class="key">F</span>Switch unlocked SEMI / BURST / AUTO modes</div><div class="legend-item"><span class="key">SPACE</span>Slide / dodge · steer while sliding and fire freely</div><div class="legend-item"><span class="key">SHIFT</span>Hold to sprint</div><div class="legend-item"><span class="key">E</span>Quick buttstock / bayonet strike, even mid-slide</div><div class="legend-item"><span class="key">ALT</span>Hold to crouch · slower movement, tighter spread</div><div class="legend-item"><span class="key">RMB + LMB</span>Secondary attack / ADS shot</div><div class="legend-item"><span class="key">1 / 2 / 3–5</span>Knife / custom firearm / secondary abilities</div><div class="legend-item"><span class="key">R / TAB</span>Reload / armory pause</div><div class="legend-item"><span class="key">L / ESC</span>Laser [L] · ammo [X] / pause</div></div><div id="shop"><div class="shop-summary"><div class="shop-bank" id="shopBank">$0 <small>AVAILABLE</small></div><div class="shop-message" id="shopMessage">BUY / REFUND AS MUCH AS YOU LIKE</div></div><div class="shop-stats" id="shopStats"></div><div class="shop-tabs" id="shopTabs" role="tablist" aria-label="Armory categories"></div><div class="shop-grid" id="shopGrid"></div><div class="shop-note" id="shopNote"></div></div><div class="net-launch" id="netLaunch"><div class="net-launch-head">▣ EBATO // MULTIPLAYER CONNECTION</div><div class="net-entry"><input id="netNickname" class="net-input" maxlength="18" aria-label="Your multiplayer nickname" placeholder="Your callsign" value="Operative"><input id="netCodeInput" class="net-input" maxlength="6" autocomplete="off" aria-label="Lobby code" placeholder="ROOM CODE (JOIN)"></div><div class="net-actions"><button class="net-btn" type="button" id="netCreate">+ CREATE LOBBY</button><button class="net-btn" type="button" id="netJoin">→ JOIN LOBBY</button></div><div class="net-launch-note">Live peer-to-peer rooms, up to 8 players. Share a six-character code or invite link. Press <b>T</b> anytime in a match to swap teams. Host must stay online.</div><div class="net-error" id="netLaunchError" role="status" aria-live="polite"></div></div><button type="button" id="puckModeToggle" aria-pressed="true">◉ PUCK ARENA: ON · SHOOT THE PUCK INTO THE ORANGE GOAL</button><button class="cta" id="start">DEPLOY OPERATIVE →</button><div class="hint" id="hint">Desktop keyboard + mouse recommended · Survive as long as you can</div></section></div>
+<div id="screen"><section class="modal"><div class="kicker" id="kicker">OPERATION // ARCADE PROTOTYPE</div><h1 id="modalTitle">STRIKE <span>VECTOR</span></h1><p class="intro" id="modalIntro">Start with one 9mm pistol. Fire pellets from a single cartridge, unlock all fire modes in one purchase, and fire or strike during a slide.</p><div class="legend" id="legend"><div class="legend-item"><span class="key">WASD</span>Move / strafe</div><div class="legend-item"><span class="key">MOUSE</span>Tap for semi/burst; hold for automatic fire</div><div class="legend-item"><span class="key">F</span>Switch unlocked SEMI / BURST / AUTO modes</div><div class="legend-item"><span class="key">SPACE</span>Slide / dodge · steer while sliding and fire freely</div><div class="legend-item"><span class="key">SHIFT</span>Hold to sprint</div><div class="legend-item"><span class="key">E</span>Quick buttstock / bayonet strike, even mid-slide</div><div class="legend-item"><span class="key">ALT</span>Hold to crouch · slower movement, tighter spread</div><div class="legend-item"><span class="key">RMB + LMB</span>Secondary attack / ADS shot</div><div class="legend-item"><span class="key">1 / 2 / 3–5</span>Knife / custom firearm / secondary abilities</div><div class="legend-item"><span class="key">R / TAB</span>Reload / armory pause</div><div class="legend-item"><span class="key">L / ESC</span>Laser [L] · ammo [X] / pause</div></div><div id="shop"><button type="button" id="touchShopClose">← RESUME GAME</button><div class="shop-summary"><div class="shop-bank" id="shopBank">$0 <small>AVAILABLE</small></div><div class="shop-message" id="shopMessage">BUY / REFUND AS MUCH AS YOU LIKE</div></div><div class="shop-stats" id="shopStats"></div><div class="shop-tabs" id="shopTabs" role="tablist" aria-label="Armory categories"></div><div class="shop-grid" id="shopGrid"></div><div class="shop-note" id="shopNote"></div></div><div class="net-launch" id="netLaunch"><div class="net-launch-head">▣ EBATO // MULTIPLAYER CONNECTION</div><div class="net-entry"><input id="netNickname" class="net-input" maxlength="18" aria-label="Your multiplayer nickname" placeholder="Your callsign" value="Operative"><input id="netCodeInput" class="net-input" maxlength="6" autocomplete="off" aria-label="Lobby code" placeholder="ROOM CODE (JOIN)"></div><div class="net-actions"><button class="net-btn" type="button" id="netCreate">+ CREATE LOBBY</button><button class="net-btn" type="button" id="netJoin">→ JOIN LOBBY</button></div><div class="net-launch-note">Live peer-to-peer rooms, up to 8 players. Share a six-character code or invite link. Press <b>T</b> anytime in a match to swap teams. Host must stay online.</div><div class="net-error" id="netLaunchError" role="status" aria-live="polite"></div></div><button type="button" id="puckModeToggle" aria-pressed="true">◉ PUCK ARENA: ON · SHOOT THE PUCK INTO THE ORANGE GOAL</button><button class="cta" id="start">DEPLOY OPERATIVE →</button><div class="hint" id="hint">Desktop keyboard + mouse recommended · Survive as long as you can</div></section></div>
 <script>
 (()=>{'use strict';
 const canvas=document.getElementById('game'),ctx=canvas.getContext('2d',{alpha:false});
 const ui={wave:document.getElementById('wave'),kills:document.getElementById('kills'),score:document.getElementById('score'),credits:document.getElementById('credits'),health:document.getElementById('health'),hpfill:document.getElementById('hpfill'),dodge:document.getElementById('dodge'),weaponSlot:document.getElementById('weaponSlot'),weapon:document.getElementById('weapon'),ammo:document.getElementById('ammo'),alt:document.getElementById('alt'),banner:document.getElementById('banner'),screen:document.getElementById('screen'),kicker:document.getElementById('kicker'),title:document.getElementById('modalTitle'),intro:document.getElementById('modalIntro'),legend:document.getElementById('legend'),start:document.getElementById('start'),hint:document.getElementById('hint'),sound:document.getElementById('sound'),shop:document.getElementById('shop'),shopGrid:document.getElementById('shopGrid'),shopBank:document.getElementById('shopBank'),shopMessage:document.getElementById('shopMessage'),shopNote:document.getElementById('shopNote'),shopTabs:document.getElementById('shopTabs'),shopStats:document.getElementById('shopStats'),puckToggle:document.getElementById('puckModeToggle'),puckBoard:document.getElementById('puckScoreboard'),puckPlayerGoals:document.getElementById('puckPlayerGoals'),puckEnemyGoals:document.getElementById('puckEnemyGoals'),puckDirection:document.getElementById('puckDirection')};
+const touchSupported=matchMedia('(pointer:coarse)').matches||navigator.maxTouchPoints>0||new URLSearchParams(location.search).has('touch');
+if(touchSupported)document.body.classList.add('touch-ready');
+if(touchSupported){document.getElementById('hint').textContent='Mobile: move with left stick · aim & fire with right stick · tap ARMORY for upgrades';}
+const touchState={move:{x:0,y:0},aim:{x:1,y:0},moveId:null,aimId:null,activeAim:false,activeFire:false,sprint:false,crouch:false,alt:false,lastShot:0,shown:false};
 let sw=innerWidth,sh=innerHeight,dpr=1,renderedStill=false,cam={x:0,y:0},clock=0,last=0,started=false,paused=true,ended=false,fireHeld=false,altHeld=false,secondaryPending=false,altStart=0,mouse={x:innerWidth*.64,y:innerHeight*.5,active:false},keys=new Set(),lastShiftTap=-Infinity;
-const isCrouching=()=>keys.has('AltLeft')||keys.has('AltRight');
+const isCrouching=()=>keys.has('AltLeft')||keys.has('AltRight')||touchState.crouch;
 const WORLD={w:2500,h:1700},TAU=Math.PI*2,clamp=(v,l,h)=>Math.max(l,Math.min(h,v)),rand=(a,b)=>a+Math.random()*(b-a),dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 let player,enemies=[],bullets=[],grenades=[],knives=[],particles=[],texts=[],wave=0,kills=0,score=0,credits=0,shopOpen=false,shopMode="between",toSpawn=0,spawnTimer=0,nextWaveTimer=0,bannerUntil=0,shake=0,obstacles=[],coverSpawnTimer=5;
 let puckEnabled=true,puck=null,teamGoals=0,rivalGoals=0,goalFlash=0;
@@ -826,6 +932,7 @@ function showScreen(type){
 }
 function begin(){if(net.phase==='match'&&shopOpen){closeFieldShop();return;}if(net.mode!=='solo')return;lastShiftTap=-Infinity;renderedStill=false;if(shopOpen){const cleared=shopMode==='between';closeFieldShop();if(cleared)nextWave();sound('buy');return}if(!started||ended){reset();started=true}paused=false;ui.puckBoard.hidden=!puckEnabled;ui.screen.classList.add('hidden');sound('dodge')}
 ui.puckToggle.addEventListener('click',()=>{puckEnabled=!puckEnabled;ui.puckToggle.setAttribute('aria-pressed',String(puckEnabled));ui.puckToggle.textContent=puckEnabled?'◉ PUCK ARENA: ON · SHOOT THE PUCK INTO THE ORANGE GOAL':'○ PUCK ARENA: OFF · CLASSIC SURVIVAL ONLY';});
+document.getElementById('touchShopClose').addEventListener('click',begin);
 ui.start.addEventListener('click',begin);ui.sound.addEventListener('click',()=>{soundOn=!soundOn;ui.sound.textContent=soundOn?'♪ SOUND ON':'♪ SOUND OFF'});
 function switchWeapon(n){if(!started||paused||ended||(n!==0&&n!==2))return;if(player.weapon===n)return;player.weapon=n;player.fireCd=Math.min(player.fireCd,.10);player.slash=0;player.triggerQueue=0;player.burstShots=0;secondaryPending=false;sound('dry')}
 window.addEventListener('keydown',e=>{const c=e.code;
@@ -920,6 +1027,96 @@ canvas.addEventListener('pointerdown',e=>{
 },true);
 canvas.addEventListener('auxclick',e=>{if(e.button===2)e.preventDefault()});
 canvas.addEventListener('wheel',e=>{e.preventDefault();if(paused||ended)return;switchWeapon(player.weapon===0?2:0)},{passive:false});
+
+// Mobile: two independent pointer captures permit walking, aiming and firing simultaneously.
+const touchUI=document.getElementById('touchControls');
+const touchPlayable=()=>started&&!paused&&!ended&&!shopOpen&&ui.screen.classList.contains('hidden')&&document.getElementById('netLobby').classList.contains('hidden');
+function refreshTouchUI(){
+ if(!touchSupported)return;
+ const available=touchPlayable();
+ if(touchState.shown!==available){touchState.shown=available;touchUI.classList.toggle('active',available);if(!available)releaseTouchControls();}
+ document.body.classList.toggle('touch-in-mp',net.phase==='match');
+}
+function releaseTouchControls(){
+ touchState.moveId=null;touchState.aimId=null;touchState.move.x=0;touchState.move.y=0;touchState.activeAim=false;touchState.activeFire=false;touchState.sprint=false;touchState.crouch=false;touchState.alt=false;
+ fireHeld=false;altHeld=false;secondaryPending=false;
+ for(const el of touchUI.querySelectorAll('.touch-thumb'))el.style.transform='translate(0px,0px)';
+ for(const el of touchUI.querySelectorAll('.touch-actions button'))el.classList.remove('is-active');
+}
+function positionTouchAim(){
+ if(!player||!touchState.activeAim)return;
+ // Assign an artificial screen-space cursor to reuse normal aiming and shot physics.
+ const distance=Math.max(190,Math.min(360,Math.max(sw,sh)*.55));
+ mouse.x=player.x-cam.x+touchState.aim.x*distance;
+ mouse.y=player.y-cam.y+touchState.aim.y*distance;
+ mouse.active=false;
+}
+function installTouchStick(id,kind){
+ const element=document.getElementById(id),thumb=element.querySelector('.touch-thumb'),name=kind==='move'?'moveId':'aimId';
+ const update=e=>{
+  const r=element.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,radius=r.width*.34;
+  const x=(e.clientX-cx)/radius,y=(e.clientY-cy)/radius,m=Math.hypot(x,y),scale=m>1?1/m:1;
+  const dx=x*scale,dy=y*scale;
+  thumb.style.transform=`translate(${(dx*radius).toFixed(2)}px,${(dy*radius).toFixed(2)}px)`;
+  if(kind==='move'){touchState.move.x=Math.abs(dx)<.055?0:dx;touchState.move.y=Math.abs(dy)<.055?0:dy;}
+  else if(m>.13){touchState.aim.x=dx/Math.hypot(dx,dy);touchState.aim.y=dy/Math.hypot(dx,dy);positionTouchAim();}
+ };
+ element.addEventListener('pointerdown',e=>{
+  if(!touchPlayable()||touchState[name]!==null)return;
+  e.preventDefault();e.stopPropagation();touchState[name]=e.pointerId;
+  try{element.setPointerCapture(e.pointerId)}catch(_){}
+  update(e);
+  if(kind==='aim'){
+   touchState.activeAim=true;touchState.activeFire=true;
+   positionTouchAim();fireHeld=true;
+   if(altHeld&&player.secondary!=='aim')secondaryPending=true;
+   else pressPrimaryTrigger();
+   if(secondaryPending&&shoot())secondaryPending=false;
+   touchState.lastShot=clock;
+  }
+ });
+ element.addEventListener('pointermove',e=>{if(touchState[name]!==e.pointerId)return;e.preventDefault();update(e)});
+ const end=e=>{if(touchState[name]!==e.pointerId)return;e.preventDefault();touchState[name]=null;thumb.style.transform='translate(0px,0px)';if(kind==='move'){touchState.move.x=touchState.move.y=0;}else{touchState.activeAim=false;touchState.activeFire=false;fireHeld=false;secondaryPending=false;}};
+ element.addEventListener('pointerup',end);element.addEventListener('pointercancel',end);element.addEventListener('lostpointercapture',end);
+}
+installTouchStick('touchMove','move');installTouchStick('touchAim','aim');
+// Each mobile button maps to exactly the same native in-game action as its keyboard equivalent.
+for(const button of touchUI.querySelectorAll('button[data-touch]')){
+ const action=button.dataset.touch;
+ button.addEventListener('pointerdown',e=>{
+  e.preventDefault();e.stopPropagation();
+  if(!touchPlayable())return;
+  if(action==='sprint'){touchState.sprint=true;button.classList.add('is-active')}
+  else if(action==='crouch'){touchState.crouch=!touchState.crouch;button.classList.toggle('is-active',touchState.crouch)}
+  else if(action==='slide')startSlide();
+  else if(action==='melee')quickMelee();
+  else if(action==='reload')reload();
+  else if(action==='firemode')cycleFireMode();
+  else if(action==='weapon')switchWeapon(player.weapon===0?2:0);
+  else if(action==='ability'){
+   const modes=['aim','grenade','power'].filter(id=>id==='aim'||player.modules[id]);
+   const i=modes.indexOf(player.secondary);selectSecondary(modes[(i+1)%modes.length]);
+  }
+  else if(action==='alt'){
+   if(!altHeld){altHeld=true;altStart=clock;touchState.alt=true;button.classList.add('is-active');
+    if(player.secondary!=='aim'||player.weapon===2){secondaryPending=true;if(shoot())secondaryPending=false;}
+   }
+  }
+  else if(action==='armory')toggleTabShop();
+  else if(action==='team'&&net.phase==='match')netTeam(net.team==='cyan'?'orange':'cyan');
+  else if(action==='roster'&&net.phase==='match')netShowLobby(true);
+  else if(action==='pause'){
+   if(net.phase==='match')netShowLobby(true);
+   else {paused=true;keys.clear();showScreen('pause');}
+  }
+ });
+ const release=e=>{if(action==='sprint'){touchState.sprint=false;button.classList.remove('is-active')}if(action==='alt'){touchState.alt=false;altHeld=false;secondaryPending=false;button.classList.remove('is-active')}};
+ button.addEventListener('pointerup',release);button.addEventListener('pointercancel',release);button.addEventListener('lostpointercapture',release);
+ button.addEventListener('click',e=>e.preventDefault());
+}
+window.addEventListener('blur',()=>{if(touchSupported)releaseTouchControls()});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&touchSupported)releaseTouchControls()});
+
 function collidesCircleRect(x,y,r,rect){let qx=clamp(x,rect.x,rect.x+rect.w),qy=clamp(y,rect.y,rect.y+rect.h);return (x-qx)**2+(y-qy)**2<(r*r)}
 const COVER_CELL=12;
 function makeCover(o){
@@ -1169,7 +1366,7 @@ function quickMelee(){
 }
 function startSlide(){
  if(!player||paused||ended||player.hp<=0||player.rollCd>0||player.roll>0)return false;
- let vx=(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),vy=(keys.has('KeyS')?1:0)-(keys.has('KeyW')?1:0);
+ let vx=touchState.moveId!==null?touchState.move.x:(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),vy=touchState.moveId!==null?touchState.move.y:(keys.has('KeyS')?1:0)-(keys.has('KeyW')?1:0);
  if(!vx&&!vy){vx=Math.cos(player.angle);vy=Math.sin(player.angle)}
  const n=Math.hypot(vx,vy)||1;
  player.rollDx=vx/n;player.rollDy=vy/n;
@@ -1604,7 +1801,7 @@ function update(dt){clock+=dt;
   if(created===0)coverSpawnTimer=Math.max(coverSpawnTimer,3.4);
  }
 }for(const o of obstacles){o.hit=Math.max(0,(o.hit||0)-dt);o.newborn=Math.max(0,(o.newborn||0)-dt)}if(toSpawn>0&&net.phase!=='match'){spawnTimer-=dt;if(spawnTimer<=0){if(enemies.length<48){spawnEnemy();toSpawn--;spawnTimer=clamp(1.0-wave*.047,.40,1.0)}else spawnTimer=.35}}
-const c=isCrouching(),run=(keys.has('ShiftLeft')||keys.has('ShiftRight'))&&!c,movingX=(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),movingY=(keys.has('KeyS')?1:0)-(keys.has('KeyW')?1:0),norm=Math.hypot(movingX,movingY)||1;player.angle=mouseAim();player.step+=dt*(run?15:c?4:9)*Math.min(1,Math.hypot(movingX,movingY));player.fireCd=Math.max(0,player.fireCd-dt);player.secondaryCd=Math.max(0,player.secondaryCd-dt);player.rollCd=Math.max(0,player.rollCd-dt);player.meleeCd=Math.max(0,player.meleeCd-dt);player.invul=Math.max(0,player.invul-dt);player.slash=Math.max(0,player.slash-dt);
+const c=isCrouching()||touchState.crouch,run=(keys.has('ShiftLeft')||keys.has('ShiftRight')||touchState.sprint)&&!c,movingX=touchState.moveId!==null?touchState.move.x:(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),movingY=touchState.moveId!==null?touchState.move.y:(keys.has('KeyS')?1:0)-(keys.has('KeyW')?1:0),norm=Math.max(1,Math.hypot(movingX,movingY));player.angle=mouseAim();player.step+=dt*(run?15:c?4:9)*Math.min(1,Math.hypot(movingX,movingY));player.fireCd=Math.max(0,player.fireCd-dt);player.secondaryCd=Math.max(0,player.secondaryCd-dt);player.rollCd=Math.max(0,player.rollCd-dt);player.meleeCd=Math.max(0,player.meleeCd-dt);player.invul=Math.max(0,player.invul-dt);player.slash=Math.max(0,player.slash-dt);
 if(player.reload>0){player.reload-=dt;if(player.reload<=0){player.reload=0;const num=Math.min(clipSize()-player.gun,player.gunReserve);player.gun+=num;player.gunReserve-=num}}
 if(player.grenadeReload>0){player.grenadeReload-=dt;if(player.grenadeReload<=0){player.grenadeReload=0;const count=Math.min(grenadeClipSize()-player.grenades,player.grenadeReserve);player.grenades+=count;player.grenadeReserve-=count;sound('buy')}}
 if(player.roll>0){
@@ -1622,7 +1819,7 @@ if(player.roll>0){
  if(Math.random()<.60)particle(player.x-player.rollDx*24+rand(-8,8),player.y-player.rollDy*24+rand(-8,8),-player.rollDx*rand(60,170),-player.rollDy*rand(60,170),.25,'#c8a88d',rand(1,3));
 }
 else{let speed=player.hp<=0&&net.phase==='match'?0:c?130:run?360:238;if(altHeld&&player.weapon===0&&player.secondary==='aim')speed*=.72;if(altHeld&&player.weapon===2)speed*=.76;moveBody(player,movingX/norm*speed*dt,movingY/norm*speed*dt)}
-cam.x+=((player.x-sw/2)-cam.x)*Math.min(1,dt*8);cam.y+=((player.y-sh/2)-cam.y)*Math.min(1,dt*8);
+cam.x+=((player.x-sw/2)-cam.x)*Math.min(1,dt*8);cam.y+=((player.y-sh/2)-cam.y)*Math.min(1,dt*8);if(touchState.activeAim)positionTouchAim();
 if(player.hp>0&&fireHeld&&altHeld&&(player.weapon===2||(player.weapon===0&&player.secondary!=='aim'))){
  if(secondaryPending&&shoot())secondaryPending=false;
 }else if(player.weapon===0&&player.hp>0){
@@ -1630,6 +1827,7 @@ if(player.hp>0&&fireHeld&&altHeld&&(player.weapon===2||(player.weapon===0&&playe
   if(shoot())player.burstShots--;else player.burstShots=0;
  }
  if(player.fireMode==='auto'&&fireHeld&&player.fireCd<=0&&player.reload<=0){shoot()}
+ else if(touchState.activeFire&&player.fireMode==='semi'&&player.fireCd<=0&&player.reload<=0&&clock-touchState.lastShot>.18){if(shoot())touchState.lastShot=clock}
  else if(player.fireMode==='semi'&&player.triggerQueue>0){
   if(clock>player.triggerExpiry)player.triggerQueue=0;
   else if(player.fireCd<=0&&player.reload<=0){if(shoot())player.triggerQueue--;}
@@ -1788,6 +1986,7 @@ let frameErrors=0;
 function loop(t){
  try{
   const dt=Math.min((t-last)/1000||0,.035);last=t;
+  refreshTouchUI();
   if(!paused&&!ended){update(dt);syncUI(dt);renderedStill=false}
   else if(!started){clock+=dt*.22}
   if(player&&(!paused&&!ended||!renderedStill)){draw();renderedStill=paused||ended}
