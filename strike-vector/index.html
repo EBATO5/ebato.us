@@ -842,7 +842,7 @@ function nodePurchaseInfo(id){
  return {};
 }
 function compactNode(id,iconId,x,y,label,{locked=false,active=false,root=false,hub=false,theme='',levelText='' }={}){
- const available=nodePurchaseInfo(id),cls=['tree-compact-node'];if(locked||available.locked)cls.push('locked');if(available.affordable)cls.push('can-afford');if(available.maxed)cls.push('maxed');if(active)cls.push('active');if(root)cls.push('root');if(hub)cls.push('branch-hub');if(theme)cls.push('branch-'+theme);if(selectedTreeNode===id)cls.push('selected');
+ const available=nodePurchaseInfo(id),cls=['tree-compact-node'];if((locked&&!available.affordable)||available.locked)cls.push('locked');if(available.affordable)cls.push('can-afford');if(available.maxed)cls.push('maxed');if(active)cls.push('active');if(root)cls.push('root');if(hub)cls.push('branch-hub');if(theme)cls.push('branch-'+theme);if(selectedTreeNode===id)cls.push('selected');
  return `<button type="button" class="${cls.join(' ')}" data-select-node="${id}" style="left:${x}px;top:${y}px" title="${label}${available.cost!==undefined?' · NEXT $'+available.cost.toLocaleString():available.maxed?' · MAXED':''}"><span class="mini-icon">${iconArt(iconId, id==='projectiles'?player.mods.projectiles:0)}</span>${levelText?`<span class="tree-node-level">${levelText}</span>`:''}<span class="tree-node-label">${label}</span></button>`;
 }
 function buildCompactSkillTree(){
@@ -1012,6 +1012,7 @@ function updateTreeDetailPanel(){
 }
 function refreshAffordableNodes(){
  if(!shopOpen)return;
+ ui.shopBank.innerHTML=`$${credits.toLocaleString()} <small>AVAILABLE CREDITS</small>`;
  ui.shopGrid.querySelectorAll('[data-select-node]').forEach(el=>{
   const info=nodePurchaseInfo(el.dataset.selectNode);
   el.classList.toggle('can-afford',!!info.affordable);
@@ -2303,7 +2304,7 @@ function netBotFire(bot,a,puckOnly=false){
  burst(bot.x+Math.cos(angle)*26,bot.y+Math.sin(angle)*26,3,teamColor(bot.team),80);
 }
 function netBotMelee(bot,foe){
- const power=36;
+ const power=85;
  if(foe.npc){if(foe.enemy&&!foe.enemy.dead)hurtEnemy(foe.enemy,power,foe.enemy.x,foe.enemy.y,bot.id);}
  else if(foe.id==='host')netPvpHit('host',power);
  else if(net.remotes.has(foe.id))netPvpHit(foe.id,power);
