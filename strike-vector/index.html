@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
 <meta name="theme-color" content="#080e17" />
-<title>STRIKE VECTOR v1.4.5 — Balanced Cover & Economy</title>
+<title>STRIKE VECTOR v1.4.6 — Shields, Armor & Precision Ballistics</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{color-scheme:dark;--bg:#080e17;--panel:#101b28;--border:#263746;--mint:#74f7d4;--text:#eef6f7;--muted:#8da4b3;--orange:#ffbd75}
@@ -386,15 +386,24 @@ body.touch-ready .net-btn{padding:8px 5px;font-size:10px}
 #roundBreakPanel .rb-help{font-size:10px}
 #screen .cta:disabled,#touchShopClose:disabled{cursor:not-allowed!important;opacity:.56!important}
 @media(max-width:600px){#roundBreakPanel{padding:9px 10px;gap:7px}#roundBreakPanel .rb-heading{font-size:10px}#roundBreakPanel .rb-caption{font-size:9px}#roundBreakPanel .rb-count{font-size:23px}}
+
+/* v1.4.6 // energy shield and intermission return */
+.shield-caption{display:flex;justify-content:space-between;gap:8px;color:#8beaff;font-size:9px;font-weight:850;letter-spacing:.11em;margin-top:6px}
+.shieldbar{height:5px;background:#172d42;border-radius:9px;overflow:hidden;margin:5px 0 9px}
+.shieldfill{height:100%;width:0;background:linear-gradient(90deg,#4788eb,#89faff);transition:width .12s}
+#reopenArmory{display:none;position:fixed;top:27%;left:50%;transform:translateX(-50%);z-index:9;padding:13px 23px;border:1px solid #ffb96b;border-radius:12px;background:#123b4af2;color:#dcffff;font:900 13px Oxanium,system-ui;letter-spacing:.09em;box-shadow:0 8px 28px #0009;cursor:pointer}
+#reopenArmory.active{display:block}
+#reopenArmory:hover{background:#1c5964}
+@media(max-width:600px){#reopenArmory{top:39%;width:min(90vw,360px);font-size:11px}}
 </style>
 </head>
 <body>
 <canvas id="game"></canvas><div id="vignette"></div>
 <div id="hud">
   <div class="topbar"><div><div class="brand">STRIKE <span>VECTOR</span></div><div class="subbrand">TACTICAL SURVIVAL SIMULATOR // 13</div></div><div class="topstats"><div><div class="statlabel">WAVE</div><div class="statnum" id="wave">01</div></div><div><div class="statlabel">KILLS</div><div class="statnum" id="kills">000</div></div><div><div class="statlabel">CREDITS</div><div class="statnum" id="credits">$0</div></div><div><div class="statlabel">SCORE</div><div class="statnum" id="score">00000</div></div></div></div>
-  <div class="bottom"><div class="leftpanel"><div style="display:flex;justify-content:space-between;align-items:center"><span class="micro">OPERATIVE / HEALTH</span><span class="hpnum" id="health">100</span></div><div class="hpbar"><div class="hpfill" id="hpfill"></div></div><div class="dodge"><span>COMBAT SLIDE</span><b id="dodge">READY</b></div></div><div class="controls"><span><b>WASD</b>MOVE</span><span><b>SHIFT</b>SPRINT</span><span><b>SPACE</b>SLIDE / DODGE</span><span><b>ALT</b>CROUCH</span><span><b>E</b>MELEE</span><span><b>R</b>RELOAD</span><span><b>1 / 2</b>KNIFE / GUN</span><span><b>TAB</b>ARMORY / PAUSE</span><span><b>F</b>FIRE MODE</span><span><b>3–5</b>ALT ABILITIES</span></div><div class="rightpanel"><div class="micro" id="weaponSlot">02 / CUSTOM</div><div class="weapon" id="weapon">9mm · COMPACT</div><div class="ammo" id="ammo">14 <small>/ 120</small></div><div class="alt" id="alt">HOLD RMB · PRECISION AIM</div></div></div>
+  <div class="bottom"><div class="leftpanel"><div style="display:flex;justify-content:space-between;align-items:center"><span class="micro">OPERATIVE / HEALTH</span><span class="hpnum" id="health">100</span></div><div class="hpbar"><div class="hpfill" id="hpfill"></div></div><div class="shield-caption"><span>ENERGY SHIELD</span><span id="shieldText">0 / 0</span></div><div class="shieldbar"><div class="shieldfill" id="shieldfill"></div></div><div class="dodge"><span>COMBAT SLIDE</span><b id="dodge">READY</b></div></div><div class="controls"><span><b>WASD</b>MOVE</span><span><b>SHIFT</b>SPRINT</span><span><b>SPACE</b>SLIDE / DODGE</span><span><b>ALT</b>CROUCH</span><span><b>E</b>MELEE</span><span><b>R</b>RELOAD</span><span><b>1 / 2</b>KNIFE / GUN</span><span><b>TAB</b>ARMORY / PAUSE</span><span><b>F</b>FIRE MODE</span><span><b>3–5</b>ALT ABILITIES</span></div><div class="rightpanel"><div class="micro" id="weaponSlot">02 / CUSTOM</div><div class="weapon" id="weapon">9mm · COMPACT</div><div class="ammo" id="ammo">14 <small>/ 120</small></div><div class="alt" id="alt">HOLD RMB · PRECISION AIM</div></div></div>
 </div>
-<div id="banner"></div>
+<div id="banner"></div><button id="reopenArmory" type="button">⚙ REOPEN ARMORY</button>
 <div id="touchControls" aria-label="Mobile combat controls">
  <div class="touch-bar"><button type="button" data-touch="armory">⚙ ARMORY</button><button type="button" class="mp-only" data-touch="team">⇄ TEAM</button><button type="button" class="mp-only" data-touch="roster">☷ LOBBY</button><button type="button" data-touch="pause">Ⅱ PAUSE</button></div>
  <div class="touch-stick" id="touchMove" role="group" aria-label="Movement joystick"><span class="touch-stick-label">MOVE</span><div class="touch-thumb"></div></div>
@@ -490,9 +499,9 @@ function buildLevel(){
 
 function reset(){
  buildLevel();player={x:1250,y:810,r:18,hp:100,maxHp:100,vx:0,vy:0,angle:0,weapon:0,
-  mods:{receiver:0,barrel:0,damage:0,trigger:0,fireControl:0,mag:0,projectiles:0,penetration:0,reloadSpeed:0,blast:0,knife:0,grenadePower:0,grenadeRange:0,grenadeMag:0,grenadeReload:0,grenadeCycle:0},
+  mods:{receiver:0,barrel:0,damage:0,trigger:0,fireControl:0,mag:0,projectiles:0,penetration:0,reloadSpeed:0,blast:0,knife:0,grenadePower:0,grenadeRange:0,grenadeMag:0,grenadeReload:0,grenadeCycle:0,shieldCapacity:0,shieldRegen:0,shieldDelay:0,armor:0},
   modules:{laser:false,grenade:false,power:false,explosive:false,bayonet:false},laserOn:false,explosiveOn:false,bayonetOn:false,secondary:'aim',
-  roll:0,rollMax:.78,rollMode:'slide',rollDx:0,rollDy:0,rollCd:0,invul:0,slideTurn:0,fireCd:0,secondaryCd:0,slash:0,slashDir:0,slashHits:new Set(),
+  shield:0,shieldHitAt:-999,roll:0,rollMax:.78,rollMode:'slide',rollDx:0,rollDy:0,rollCd:0,invul:0,slideTurn:0,fireCd:0,secondaryCd:0,slash:0,slashDir:0,slashHits:new Set(),
   reload:0,gun:14,gunReserve:Infinity,grenades:5,grenadeReserve:Infinity,grenadeReload:0,throwKnives:Infinity,step:0,meleeCd:0,slashKind:'knife',triggerQueue:0,triggerExpiry:0,fireMode:'semi',burstShots:0};
  enemies=[];bullets=[];grenades=[];knives=[];particles=[];texts=[];clock=0;wave=0;kills=0;score=0;credits=0;teamGoals=0;rivalGoals=0;goalFlash=0;resetPuck();roundBreak.kind='';roundBreak.until=0;roundBreak.lastShown=-1;document.getElementById('roundBreakPanel').classList.remove('active');document.getElementById('touchShopClose').disabled=false;ui.start.disabled=false;
  shopOpen=false;shopTab='gun';shopMode='between';coverSpawnTimer=4.5;toSpawn=0;spawnTimer=0;nextWaveTimer=1.1;shake=0;
@@ -511,7 +520,7 @@ const OPTIONS=[
  {id:'projectiles',name:'SHOT PELLET PACK',price:345,step:215,max:7,detail:'Fire additional pellets from one cartridge, like buckshot. Extra pellets never consume extra ammunition.'},
  {id:'reloadSpeed',name:'FAST MAG CHANGE',price:210,step:145,detail:'Reload 16% faster per tier'},
  {id:'mag',name:'MAGAZINE EXTENSION',price:185,step:100,detail:'+4 rounds per tier'},
- {id:'barrel',name:'PRECISION BARREL',price:225,step:135,detail:'Improved accuracy and muzzle velocity'},
+ {id:'barrel',name:'PRECISION BARREL',price:225,step:135,detail:'−32% random spread and −21% pellet fan per tier, plus muzzle velocity'},
  {id:'penetration',name:'PENETRATOR CORE',price:305,step:165,detail:'Pass through +1 extra enemy per tier'},
  {id:'blast',name:'GRENADE BLAST RADIUS',price:350,step:165,detail:'+25 blast radius per tier',requires:'grenade'},
  {id:'grenadePower',name:'GRENADE EXPLOSIVE CHARGE',price:310,step:160,detail:'+25 blast damage per tier; more cover damage',requires:'grenade'},
@@ -519,7 +528,11 @@ const OPTIONS=[
  {id:'grenadeMag',name:'GRENADE FEED CAPACITY',price:295,step:175,max:5,detail:'+1 loaded grenade per tier',requires:'grenade'},
  {id:'grenadeReload',name:'GRENADE LOADING SPEED',price:245,step:135,detail:'15% faster grenade reload per tier',requires:'grenade'},
  {id:'grenadeCycle',name:'GRENADE FIRING MECHANISM',price:275,step:150,detail:'15% faster follow-up grenade shots per tier',requires:'grenade'},
- {id:'knife',name:'MELEE EDGE',price:190,step:105,detail:'+15 slash damage per tier'}
+ {id:'knife',name:'MELEE EDGE',price:190,step:105,detail:'+15 slash damage per tier'},
+ {id:'shieldCapacity',name:'ENERGY SHIELD ARRAY',price:340,step:190,max:5,detail:'+35 regenerating shield points per tier. New capacity immediately charges.'},
+ {id:'shieldRegen',name:'SHIELD RECHARGE',price:290,step:170,max:5,detail:'+6 shield per second per tier, once shield capacity is installed.'},
+ {id:'shieldDelay',name:'SHIELD RECOVERY TIMER',price:265,step:160,max:5,detail:'Each tier shortens the delay after damage by 0.5 seconds (minimum 1 second).'},
+ {id:'armor',name:'REINFORCED ARMOR',price:320,step:190,max:5,detail:'Reduces health damage passing through shields by 7% per tier (up to 35%).'}
 ];
 const MODULES=[
  {id:'grenade',name:'UNDERBARREL GRENADE',price:475,detail:'Lobbed grenade · bounces only off arena edges · 5 per clip'},
@@ -532,6 +545,24 @@ const BASE_GRENADE_CLIP=5,BASE_GRENADE_RANGE=680;
 function gunSpec(){return RECEIVERS[player.mods.receiver]}
 function clipSize(){return gunSpec().clip+player.mods.mag*4}
 function projectileCount(){return 1+player.mods.projectiles}
+function shieldMax(mods=player.mods){return Math.max(0,35*(mods.shieldCapacity||0))}
+function shieldRate(mods=player.mods){return shieldMax(mods)>0?10+6*(mods.shieldRegen||0):0}
+function shieldDelayTime(mods=player.mods){return Math.max(1,3.5-.5*(mods.shieldDelay||0))}
+function shieldProtection(mods=player.mods){return Math.min(.35,.07*(mods.armor||0))}
+function barrelSpread(level=player.mods.barrel){return gunSpec().spread*Math.pow(.68,level)}
+function pelletFan(level=player.mods.barrel){return Math.pow(.79,level)}
+function projectileRadius(receiver=player.mods.receiver,power=false){return (3.2+receiver*1.55)*(power?1.4:1)}
+function absorbDamage(target,amount){
+ const mods=target.defense||target.mods||player.mods,incoming=Math.max(0,amount);
+ const absorbed=Math.min(Math.max(0,target.shield||0),incoming);
+ target.shield=Math.max(0,(target.shield||0)-absorbed);target.shieldHitAt=clock;
+ return {hpDamage:Math.max(0,incoming-absorbed)*(1-shieldProtection(mods)),absorbed};
+}
+function rechargeShield(target,dt){
+ const mods=target.defense||target.mods||player.mods,max=shieldMax(mods);
+ if(target.hp>0&&max>0&&target.shield<max&&clock-(target.shieldHitAt||-999)>=shieldDelayTime(mods))
+  target.shield=Math.min(max,(target.shield||0)+shieldRate(mods)*dt);
+}
 const FIRE_MODES=['semi','burst','auto'];
 function fireModeLabel(){return player.fireMode==='auto'?'AUTO':player.fireMode==='burst'?'3-RD BURST':'SEMI'}
 function setFireMode(mode){const tier=FIRE_MODES.indexOf(mode);if(tier<0||(tier>0&&!player.mods.fireControl))return false;player.fireMode=mode;player.burstShots=0;player.triggerQueue=0;sound('buy');syncUI(1);return true}
@@ -601,7 +632,7 @@ function statText(o,lvl){
   case 'trigger':return {now:`${Math.round(60/gunInterval())} RPM max`,next:`${Math.round(60/Math.max(.045,r.interval/(1+.18*next)))} RPM max`};
   case 'reloadSpeed':return {now:`${reloadDuration().toFixed(2)}s reload`,next:`${Math.max(.34,r.reload*Math.pow(.84,next)).toFixed(2)}s reload`};
   case 'mag':return {now:`${clipSize()} cartridges`,next:`${clipSize()+4} cartridges`};
-  case 'barrel':return {now:`${Math.round(r.velocity+curr*75)} velocity`,next:`${Math.round(r.velocity+next*75)} velocity`};
+  case 'barrel':return {now:`${(barrelSpread(curr)*180/Math.PI).toFixed(2)}° / ${Math.round(r.velocity+curr*75)} vel`,next:`${(barrelSpread(next)*180/Math.PI).toFixed(2)}° / ${Math.round(r.velocity+next*75)} vel`,hint:'−32% random spread and −21% pellet fan per tier'};
   case 'penetration':return {now:`${curr+1} enemies per bullet`,next:`${next+1} enemies per bullet`};
   case 'blast':return {now:`${grenadeRadius()} radius`,next:`${grenadeRadius()+25} radius`};
   case 'grenadePower':return {now:`${grenadeDamage()} grenade damage`,next:`${grenadeDamage()+25} damage`};
@@ -610,6 +641,10 @@ function statText(o,lvl){
   case 'grenadeReload':return {now:`${grenadeReloadDuration().toFixed(2)}s reload`,next:`${Math.max(.38,1.6*Math.pow(.85,next)).toFixed(2)}s reload`};
   case 'grenadeCycle':return {now:`${grenadeInterval().toFixed(2)}s launcher cycle`,next:`${Math.max(.15,.76*Math.pow(.85,next)).toFixed(2)}s cycle`};
   case 'knife':return {now:`${44+curr*15} slash damage`,next:`${44+next*15} slash damage`};
+   case 'shieldCapacity':return {now:`${shieldMax()} shield max`,next:`${shieldMax()+35} shield max`,hint:`Currently charged: ${Math.ceil(player.shield)}`};
+   case 'shieldRegen':return {now:`${shieldRate()} shield / sec`,next:`${shieldMax()>0?shieldRate()+6:0} shield / sec`};
+   case 'shieldDelay':return {now:`${shieldDelayTime().toFixed(1)}s delay`,next:`${Math.max(1,shieldDelayTime()-.5).toFixed(1)}s delay`};
+   case 'armor':return {now:`${Math.round(shieldProtection()*100)}% health resistance`,next:`${Math.round(Math.min(.35,.07*next)*100)}% resistance`};
  }
  return {now:`Level ${lvl}`,next:`Level ${next}`};
 }
@@ -1501,8 +1536,8 @@ function launchGrenade(){
 function fireBullet(a,spread,power=false,showEffects=true){
  const spec=gunSpec(),angle=a+rand(-spread,spread),speed=spec.velocity+player.mods.barrel*75;
  const damage=(spec.damage+player.mods.damage*7)*(power?2.65:1),pierce=player.mods.penetration+(power?2:0),color=power?'#ffca8c':player.explosiveOn?'#ffc07d':'#a1fff0';
- bullets.push({x:player.x+Math.cos(a)*29,y:player.y+Math.sin(a)*29,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,t:1,damage,friend:true,color,r:power?4.7:3,pierce,trace:power,explosive:player.explosiveOn,owner:'host',visualOnly:net.phase==='match'&&net.mode==='guest'});
- if(net.phase==='match'){const data={t:'shot',a:angle,explosive:player.explosiveOn,damage:Math.min(190,damage),velocity:speed};if(net.mode==='guest')netMsg(net.conn,data);else netBroadcast({...data,by:'host',x:player.x,y:player.y});}
+ bullets.push({x:player.x+Math.cos(a)*29,y:player.y+Math.sin(a)*29,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,t:1,damage,friend:true,color,r:projectileRadius(player.mods.receiver,power),pierce,trace:power,explosive:player.explosiveOn,owner:'host',visualOnly:net.phase==='match'&&net.mode==='guest'});
+ if(net.phase==='match'){const data={t:'shot',a:angle,explosive:player.explosiveOn,damage:Math.min(190,damage),velocity:speed,r:projectileRadius(player.mods.receiver,power)};if(net.mode==='guest')netMsg(net.conn,data);else netBroadcast({...data,by:'host',x:player.x,y:player.y});}
  if(showEffects){burst(player.x+Math.cos(a)*29,player.y+Math.sin(a)*29,power?10:4,'#ffe6a4',power?210:130);shake=Math.max(shake,power?5:1.8);
  sound(power?'sniper':player.mods.receiver===2?'rifle':'pistol');}
 }
@@ -1527,8 +1562,8 @@ function shoot(){
  const projectiles=projectileCount();
  player.gun-=cartridgesPerShot;
  const aim=altHeld&&player.secondary==='aim';
- const spread=gunSpec().spread*movementSpread/(1+player.mods.barrel*.22)*(aim?.16:1)*(power?.28:1);
- const fanAngle=projectiles>1?Math.min(.26,.068+.018*(projectiles-2)):0;
+ const spread=barrelSpread()*movementSpread*(aim?.16:1)*(power?.28:1);
+ const fanAngle=(projectiles>1?Math.min(.26,.068+.018*(projectiles-2)):0)*pelletFan();
  for(let i=0;i<projectiles;i++){
   const offset=projectiles>1?(i-(projectiles-1)/2)*fanAngle:0;
   fireBullet(a+offset,spread*(projectiles>1?.72:1),power,i===0);
@@ -1572,7 +1607,7 @@ function hurtEnemy(e,damage,x,y){
   floatText(e.x,e.y-26,'+'+points);sound('hit');
  }
 }
-function hurtPlayer(damage){if(player.invul>0||player.hp<=0)return;player.hp=Math.max(0,player.hp-damage);player.invul=.47;shake=Math.max(shake,7);burst(player.x,player.y,13,'#ff857d',190);sound('hit');if(player.hp<=0){if(net.phase==='match'){player.respawn=1.9;fireHeld=false;altHeld=false;secondaryPending=false;floatText(player.x,player.y-32,'RESPAWNING','#ffc187');}else{ended=true;paused=true;fireHeld=false;altHeld=false;secondaryPending=false;showScreen('gameover')}}}
+function hurtPlayer(damage){if(player.invul>0||player.hp<=0)return;const hit=absorbDamage(player,damage);player.hp=Math.max(0,player.hp-hit.hpDamage);player.invul=.47;shake=Math.max(shake,hit.absorbed>0?4:7);burst(player.x,player.y,hit.absorbed>0?9:13,hit.absorbed>0?'#70eaff':'#ff857d',190);sound('hit');if(player.hp<=0){if(net.phase==='match'){player.respawn=1.9;fireHeld=false;altHeld=false;secondaryPending=false;floatText(player.x,player.y-32,'RESPAWNING','#ffc187');}else{ended=true;paused=true;fireHeld=false;altHeld=false;secondaryPending=false;showScreen('gameover')}}}
 function boom(x,y,r=137,damage=100,owner='host',grenadeId=''){if(net.phase==='match'&&net.mode==='host'){netAreaDamage(x,y,r,damage,owner);netBroadcast({t:'explosion',x,y,r,id:grenadeId,by:owner});}puckBlast(x,y,r,1300+damage*3,'blast');shake=Math.max(shake,12);burst(x,y,50,'#ffa66b',440);burst(x,y,25,'#fff3c2',220);particles.push({x,y,vx:0,vy:0,life:.35,max:.35,color:'#ffaa70',r,ring:true});for(const e of enemies){let d=Math.hypot(e.x-x,e.y-y);if(d<r+e.r){hurtEnemy(e,Math.round(damage*(1-clamp(d/r,0,.8)*.45)),e.x,e.y);const a=Math.atan2(e.y-y,e.x-x);e.x+=Math.cos(a)*Math.max(0,28-d*.06);e.y+=Math.sin(a)*Math.max(0,28-d*.06)}}for(const o of [...obstacles]){const qx=clamp(x,o.x,o.x+o.w),qy=clamp(y,o.y,o.y+o.h),d=Math.hypot(x-qx,y-qy);if(d<r)damageCover(o,Math.max(30,Math.round(200*(1-d/r*.48))),qx,qy)}sound('grenade')}
 function smallExplosion(x,y,b,skip){
  if(!b.explosive)return;
@@ -1953,7 +1988,7 @@ function update(dt){clock+=dt;
   if(created===0)coverSpawnTimer=Math.max(coverSpawnTimer,3.4);
  }
 }for(const o of obstacles){o.hit=Math.max(0,(o.hit||0)-dt);o.newborn=Math.max(0,(o.newborn||0)-dt)}if(toSpawn>0&&net.phase!=='match'){spawnTimer-=dt;if(spawnTimer<=0){if(enemies.length<48){spawnEnemy();toSpawn--;spawnTimer=clamp(1.0-wave*.047,.40,1.0)}else spawnTimer=.35}}
-const c=isCrouching()||touchState.crouch,run=(keys.has('ShiftLeft')||keys.has('ShiftRight')||touchState.sprint)&&!c,movingX=touchState.moveId!==null?touchState.move.x:(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),movingY=touchState.moveId!==null?touchState.move.y:(keys.has('KeyS')?1:0)-(keys.has('KeyW')?1:0),norm=Math.max(1,Math.hypot(movingX,movingY));player.angle=mouseAim();player.step+=dt*(run?15:c?4:9)*Math.min(1,Math.hypot(movingX,movingY));player.fireCd=Math.max(0,player.fireCd-dt);player.secondaryCd=Math.max(0,player.secondaryCd-dt);player.rollCd=Math.max(0,player.rollCd-dt);player.meleeCd=Math.max(0,player.meleeCd-dt);player.invul=Math.max(0,player.invul-dt);player.slash=Math.max(0,player.slash-dt);
+const c=isCrouching()||touchState.crouch,run=(keys.has('ShiftLeft')||keys.has('ShiftRight')||touchState.sprint)&&!c,movingX=touchState.moveId!==null?touchState.move.x:(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),movingY=touchState.moveId!==null?touchState.move.y:(keys.has('KeyS')?1:0)-(keys.has('KeyW')?1:0),norm=Math.max(1,Math.hypot(movingX,movingY));player.angle=mouseAim();player.step+=dt*(run?15:c?4:9)*Math.min(1,Math.hypot(movingX,movingY));player.fireCd=Math.max(0,player.fireCd-dt);player.secondaryCd=Math.max(0,player.secondaryCd-dt);player.rollCd=Math.max(0,player.rollCd-dt);player.meleeCd=Math.max(0,player.meleeCd-dt);player.invul=Math.max(0,player.invul-dt);player.slash=Math.max(0,player.slash-dt);rechargeShield(player,dt);
 if(player.reload>0){player.reload-=dt;if(player.reload<=0){player.reload=0;const num=Math.min(clipSize()-player.gun,player.gunReserve);player.gun+=num;player.gunReserve-=num}}
 if(player.grenadeReload>0){player.grenadeReload-=dt;if(player.grenadeReload<=0){player.grenadeReload=0;const count=Math.min(grenadeClipSize()-player.grenades,player.grenadeReserve);player.grenades+=count;player.grenadeReserve-=count;sound('buy')}}
 if(player.roll>0){
@@ -2073,6 +2108,7 @@ if(net.phase==='match')for(const r of net.remotes.values()){
  ctx.fillStyle='rgba(0,0,0,.42)';ctx.beginPath();ctx.ellipse(4,8,25,19,0,0,TAU);ctx.fill();
  ctx.fillStyle=r.team==='orange'?'#683d21':'#1b5460';ctx.strokeStyle=color;ctx.lineWidth=3;ctx.beginPath();ctx.arc(0,0,19,0,TAU);ctx.fill();ctx.stroke();
  ctx.fillStyle=color;rr(7,-5,r.weapon===2?14:29,10,3);ctx.fill();ctx.restore();
+  if(r.shield>0&&r.shieldMax>0){ctx.strokeStyle='rgba(107,227,255,.60)';ctx.lineWidth=2.5+2*r.shield/r.shieldMax;ctx.beginPath();ctx.arc(r.x,r.y,24,-Math.PI/2,-Math.PI/2+TAU*r.shield/r.shieldMax);ctx.stroke();}
  ctx.textAlign='center';ctx.font='bold 12px Oxanium,system-ui';ctx.fillStyle=color;ctx.fillText(r.name||'OPERATIVE',r.x,r.y-34);
  if(r.hp>0){ctx.fillStyle='#10262b';ctx.fillRect(r.x-22,r.y-29,44,4);ctx.fillStyle=color;ctx.fillRect(r.x-22,r.y-29,44*Math.max(0,r.hp/100),4);}
  if(r.weapon===0&&r.laserOn&&r.hp>0){const ax=Math.cos(r.a||0),ay=Math.sin(r.a||0),len=rayCoverDistance(r.x,r.y,ax,ay,1000);ctx.strokeStyle='rgba(255,86,95,.85)';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(r.x+ax*29,r.y+ay*29);ctx.lineTo(r.x+ax*len,r.y+ay*len);ctx.stroke();}
@@ -2098,6 +2134,7 @@ if(!roll){ctx.fillStyle=net.phase==='match'&&net.team==='orange'?'#683d21':'#1b5
 ctx.fillStyle='#c7fff2';rr(5,-5,player.weapon===2?14:gunSpec().barrel+player.mods.barrel*3,player.weapon===2?8:10,3);ctx.fill();ctx.fillStyle='#316772';rr(7,-5,16,10,2);ctx.fill();
 if(sliding){ctx.strokeStyle='#8ae9df';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(2,-10);ctx.lineTo(19,-5);ctx.stroke()}
 ctx.restore();
+if(player.shield>0&&shieldMax()>0){ctx.strokeStyle='rgba(103,230,255,.77)';ctx.lineWidth=2.5+2.4*player.shield/shieldMax();ctx.beginPath();ctx.arc(player.x,player.y,28,-Math.PI/2,-Math.PI/2+TAU*player.shield/shieldMax());ctx.stroke();}
 if(player.slash>0){const gunStrike=player.slashKind==='quick'&&player.weapon===0;
  ctx.strokeStyle=gunStrike?`rgba(255,207,126,${Math.min(1,player.slash/.18)})`:`rgba(188,255,241,${Math.min(1,player.slash/.2)})`;
  ctx.lineWidth=gunStrike?9:12;ctx.beginPath();ctx.arc(player.x,player.y,gunStrike?(player.bayonetOn?102:71):75,player.slashDir-(gunStrike?.65:.95),player.slashDir+(gunStrike?.65:.95));ctx.stroke()}
@@ -2124,7 +2161,7 @@ function reticle(){
 }
 let uiTimer=0;function syncUI(dt){
  uiTimer-=dt;if(uiTimer>0)return;uiTimer=.06;
- ui.wave.textContent=net.phase==='match'?'MP':String(wave).padStart(2,'0');ui.kills.textContent=String(kills).padStart(3,'0');ui.score.textContent=String(score).padStart(5,'0');ui.credits.textContent='$'+credits.toLocaleString();ui.puckBoard.hidden=!puckEnabled||!started;ui.puckBoard.classList.toggle('online',net.phase==='match');ui.puckBoard.querySelector('.puck-head').textContent=net.phase==='match'?'ONLINE PUCK ARENA // '+net.code:'PUCK ARENA // BONUS OBJECTIVE';ui.puckBoard.querySelector('.puck-tally').firstChild.textContent=net.phase==='match'?'CYAN ':'YOU ';ui.puckBoard.querySelector('.puck-tally span').textContent=net.phase==='match'?' ORANGE':' RIVALS';ui.puckPlayerGoals.textContent=String(teamGoals);ui.puckEnemyGoals.textContent=String(rivalGoals);if(puckEnabled&&puck){const pdx=puck.x-player.x,pdy=puck.y-player.y;const arrow=Math.abs(pdx)>Math.abs(pdy)?(pdx>=0?'→':'←'):(pdy>=0?'↓':'↑');ui.puckDirection.innerHTML=puck.respawn>0?'PUCK RESETTING…':`PUCK ${arrow} ${Math.round(Math.hypot(pdx,pdy))}m · ${net.phase==='match'?(net.team==='cyan'?'ATTACK ORANGE →':'ATTACK CYAN ←'):'SCORE IN ORANGE GOAL'} · <strong>${net.phase==='match'?'T SWAPS TEAMS':'+2,500 PTS'}</strong>`;}ui.health.textContent=player.hp<=0&&net.phase==='match'?'RESPAWN':String(Math.ceil(player.hp));ui.hpfill.style.width=player.hp+'%';ui.dodge.textContent=player.roll>0?'SLIDING':player.rollCd>0?player.rollCd.toFixed(1)+'s':'READY';ui.dodge.style.color=player.rollCd>0?'#e9b27f':'#c5faf0';
+ ui.wave.textContent=net.phase==='match'?'MP':String(wave).padStart(2,'0');ui.kills.textContent=String(kills).padStart(3,'0');ui.score.textContent=String(score).padStart(5,'0');ui.credits.textContent='$'+credits.toLocaleString();ui.puckBoard.hidden=!puckEnabled||!started;ui.puckBoard.classList.toggle('online',net.phase==='match');ui.puckBoard.querySelector('.puck-head').textContent=net.phase==='match'?'ONLINE PUCK ARENA // '+net.code:'PUCK ARENA // BONUS OBJECTIVE';ui.puckBoard.querySelector('.puck-tally').firstChild.textContent=net.phase==='match'?'CYAN ':'YOU ';ui.puckBoard.querySelector('.puck-tally span').textContent=net.phase==='match'?' ORANGE':' RIVALS';ui.puckPlayerGoals.textContent=String(teamGoals);ui.puckEnemyGoals.textContent=String(rivalGoals);if(puckEnabled&&puck){const pdx=puck.x-player.x,pdy=puck.y-player.y;const arrow=Math.abs(pdx)>Math.abs(pdy)?(pdx>=0?'→':'←'):(pdy>=0?'↓':'↑');ui.puckDirection.innerHTML=puck.respawn>0?'PUCK RESETTING…':`PUCK ${arrow} ${Math.round(Math.hypot(pdx,pdy))}m · ${net.phase==='match'?(net.team==='cyan'?'ATTACK ORANGE →':'ATTACK CYAN ←'):'SCORE IN ORANGE GOAL'} · <strong>${net.phase==='match'?'T SWAPS TEAMS':'+2,500 PTS'}</strong>`;}ui.health.textContent=player.hp<=0&&net.phase==='match'?'RESPAWN':String(Math.ceil(player.hp));ui.hpfill.style.width=player.hp+'%';document.getElementById('shieldText').textContent=Math.ceil(player.shield)+' / '+shieldMax();document.getElementById('shieldfill').style.width=(shieldMax()?100*player.shield/shieldMax():0)+'%';ui.dodge.textContent=player.roll>0?'SLIDING':player.rollCd>0?player.rollCd.toFixed(1)+'s':'READY';ui.dodge.style.color=player.rollCd>0?'#e9b27f':'#c5faf0';
  if(player.weapon===2){ui.weapon.textContent='COMBAT KNIFE';ui.weaponSlot.textContent='01 / MELEE · '+(toSpawn+enemies.length)+(net.phase==='match'?' ONLINE TEAM ARENA':' HOSTILES LEFT');ui.ammo.innerHTML=(player.throwKnives===Infinity?'∞':player.throwKnives)+' <small>THROWING KNIVES</small>';ui.alt.textContent='SPACE / LMB · SLASH · RMB + LMB · THROW';return}
  ui.weapon.textContent=gunSpec().name+(projectileCount()>1?' · ×'+projectileCount()+' PELLETS':'')+' · '+fireModeLabel();ui.weaponSlot.textContent='02 / CUSTOM FIREARM · '+(toSpawn+enemies.length)+(net.phase==='match'?' ONLINE TEAM ARENA':' HOSTILES LEFT');
  ui.ammo.innerHTML=player.reload>0?`<span style="font-size:16px;color:#ffbf87">RELOADING ${player.reload.toFixed(1)}s</span>`:`${player.gun} <small>/ ${player.gunReserve===Infinity?'∞':player.gunReserve}</small>`;
