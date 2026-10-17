@@ -1857,7 +1857,7 @@ function netSendMelee(kind,a){
  if(net.mode==='host'){netHostMelee('host',kind,a);netBroadcast({t:'melee',by:'host',a,kind});}
  else netMsg(net.conn,{t:'melee',kind,a});
 }
-function netVisualMelee(id,a,kind){const r=net.remotes.get(id);if(!r)return;r.slash=.22;r.slashDir=a;r.slashKind=kind;burst(r.x+Math.cos(a)*45,r.y+Math.sin(a)*45,5,teamColor(r.team),90);}
+function netVisualMelee(id,a,kind){const r=net.remotes.get(id)||net.bots.find(b=>b.id===id);if(!r)return;r.slash=.22;r.slashDir=a;r.slashKind=kind;burst(r.x+Math.cos(a)*45,r.y+Math.sin(a)*45,5,teamColor(r.team),90);}
 function netSendGrenade(a,range,id){
  if(net.phase!=='match'||!Number.isFinite(a))return;
  const data={t:'grenade',a,range,id,radius:grenadeRadius(),damage:grenadeDamage()};
@@ -1913,7 +1913,7 @@ function netRosterData(){
 }
 function netPlaceBot(bot){
  const slot=net.bots.indexOf(bot)+1,p=netGoalSpawn(bot.team,slot);
- bot.x=p.x;bot.y=p.y;bot.hp=100;bot.r=18;bot.a=bot.team==='cyan'?0:Math.PI;bot.shotCd=.45+Math.random()*.6;bot.combatCd=.2+Math.random()*.4;bot.grenadeCd=2.5+Math.random()*3;bot.flash=0;bot.respawn=0;bot.invulUntil=clock+1.5;
+ bot.x=p.x;bot.y=p.y;bot.hp=100;bot.r=18;bot.a=bot.team==='cyan'?0:Math.PI;bot.shotCd=.45+Math.random()*.6;bot.combatCd=.2+Math.random()*.4;bot.grenadeCd=2.5+Math.random()*3;bot.meleeCd=1+Math.random();bot.flash=0;bot.respawn=0;bot.invulUntil=clock+1.5;
 }
 function netAddBot(){
  if(net.mode!=='host'||net.clients.size+net.bots.length>=7)return;
@@ -2183,7 +2183,7 @@ function netBotCombatTarget(bot){
   for(const [id,p] of net.remotes)if(p.hp>0&&p.team!==bot.team)options.push({id,x:p.x,y:p.y,r:18});
   for(const rival of net.bots)if(rival!==bot&&rival.hp>0&&rival.team!==bot.team)options.push({id:rival.id,x:rival.x,y:rival.y,r:rival.r});
  }
- if(net.settings.npcs)for(const e of enemies)if(!e.dead&&e.hp>0)options.push({id:'npc',x:e.x,y:e.y,r:e.r,npc:true});
+ if(net.settings.npcs)for(const e of enemies)if(!e.dead&&e.hp>0)options.push({id:'npc',x:e.x,y:e.y,r:e.r,npc:true,enemy:e});
  let best=null,weight=Infinity;
  for(const candidate of options){
   const range=Math.hypot(candidate.x-bot.x,candidate.y-bot.y);
@@ -2206,6 +2206,16 @@ function netBotFire(bot,a,puckOnly=false){
  netBroadcast({t:'shot',by:bot.id,x:bot.x,y:bot.y,a:angle,velocity:v,r,explosive:false});
  burst(bot.x+Math.cos(angle)*26,bot.y+Math.sin(angle)*26,3,teamColor(bot.team),80);
 }
+function netBotMelee(bot,foe){
+ const power=36;
+ if(foe.npc){if(foe.enemy&&!foe.enemy.dead)hurtEnemy(foe.enemy,power,foe.enemy.x,foe.enemy.y,bot.id);}
+ else if(foe.id==='host')netPvpHit('host',power);
+ else if(net.remotes.has(foe.id))netPvpHit(foe.id,power);
+ else netBotHit(net.bots.find(v=>v.id===foe.id),power);
+ bot.slash=.22;bot.slashDir=bot.a;
+ netBroadcast({t:'melee',by:bot.id,a:bot.a,kind:'quick'});
+ burst(bot.x+Math.cos(bot.a)*40,bot.y+Math.sin(bot.a)*40,6,teamColor(bot.team),110);
+}
 function netBotThrowGrenade(bot,foe){
  if(!foe||!netBotGrenadeSafe(bot,foe.x,foe.y))return false;
  const dx=foe.x-bot.x,dy=foe.y-bot.y,d=Math.hypot(dx,dy);
@@ -2225,6 +2235,7 @@ function netBotAI(dt){
   b.shotCd=Math.max(0,(b.shotCd||0)-dt);
   b.combatCd=Math.max(0,(b.combatCd||0)-dt);
   b.grenadeCd=Math.max(0,(b.grenadeCd||0)-dt);
+  b.meleeCd=Math.max(0,(b.meleeCd||0)-dt);
   const foe=netBotCombatTarget(b);
   let tx=b.x,ty=b.y;
   if(foe&&foe.range<550){
@@ -2252,6 +2263,7 @@ function netBotAI(dt){
    if(b.grenadeCd<=0&&distance>=200&&distance<710){
     b.grenadeCd=netBotThrowGrenade(b,foe)?7.5+Math.random()*3.5:1.5;
    }
+   if(distance<88&&b.meleeCd<=0){netBotMelee(b,foe);b.meleeCd=1.25+Math.random()*.6;}
    if(distance<710&&b.combatCd<=0&&canSee(b.x,b.y,foe.x,foe.y)){
     netBotFire(b,b.a);b.combatCd=.48+Math.random()*.25;
    }
@@ -2462,6 +2474,7 @@ if(net.phase==='match')for(const b of net.bots){
   ctx.textAlign='center';ctx.font='bold 11px Oxanium,system-ui';ctx.fillStyle=color;ctx.fillText(b.name||'AI',b.x,b.y-36);
   ctx.fillStyle='#112934';ctx.fillRect(b.x-23,b.y-30,46,5);
   ctx.fillStyle=b.hp<35?'#ff8b70':color;ctx.fillRect(b.x-23,b.y-30,46*clamp(b.hp/100,0,1),5);
+  if(b.slash>0){ctx.strokeStyle=color;ctx.lineWidth=8;ctx.beginPath();ctx.arc(b.x,b.y,75,(b.slashDir||0)-.7,(b.slashDir||0)+.7);ctx.stroke();}
  }
  if(net.phase==='match')for(const r of net.remotes.values()){
  const color=teamColor(r.team);if(r.hp<=0){ctx.globalAlpha=.3;}ctx.save();ctx.translate(r.x,r.y);ctx.rotate(r.a||0);
@@ -2511,7 +2524,7 @@ if(altHeld&&player.weapon===0&&player.secondary==='grenade'){
  ctx.strokeStyle='#ffc17d';ctx.beginPath();ctx.arc(tx,ty,8,0,TAU);ctx.stroke();ctx.fillStyle='#ffc481';ctx.font='bold 11px system-ui';ctx.fillText('LOB · ARENA-EDGE BOUNCE',tx+13,ty-13)
 }
 if(altHeld&&player.weapon===2){let charge=clamp((clock-altStart)/.65,0,1);ctx.strokeStyle='#8df7d5aa';ctx.lineWidth=2+charge*2;ctx.setLineDash([7,8]);ctx.beginPath();ctx.moveTo(player.x+Math.cos(a)*28,player.y+Math.sin(a)*28);ctx.lineTo(player.x+Math.cos(a)*690,player.y+Math.sin(a)*690);ctx.stroke();ctx.setLineDash([]);ctx.strokeStyle='#7af4d4';ctx.lineWidth=3;ctx.beginPath();ctx.arc(player.x,player.y,27,-Math.PI/2,-Math.PI/2+charge*TAU);ctx.stroke()}
-for(const r of net.remotes.values())if(r.slash>0)r.slash=Math.max(0,r.slash-1/60);
+for(const r of [...net.remotes.values(),...net.bots])if(r.slash>0)r.slash=Math.max(0,r.slash-1/60);
 for(const p of particles){if(p.x<cam.x-100||p.x>cam.x+sw+100||p.y<cam.y-100||p.y>cam.y+sh+100)continue;ctx.globalAlpha=clamp(p.life/p.max,0,1);if(p.ring){ctx.strokeStyle=p.color;ctx.lineWidth=5*(p.life/p.max);ctx.beginPath();ctx.arc(p.x,p.y,p.r*(1-p.life/p.max),0,TAU);ctx.stroke()}else{ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.r*(.5+p.life/p.max*.5),0,TAU);ctx.fill()}}ctx.globalAlpha=1;
 for(const t of texts){ctx.globalAlpha=1-t.t/t.max;ctx.fillStyle=t.color;ctx.font='bold 15px system-ui';ctx.textAlign='center';ctx.fillText(t.text,t.x,t.y)}ctx.globalAlpha=1;ctx.restore()}
 // Proximity radar is local to each operative: the ring fills as the puck
