@@ -1218,7 +1218,7 @@ function aimWorld(){return{x:mouse.x+cam.x,y:mouse.y+cam.y}}function mouseAim(){
 function updateMousePosition(e){mouse.x=e.clientX;mouse.y=e.clientY;mouse.active=true}
 function pressPrimaryTrigger(){
  if(player.weapon===2){shoot();return}
- if(altHeld&&player.secondary!=='aim')return;
+ if(altHeld)return;
  if(player.fireMode==='burst'){
   // Complete a 3-shot burst from a single click, even if LMB is released.
   if(player.burstShots===0&&player.reload<=0){
@@ -1237,13 +1237,13 @@ function handleMouseDown(e){
  if(e.button===2){
   if(!altHeld){
    altHeld=true;altStart=clock;
-   if(fireHeld&&player.secondary!=='aim'){
+   if(fireHeld){
     secondaryPending=true;player.burstShots=0;player.triggerQueue=0;
    }
   }
  }else if(!fireHeld){
   fireHeld=true;
-  if(altHeld&&player.secondary!=='aim')secondaryPending=true;
+  if(altHeld)secondaryPending=true;
   else pressPrimaryTrigger();
  }
  if(fireHeld&&altHeld&&secondaryPending&&shoot())secondaryPending=false;
@@ -1325,7 +1325,7 @@ function installTouchStick(id,kind){
   if(kind==='aim'){
    touchState.activeAim=true;touchState.activeFire=true;
    positionTouchAim();fireHeld=true;
-   if(altHeld&&player.secondary!=='aim')secondaryPending=true;
+   if(altHeld)secondaryPending=true;
    else pressPrimaryTrigger();
    if(secondaryPending&&shoot())secondaryPending=false;
    touchState.lastShot=clock;
@@ -1359,7 +1359,7 @@ for(const button of touchUI.querySelectorAll('button[data-touch]')){
   }
   else if(action==='alt'){
    if(!altHeld){altHeld=true;altStart=clock;touchState.alt=true;button.classList.add('is-active');
-    if(player.secondary!=='aim'||player.weapon===2){secondaryPending=true;if(shoot())secondaryPending=false;}
+    /* ALT only arms the secondary; aim-stick or LMB fires. */
    }
   }
   else if(action==='armory')toggleTabShop();
@@ -1668,16 +1668,21 @@ function launchGrenade(){
  if(net.phase==='match')netSendGrenade(a,range,grenadeId);
  sound('grenade');shake=Math.max(shake,2.5);return true;
 }
-function fireBullet(a,spread,power=false,showEffects=true){
- const spec=gunSpec(),angle=a+rand(-spread,spread),speed=spec.velocity+player.mods.barrel*75;
- const damage=(spec.damage+player.mods.damage*7)*(power?2.65:1),pierce=player.mods.penetration+(power?2:0),color=power?'#ffca8c':player.explosiveOn?'#ffc07d':'#a1fff0';
- bullets.push({x:player.x+Math.cos(a)*29,y:player.y+Math.sin(a)*29,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,t:1,damage,friend:true,color,r:projectileRadius(player.mods.receiver,power),pierce,trace:power,explosive:player.explosiveOn,owner:'host',visualOnly:net.phase==='match'&&net.mode==='guest'});
- if(net.phase==='match'){const data={t:'shot',a:angle,explosive:player.explosiveOn,damage:Math.min(190,damage),velocity:speed,r:projectileRadius(player.mods.receiver,power)};if(net.mode==='guest')netMsg(net.conn,data);else netBroadcast({...data,by:'host',x:player.x,y:player.y});}
- if(showEffects){burst(player.x+Math.cos(a)*29,player.y+Math.sin(a)*29,power?10:4,'#ffe6a4',power?210:130);shake=Math.max(shake,power?5:1.8);
- sound(power?'sniper':player.mods.receiver===2?'rifle':'pistol');}
+function fireBullet(a,spread,power=false,showEffects=true,precision=false){
+ const spec=gunSpec(),angle=a+rand(-spread,spread),speed=(spec.velocity+player.mods.barrel*75)*(precision?1.48:1);
+ const damage=(spec.damage+player.mods.damage*7)*(precision?1.9:power?2.65:1);
+ const pierce=player.mods.penetration+(precision?1:power?2:0),color=precision?'#bffaff':power?'#ffca8c':player.explosiveOn?'#ffc07d':'#a1fff0';
+ const radius=projectileRadius(player.mods.receiver,power)*(precision?1.12:1);
+ bullets.push({x:player.x+Math.cos(a)*29,y:player.y+Math.sin(a)*29,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,t:precision?1.25:1,damage,friend:true,color,r:radius,pierce,trace:power||precision,precision,explosive:player.explosiveOn,owner:'host',visualOnly:net.phase==='match'&&net.mode==='guest'});
+ if(net.phase==='match'){
+  const data={t:'shot',a:angle,explosive:player.explosiveOn,precision,damage:Math.min(240,damage),velocity:speed,r:radius};
+  if(net.mode==='guest')netMsg(net.conn,data);else netBroadcast({...data,by:'host',x:player.x,y:player.y});
+ }
+ if(showEffects){burst(player.x+Math.cos(a)*29,player.y+Math.sin(a)*29,power||precision?10:4,'#ffe6a4',power||precision?210:130);shake=Math.max(shake,power||precision?5:1.8);
+ sound(power||precision?'sniper':player.mods.receiver===2?'rifle':'pistol');}
 }
 function shoot(){
- const secondaryAttack=altHeld&&(player.weapon===2||(player.weapon===0&&player.secondary!=='aim'));
+ const secondaryAttack=altHeld;
  if(paused||ended||player.hp<=0)return false;
  if(secondaryAttack&&player.secondaryCd>0)return false;
  if(!secondaryAttack&&player.fireCd>0)return false;
@@ -1689,21 +1694,22 @@ function shoot(){
  }
  if(secondaryAttack&&player.secondary==='grenade')return launchGrenade();
  if(player.reload>0)return false;
- const power=secondaryAttack&&player.secondary==='power';
+ const power=secondaryAttack&&player.secondary==='power',precision=secondaryAttack&&player.secondary==='aim';
  // Each shell / cartridge produces a cluster of pellets. Power shot uses
  // 3 cartridges TOTAL for the whole volley, not per pellet.
  const cartridgesPerShot=power?3:1;
  if(player.gun<cartridgesPerShot){reload();if(player.reload<=0)sound('dry');return false}
- const projectiles=projectileCount();
+ const projectiles=precision?1:projectileCount();
  player.gun-=cartridgesPerShot;
- const aim=altHeld&&player.secondary==='aim';
- const spread=barrelSpread()*movementSpread*(aim?.16:1)*(power?.28:1);
+ const spread=precision?precisionShotSpread():barrelSpread()*movementSpread*(power?.28:1);
  const fanAngle=(projectiles>1?Math.min(.26,.068+.018*(projectiles-2)):0)*pelletFan();
  for(let i=0;i<projectiles;i++){
   const offset=projectiles>1?(i-(projectiles-1)/2)*fanAngle:0;
-  fireBullet(a+offset,spread*(projectiles>1?.72:1),power,i===0);
+  fireBullet(a+offset,spread*(projectiles>1?.72:1),power,i===0,precision);
  }
- if(power){player.secondaryCd=1.05;player.fireCd=.28;}else{player.fireCd=gunInterval()*(aim?1.23:1)}
+ if(precision){player.secondaryCd=.38;player.fireCd=.33;}
+ else if(power){player.secondaryCd=1.05;player.fireCd=.28;}
+ else player.fireCd=gunInterval();
  if(player.gun<=0)reload();
  return true;
 }
@@ -2365,9 +2371,9 @@ if(player.roll>0){
 }
 else{let speed=player.hp<=0&&net.phase==='match'?0:c?130:run?360:238;if(altHeld&&player.weapon===0&&player.secondary==='aim')speed*=.72;if(altHeld&&player.weapon===2)speed*=.76;moveBody(player,movingX/norm*speed*dt,movingY/norm*speed*dt)}
 cam.x+=((player.x-sw/2)-cam.x)*Math.min(1,dt*8);cam.y+=((player.y-sh/2)-cam.y)*Math.min(1,dt*8);if(touchState.activeAim)positionTouchAim();
-if(player.hp>0&&fireHeld&&altHeld&&(player.weapon===2||(player.weapon===0&&player.secondary!=='aim'))){
+if(player.hp>0&&fireHeld&&altHeld){
  if(secondaryPending&&shoot())secondaryPending=false;
-}else if(player.weapon===0&&player.hp>0){
+}else if(player.weapon===0&&player.hp>0&&!altHeld){
  if(player.burstShots>0&&player.fireCd<=0&&player.reload<=0){
   if(shoot())player.burstShots--;else player.burstShots=0;
  }
