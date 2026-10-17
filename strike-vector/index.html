@@ -503,7 +503,7 @@ function reset(){
   modules:{laser:false,grenade:false,power:false,explosive:false,bayonet:false},laserOn:false,explosiveOn:false,bayonetOn:false,secondary:'aim',
   shield:0,shieldHitAt:-999,roll:0,rollMax:.78,rollMode:'slide',rollDx:0,rollDy:0,rollCd:0,invul:0,slideTurn:0,fireCd:0,secondaryCd:0,slash:0,slashDir:0,slashHits:new Set(),
   reload:0,gun:14,gunReserve:Infinity,grenades:5,grenadeReserve:Infinity,grenadeReload:0,throwKnives:Infinity,step:0,meleeCd:0,slashKind:'knife',triggerQueue:0,triggerExpiry:0,fireMode:'semi',burstShots:0};
- enemies=[];bullets=[];grenades=[];knives=[];particles=[];texts=[];clock=0;wave=0;kills=0;score=0;credits=0;teamGoals=0;rivalGoals=0;goalFlash=0;resetPuck();roundBreak.kind='';roundBreak.until=0;roundBreak.lastShown=-1;document.getElementById('roundBreakPanel').classList.remove('active');document.getElementById('touchShopClose').disabled=false;ui.start.disabled=false;
+ enemies=[];bullets=[];grenades=[];knives=[];particles=[];texts=[];clock=0;wave=0;kills=0;score=0;credits=0;teamGoals=0;rivalGoals=0;goalFlash=0;resetPuck();roundBreak.kind='';roundBreak.until=0;roundBreak.lastShown=-1;document.getElementById('roundBreakPanel').classList.remove('active');document.getElementById('touchShopClose').disabled=false;document.getElementById('reopenArmory').classList.remove('active');ui.start.disabled=false;
  shopOpen=false;shopTab='gun';shopMode='between';coverSpawnTimer=4.5;toSpawn=0;spawnTimer=0;nextWaveTimer=1.1;shake=0;
  fireHeld=false;altHeld=false;secondaryPending=false;ended=false;keys.clear();cam.x=player.x-sw/2;cam.y=player.y-sh/2;
 }
@@ -917,7 +917,8 @@ function roundBreakLeft(){return roundBreak.kind?Math.max(0,roundBreak.until-clo
 function renderRoundBreakClock(force=false){
  const active=!!roundBreak.kind,el=document.getElementById('roundBreakPanel');
  el.classList.toggle('active',active);
- ui.start.disabled=active;document.getElementById('touchShopClose').disabled=active;
+ document.getElementById('reopenArmory').classList.toggle('active',active&&!shopOpen);
+ ui.start.disabled=active;document.getElementById('touchShopClose').disabled=false;
  if(!active)return;
  const remaining=Math.ceil(roundBreakLeft());
  if(!force&&roundBreak.lastShown===remaining)return;
@@ -931,7 +932,8 @@ function renderRoundBreakClock(force=false){
  ui.title.innerHTML=goal?'GOAL <span>INTERMISSION</span>':'WAVE <span>COMPLETE</span>';
  ui.intro.textContent=goal?'30-second shopping window. All players return to the arena together.':'10-second shopping window before the next wave of enemies.';
  ui.start.textContent='NEXT ROUND AUTOMATICALLY · '+remaining+'s';
- document.getElementById('touchShopClose').textContent='AUTO-RESUME · '+remaining+'s';
+ document.getElementById('touchShopClose').textContent='← CLOSE ARMORY · '+remaining+'s';
+ document.getElementById('reopenArmory').textContent='⚙ REOPEN ARMORY · '+remaining+'s';
  ui.hint.textContent='Mandatory break · purchase or refund upgrades now · no early skip';
 }
 function startRoundBreak(kind,seconds=kind==='goal'?30:10,remote=false){
@@ -964,10 +966,10 @@ function finishRoundBreak(confirmedByHost=false){
  }else if(kind==='wave'){nextWave();}
  syncUI(1);
 }
-function openShop(mode='between'){
+function openShop(mode='between',award=true){
  if(shopOpen)return;renderedStill=false;shopOpen=true;shopMode=mode;treePopupOpen=false;treeDrag=null;
- if(mode==='between'){credits+=170+wave*55;bullets=[];grenades=[];knives=[]}
- fireHeld=false;altHeld=false;secondaryPending=false;player.triggerQueue=0;player.burstShots=0;paused=net.phase==='match'?false:true;keys.clear();showScreen(mode==='field'?'fieldShop':'shop');renderShop();renderRoundBreakClock(true);syncUI(1);
+ if(mode==='between'&&award){credits+=170+wave*55;bullets=[];grenades=[];knives=[]}
+ fireHeld=false;altHeld=false;secondaryPending=false;player.triggerQueue=0;player.burstShots=0;paused=!roundBreak.kind&&net.phase!=='match';keys.clear();showScreen(mode==='field'?'fieldShop':'shop');renderShop();renderRoundBreakClock(true);syncUI(1);
 }
 
 // Wheel zooms the skill map at the cursor, not the paused game or browser page.
