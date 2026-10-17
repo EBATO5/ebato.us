@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
 <meta name="theme-color" content="#080e17" />
-<title>STRIKE VECTOR v1.4.4 — Synchronized Grenades & Intermissions</title>
+<title>STRIKE VECTOR v1.4.5 — Balanced Cover & Economy</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{color-scheme:dark;--bg:#080e17;--panel:#101b28;--border:#263746;--mint:#74f7d4;--text:#eef6f7;--muted:#8da4b3;--orange:#ffbd75}
@@ -459,11 +459,35 @@ function resize(){
  canvas.width=Math.round(sw*dpr);canvas.height=Math.round(sh*dpr);
  ctx.setTransform(dpr,0,0,dpr,0,0);renderedStill=false;
 }window.addEventListener('resize',resize);resize();
-function buildLevel(){obstacles=[
-{x:360,y:270,w:185,h:105,k:'crate'},{x:665,y:225,w:110,h:190,k:'wall'},{x:1045,y:245,w:270,h:75,k:'wall'},{x:1520,y:270,w:125,h:190,k:'wall'},{x:1830,y:240,w:190,h:110,k:'crate'},{x:2130,y:405,w:130,h:130,k:'crate'},
-{x:345,y:645,w:195,h:87,k:'wall'},{x:710,y:615,w:115,h:135,k:'crate'},{x:1675,y:625,w:115,h:145,k:'crate'},{x:2015,y:760,w:245,h:85,k:'wall'},
-{x:385,y:1120,w:160,h:185,k:'crate'},{x:720,y:1010,w:190,h:85,k:'wall'},{x:1100,y:1215,w:280,h:95,k:'wall'},{x:1580,y:1065,w:90,h:215,k:'wall'},{x:1955,y:1120,w:215,h:145,k:'crate'},
-{x:680,y:1450,w:130,h:110,k:'crate'},{x:1790,y:1455,w:170,h:80,k:'wall'}]; obstacles=obstacles.map(o=>makeCover(o));}
+// Cover lives at permanent, mirrored coordinates. Each side has the same
+// shapes/approach routes, with two neutral structures away from center ice.
+const COVER_LEFT=[
+ [360,240,152,96,'crate'],[625,310,105,145,'wall'],[880,215,125,85,'wall'],
+ [365,610,176,76,'wall'],[680,650,110,130,'crate'],[910,560,136,82,'crate'],
+ [360,1100,150,128,'crate'],[685,1015,172,78,'wall'],[910,1195,126,105,'wall'],
+ [530,1400,135,95,'crate'],[920,1430,96,90,'crate']
+];
+const COVER_SLOTS=COVER_LEFT.flatMap(([x,y,w,h,k],i)=>[
+ {id:'L'+i,side:'L',pair:i,x,y,w,h,k},
+ {id:'R'+i,side:'R',pair:i,x:WORLD.w-x-w,y,w,h,k}
+]).concat([
+ {id:'C0',side:'C',pair:99,x:1180,y:190,w:140,h:74,k:'wall'},
+ {id:'C1',side:'C',pair:100,x:1180,y:1420,w:140,h:74,k:'wall'}
+]);
+let coverDestructions=Object.create(null);
+function coverScale(id){
+ const cycles=Math.max(0,coverDestructions[id]||0);
+ const total=Object.values(coverDestructions).reduce((a,b)=>a+b,0);
+ // Destroying the same barrier makes its next incarnation tougher; the
+ // cumulative global wear gives all respawns a little extra reinforcement.
+ return Math.min(2.65,1+Math.min(1.3,cycles*.18)+Math.min(.35,total*.015));
+}
+function coverFromSlot(s,newborn=0){return makeCover({...s,slotId:s.id,hpScale:coverScale(s.id),newborn});}
+function buildLevel(){
+ coverDestructions=Object.create(null);
+ obstacles=COVER_SLOTS.map(s=>coverFromSlot(s));
+}
+
 function reset(){
  buildLevel();player={x:1250,y:810,r:18,hp:100,maxHp:100,vx:0,vy:0,angle:0,weapon:0,
   mods:{receiver:0,barrel:0,damage:0,trigger:0,fireControl:0,mag:0,projectiles:0,penetration:0,reloadSpeed:0,blast:0,knife:0,grenadePower:0,grenadeRange:0,grenadeMag:0,grenadeReload:0,grenadeCycle:0},
@@ -1188,8 +1212,9 @@ const COVER_CELL=12;
 function makeCover(o){
  o.cell=COVER_CELL;o.cols=Math.ceil(o.w/COVER_CELL);o.rows=Math.ceil(o.h/COVER_CELL);
  o.cellHp=new Float32Array(o.cols*o.rows);
- const hp=o.k==='crate'?22:39;
- o.cellHp.fill(hp);o.hp=o.maxHp=o.cellHp.length*hp;
+ const scale=clamp(Number.isFinite(o.hpScale)?o.hpScale:1,1,2.65);
+ o.hpScale=scale;o.baseCellHp=Math.round((o.k==='crate'?22:39)*scale);
+ o.cellHp.fill(o.baseCellHp);o.hp=o.maxHp=o.cellHp.length*o.baseCellHp;
  o.hit=0;o.newborn=o.newborn||0;o.dirty=true;
  o.texture=document.createElement('canvas');o.texture.width=Math.ceil(o.w);o.texture.height=Math.ceil(o.h);
  return o;
@@ -1235,7 +1260,7 @@ function damageCover(o,damage,x,y){
  }
  if(lost<=0)return;
  o.hp=Math.max(0,o.hp-lost);o.hit=.16;if(removed)o.dirty=true;
- if(o.hp<1){const idx=obstacles.indexOf(o);if(idx>=0)obstacles.splice(idx,1);coverSpawnTimer=Math.min(coverSpawnTimer,1.2);burst(ix,iy,Math.min(20,4+removed),'#b8cbc9',155);}
+ if(o.hp<1){const idx=obstacles.indexOf(o);if(idx>=0)obstacles.splice(idx,1);if(o.slotId&&net.mode!=='guest')coverDestructions[o.slotId]=(coverDestructions[o.slotId]||0)+1;coverSpawnTimer=Math.min(coverSpawnTimer,.7);burst(ix,iy,Math.min(20,4+removed),'#b8cbc9',155);}
  else if(removed&&Math.random()<.75)burst(ix,iy,Math.min(7,2+removed),'#b8cbc9',100);
 }
 function repaintCover(o){
@@ -1282,15 +1307,22 @@ function rayCoverDistance(x,y,dx,dy,length){
 
 function spawnCover(n=1){
  let created=0;
- for(let i=0;i<n&&obstacles.length<30;i++){
-  for(let attempt=0;attempt<80;attempt++){
-   const a=rand(0,TAU),d=rand(250,780),k=Math.random()<.70?'crate':'wall',w=Math.round(rand(64,122)),h=Math.round(rand(60,109));
-   const x=clamp(player.x+Math.cos(a)*d-w/2,95,WORLD.w-w-95),y=clamp(player.y+Math.sin(a)*d-h/2,95,WORLD.h-h-95);
-   const cx=x+w/2,cy=y+h/2;
-   if((puckEnabled&&((puck&&Math.hypot(puck.x-cx,puck.y-cy)<160)||(cx<300&&Math.abs(cy-WORLD.h/2)<GOAL_HALF+130)||(cx>WORLD.w-300&&Math.abs(cy-WORLD.h/2)<GOAL_HALF+130)))||Math.hypot(player.x-cx,player.y-cy)<230||enemies.some(e=>!e.dead&&Math.hypot(e.x-cx,e.y-cy)<Math.max(w,h)+75)||obstacles.some(o=>x<o.x+o.w+38&&x+w+38>o.x&&y<o.y+o.h+38&&y+h+38>o.y))continue;
-   const hp=k==='crate'?145:360;
-   obstacles.push(makeCover({x,y,w,h,k,newborn:.7}));burst(cx,cy,9,'#75b9b5',90);created++;break;
-  }
+ // Start by restoring the emptier team half; don't favor whichever side
+ // the host happens to be standing on. No random positions or sizes.
+ const occupied=new Set(obstacles.map(o=>o.slotId));
+ const sideCount=side=>obstacles.filter(o=>o.side===side).length;
+ const candidates=COVER_SLOTS.filter(s=>!occupied.has(s.id));
+ while(created<n&&obstacles.length<COVER_SLOTS.length&&candidates.length){
+  candidates.sort((a,b)=>sideCount(a.side)-sideCount(b.side)||a.pair-b.pair||a.id.localeCompare(b.id));
+  const s=candidates.shift();
+  const cx=s.x+s.w*.5,cy=s.y+s.h*.5;
+  // A returning barrier must never materialize through a living player,
+  // hostile NPC, or the puck. The same slot is retried next pulse.
+  const near=(p,r)=>p&&Math.hypot(p.x-cx,p.y-cy)<Math.max(s.w,s.h)*.63+r;
+  if(near(player,48)||Array.from(net.remotes.values()).some(p=>p.hp>0&&near(p,48))||
+    enemies.some(e=>!e.dead&&near(e,38))||(puckEnabled&&puck&&near(puck,52)))continue;
+  obstacles.push(coverFromSlot(s,.65));
+  burst(cx,cy,7,'#75b9b5',80);created++;
  }
  return created;
 }
@@ -1298,7 +1330,7 @@ function blocked(x,y,r){if(x<r+44||y<r+44||x>WORLD.w-r-44||y>WORLD.h-r-44)return
 function canSee(x1,y1,x2,y2){const dx=x2-x1,dy=y2-y1,range=Math.hypot(dx,dy);return rayCoverDistance(x1,y1,dx,dy,range-12)>=range-14}
 function moveBody(b,dx,dy){if(!blocked(b.x+dx,b.y,b.r))b.x+=dx;if(!blocked(b.x,b.y+dy,b.r))b.y+=dy}
 function reload(){
- if(player.roll>0)return;
+ // Reloading and sliding are independent actions; either can start first.
  if(player.weapon===0&&player.secondary==='grenade')startGrenadeReload();
  if(player.weapon!==0||player.reload>0||player.gun>=clipSize()||player.gunReserve<=0)return;
  player.reload=reloadDuration();player.fireCd=0;sound('dry');
@@ -1438,7 +1470,7 @@ function startSlide(){
  player.rollDx=vx/n;player.rollDy=vy/n;
  player.rollMode='slide';player.rollMax=.78;player.roll=player.rollMax;
  player.rollCd=2;player.invul=.10;player.slideTurn=0;
- player.reload=0;player.reloadWeapon=null;
+ // Preserve any reload already in progress during the dash.
  sound('dodge');
  for(let i=0;i<12;i++)particle(player.x-player.rollDx*19,player.y-player.rollDy*19,rand(-115,115)-player.rollDx*140,rand(-115,115)-player.rollDy*140,.35,'#b1a78e',rand(1,4));
  return true;
@@ -1528,7 +1560,18 @@ function hitSlash(){
  }
 }
 function throwKnife(){if(player.throwKnives<=0){sound('dry');return}player.throwKnives--;const a=mouseAim(),charge=clamp((clock-altStart)/.65,0,1);knives.push({x:player.x+Math.cos(a)*25,y:player.y+Math.sin(a)*25,vx:Math.cos(a)*(920+charge*340),vy:Math.sin(a)*(920+charge*340),angle:a,t:.8,damage:58+charge*46+0});burst(player.x,player.y,4,'#d4f6fb',160);sound('knife')}
-function hurtEnemy(e,damage,x,y){e.hp-=damage;e.flash=.10;burst(x,y,7,e.type==='rusher'?'#ffb176':'#dfc1ff',180);if(e.hp<=0){kills++;credits+=e.type==='rusher'?42:58;score+=e.type==='rusher'?125:175;burst(e.x,e.y,15,e.type==='rusher'?'#ed9871':'#bd99fa',240);floatText(e.x,e.y-26,'+'+(e.type==='rusher'?125:175));e.dead=true;sound('hit')}}
+function hurtEnemy(e,damage,x,y){
+ if(e.dead)return;
+ e.hp-=damage;e.flash=.10;burst(x,y,7,e.type==='rusher'?'#ffb176':'#dfc1ff',180);
+ if(e.hp<=0){
+  e.dead=true;const earned=e.type==='rusher'?42:58,points=e.type==='rusher'?125:175;
+  kills++;credits+=earned;score+=points;
+  // Shared income lets guests buy upgrades when their side kills NPCs.
+  if(net.phase==='match'&&net.mode==='host')netBroadcast({t:'reward',credits:earned,points,kills:1});
+  burst(e.x,e.y,15,e.type==='rusher'?'#ed9871':'#bd99fa',240);
+  floatText(e.x,e.y-26,'+'+points);sound('hit');
+ }
+}
 function hurtPlayer(damage){if(player.invul>0||player.hp<=0)return;player.hp=Math.max(0,player.hp-damage);player.invul=.47;shake=Math.max(shake,7);burst(player.x,player.y,13,'#ff857d',190);sound('hit');if(player.hp<=0){if(net.phase==='match'){player.respawn=1.9;fireHeld=false;altHeld=false;secondaryPending=false;floatText(player.x,player.y-32,'RESPAWNING','#ffc187');}else{ended=true;paused=true;fireHeld=false;altHeld=false;secondaryPending=false;showScreen('gameover')}}}
 function boom(x,y,r=137,damage=100,owner='host',grenadeId=''){if(net.phase==='match'&&net.mode==='host'){netAreaDamage(x,y,r,damage,owner);netBroadcast({t:'explosion',x,y,r,id:grenadeId,by:owner});}puckBlast(x,y,r,1300+damage*3,'blast');shake=Math.max(shake,12);burst(x,y,50,'#ffa66b',440);burst(x,y,25,'#fff3c2',220);particles.push({x,y,vx:0,vy:0,life:.35,max:.35,color:'#ffaa70',r,ring:true});for(const e of enemies){let d=Math.hypot(e.x-x,e.y-y);if(d<r+e.r){hurtEnemy(e,Math.round(damage*(1-clamp(d/r,0,.8)*.45)),e.x,e.y);const a=Math.atan2(e.y-y,e.x-x);e.x+=Math.cos(a)*Math.max(0,28-d*.06);e.y+=Math.sin(a)*Math.max(0,28-d*.06)}}for(const o of [...obstacles]){const qx=clamp(x,o.x,o.x+o.w),qy=clamp(y,o.y,o.y+o.h),d=Math.hypot(x-qx,y-qy);if(d<r)damageCover(o,Math.max(30,Math.round(200*(1-d/r*.48))),qx,qy)}sound('grenade')}
 function smallExplosion(x,y,b,skip){
@@ -1632,21 +1675,29 @@ function netVisualShot(msg){
  if(bullets.length>240)bullets.shift();
 }
 function netCoverPack(){return obstacles.map(o=>{
- const max=o.k==='crate'?22:39,damaged=[];
- for(let i=0;i<o.cellHp.length;i++)if(o.cellHp[i]<max-.4)damaged.push(i,Math.round(o.cellHp[i]));
- return {x:o.x,y:o.y,w:o.w,h:o.h,k:o.k,d:damaged};
+ const damaged=[];
+ for(let i=0;i<o.cellHp.length;i++)if(o.cellHp[i]<o.baseCellHp-.4)damaged.push(i,Math.round(o.cellHp[i]));
+ return {id:o.slotId,x:o.x,y:o.y,w:o.w,h:o.h,k:o.k,s:o.hpScale,d:damaged};
 });}
 function netCoverRestore(list){
- if(!net.settings.cover){obstacles=[];return}if(!Array.isArray(list)||list.length>32)return;
- const previous=new Map(obstacles.map(o=>[`${o.x}|${o.y}|${o.w}|${o.h}|${o.k}`,o]));
- obstacles=list.map(c=>{if(![c.x,c.y,c.w,c.h].every(Number.isFinite)||c.w<20||c.w>400||c.h<20||c.h>400)return null;
-  const id=`${c.x}|${c.y}|${c.w}|${c.h}|${c.k}`,o=previous.get(id)||makeCover({x:c.x,y:c.y,w:c.w,h:c.h,k:c.k==='wall'?'wall':'crate'});
-  const max=o.k==='crate'?22:39;let changed=false;o.cellHp.fill(max);
-  if(Array.isArray(c.d)&&c.d.length<o.cellHp.length*2+1)for(let j=0;j+1<c.d.length;j+=2){const idx=c.d[j];if(Number.isInteger(idx)&&idx>=0&&idx<o.cellHp.length)o.cellHp[idx]=clamp(c.d[j+1],0,max)}
-  o.hp=o.cellHp.reduce((a,b)=>a+b,0);o.dirty=true;return o;
+ if(!net.settings.cover){obstacles=[];return}
+ if(!Array.isArray(list)||list.length>COVER_SLOTS.length)return;
+ const previous=new Map(obstacles.map(o=>[o.slotId||`${o.x}|${o.y}|${o.w}|${o.h}|${o.k}`,o]));
+ obstacles=list.map(c=>{
+  // Guests only render slots specified by the host at canonical positions.
+  const s=COVER_SLOTS.find(v=>v.id===c.id);
+  if(!s||c.x!==s.x||c.y!==s.y||c.w!==s.w||c.h!==s.h||c.k!==s.k)return null;
+  const hpScale=clamp(Number.isFinite(c.s)?c.s:1,1,2.65);
+  const o=previous.get(s.id)||makeCover({...s,slotId:s.id,hpScale});
+  o.hpScale=hpScale;o.baseCellHp=Math.round((o.k==='crate'?22:39)*hpScale);
+  o.cellHp.fill(o.baseCellHp);
+  if(Array.isArray(c.d)&&c.d.length<=o.cellHp.length*2)for(let j=0;j+1<c.d.length;j+=2){
+   const idx=c.d[j];if(Number.isInteger(idx)&&idx>=0&&idx<o.cellHp.length&&Number.isFinite(c.d[j+1]))o.cellHp[idx]=clamp(c.d[j+1],0,o.baseCellHp);
+  }
+  o.hp=o.cellHp.reduce((a,b)=>a+b,0);o.maxHp=o.cellHp.length*o.baseCellHp;o.dirty=true;
+  return o;
  }).filter(Boolean);
 }
-
 function netShowLobby(open){$net('netLobby').classList.toggle('hidden',!open);netUpdateLobby()}
 function netRosterData(){
  return [{id:net.id,name:net.name,team:net.team,host:net.mode==='host',hp:net.phase==='match'?player.hp:undefined},...Array.from(net.remotes.entries()).map(([id,r])=>({id,name:r.name,team:r.team,host:net.mode==='guest'&&id==='host',hp:r.hp}))];
@@ -1779,7 +1830,7 @@ function netHandleGuestData(msg){
   netUpdateLobby();return;
  }
  if(msg.t==='rules'){netApplyRules(msg.rules);return;}
- if(msg.t==='reward'&&net.phase==='match'){if(Number.isFinite(msg.credits))credits+=clamp(Math.floor(msg.credits),0,10000);if(Number.isFinite(msg.points))score+=clamp(Math.floor(msg.points),0,10000);syncUI(1);return;}
+ if(msg.t==='reward'&&net.phase==='match'){if(Number.isFinite(msg.credits))credits+=clamp(Math.floor(msg.credits),0,10000);if(Number.isFinite(msg.points))score+=clamp(Math.floor(msg.points),0,10000);if(Number.isFinite(msg.kills))kills+=clamp(Math.floor(msg.kills),0,20);syncUI(1);return;}
  if(msg.t==='health'&&net.phase==='match'){if(!Number.isFinite(msg.hp))return;player.hp=clamp(msg.hp,0,100);player.respawn=clamp(msg.respawn||0,0,5);player.invul=player.hp>0?1.1:0;if(Number.isFinite(msg.x)&&Number.isFinite(msg.y)){player.x=msg.x;player.y=msg.y;keys.clear();}return;}
  if(msg.t==='start'){netApplyRules(msg.rules||{});if(net.phase!=='match')netStartMatch();return;}
  if(msg.t==='break'&&net.phase==='match'&&(msg.kind==='goal'||msg.kind==='wave')){if(!roundBreak.kind)startRoundBreak(msg.kind,clamp(Number(msg.seconds)||10,1,30),true);else if(roundBreak.kind===msg.kind)roundBreak.until=clock+clamp(Number(msg.seconds)||0,0,30);return;}
@@ -1892,9 +1943,9 @@ function update(dt){clock+=dt;
   // Count mostly-destroyed walls as partial cover, not as fully intact blocks.
   // This keeps damaged arenas from appearing empty even if a few scraps remain.
   const intactCover=obstacles.reduce((sum,o)=>sum+o.hp/Math.max(1,o.maxHp),0);
-  const depleted=intactCover<10,low=intactCover<15;
-  // At most four new pieces in one pulse; fewer when the arena is healthy.
-  const requested=depleted?4:low?3:obstacles.length<22?2:1;
+  const depleted=intactCover<9,low=intactCover<16;
+  // Four fixed-site reinforcements per pulse at most; symmetric sides.
+  const requested=depleted?4:low?3:obstacles.length<20?2:1;
   const created=spawnCover(requested);
   // Heavily damaged maps replenish quickly. Healthy maps replenish calmly.
   coverSpawnTimer=depleted?rand(1.6,2.5):low?rand(2.7,4.2):rand(5,7.2);
