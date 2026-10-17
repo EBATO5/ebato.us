@@ -1885,10 +1885,17 @@ function netCombatImpact(owner,id,damage,dx,dy,power,hostile=false){
  else netBotHit(net.bots.find(b=>b.id===id),damage,hostile);
 }
 function netAreaDamage(x,y,r,amount,owner){
- if(net.phase!=='match'||net.mode!=='host'||!net.settings.pvp)return;
- if(owner!=='host'&&Math.hypot(player.x-x,player.y-y)<r+player.r)netPvpHit('host',amount*(1-.5*Math.min(1,Math.hypot(player.x-x,player.y-y)/r)));
- for(const [id,p] of net.remotes)if(id!==owner&&Math.hypot(p.x-x,p.y-y)<r+18)netPvpHit(id,amount*(1-.5*Math.min(1,Math.hypot(p.x-x,p.y-y)/r)));
- for(const bot of net.bots)if(bot.id!==owner&&Math.hypot(bot.x-x,bot.y-y)<r+18)netBotHit(bot,amount*(1-.5*Math.min(1,Math.hypot(bot.x-x,bot.y-y)/r)));
+ if(net.phase!=='match'||net.mode!=='host')return;
+ const push=(id,body)=>{
+  if(id===owner||!body||body.hp<=0)return;
+  const dx=body.x-x,dy=body.y-y,dist=Math.hypot(dx,dy);
+  if(dist>r+(body.r||18))return;
+  const fall=1-.5*Math.min(1,dist/r),power=clamp((r-dist+150)*3.4,160,1100);
+  netCombatImpact(owner,id,amount*fall,dx||Math.cos(clock*3),dy||Math.sin(clock*3),power,owner==='npc');
+ };
+ push('host',player);
+ for(const [id,v] of net.remotes)push(id,v);
+ for(const bot of net.bots)push(bot.id,bot);
 }
 function netHostMelee(id,kind,angle){
  if(net.mode!=='host'||net.phase!=='match'||!Number.isFinite(angle))return;
@@ -1897,9 +1904,9 @@ function netHostMelee(id,kind,angle){
  const bayonet=strikeKind!=='knife'&&!!p.bayonetOn,level=clamp(Math.floor(Number(id==='host'?player.mods.knife:p.meleeTier)||0),0,40);
  const reach=strikeKind==='knife'?99:bayonet?112:79,damage=meleeDamage(strikeKind,level,bayonet);
  const hits=(v)=>{const d=Math.hypot(v.x-p.x,v.y-p.y),a=Math.atan2(v.y-p.y,v.x-p.x);return d<reach+18&&Math.abs(Math.atan2(Math.sin(a-angle),Math.cos(a-angle)))<.9};
- if(id!=='host'&&hits(player))netPvpHit('host',damage);
- for(const [other,v] of net.remotes)if(other!==id&&hits(v))netPvpHit(other,damage);
- for(const bot of net.bots)if(bot.id!==id&&hits(bot))netBotHit(bot,damage);
+ if(id!=='host'&&hits(player))netCombatImpact(id,'host',damage,Math.cos(angle),Math.sin(angle),1120);
+ for(const [other,v] of net.remotes)if(other!==id&&hits(v))netCombatImpact(id,other,damage,Math.cos(angle),Math.sin(angle),1120);
+ for(const bot of net.bots)if(bot.id!==id&&hits(bot))netCombatImpact(id,bot.id,damage,Math.cos(angle),Math.sin(angle),1120);
  if(id!=='host'){for(const e of enemies)if(!e.dead&&hits(e))hurtEnemy(e,damage,e.x,e.y,id);if(puck&&puck.respawn<=0&&hits(puck))puckImpulse(puck.x,puck.y,Math.cos(angle)*520,Math.sin(angle)*520,'melee',p.team);}
 }
 function netSendMelee(kind,a){
@@ -2157,7 +2164,12 @@ function netHandleGuestData(msg){
  }
  if(msg.t==='rules'){netApplyRules(msg.rules);return;}
  if(msg.t==='reward'&&net.phase==='match'){if(Number.isFinite(msg.credits))credits+=clamp(Math.floor(msg.credits),0,10000);if(Number.isFinite(msg.points))score+=clamp(Math.floor(msg.points),0,10000);if(Number.isFinite(msg.kills))kills+=clamp(Math.floor(msg.kills),0,20);if(msg.npcBounty&&msg.credits>0)floatText(player.x,player.y-38,(msg.assist?'ASSIST':'ELIM')+' +$'+Math.floor(msg.credits),msg.assist?'#f8cd86':'#bfffe5');syncUI(1);return;}
- if(msg.t==='health'&&net.phase==='match'){if(!Number.isFinite(msg.hp))return;player.hp=clamp(msg.hp,0,maxHealth());if(Number.isFinite(msg.shield)){if(msg.shield<player.shield)player.shieldHitAt=clock;player.shield=clamp(msg.shield,0,shieldMax());}player.respawn=clamp(msg.respawn||0,0,5);player.invul=player.hp>0?1.1:0;if(Number.isFinite(msg.x)&&Number.isFinite(msg.y)){player.x=msg.x;player.y=msg.y;keys.clear();}return;}
+ if(msg.t==='impulse'&&net.phase==='match'&&[msg.vx,msg.vy].every(Number.isFinite)){
+   player.kvx=clamp((player.kvx||0)+clamp(msg.vx,-1400,1400),-1550,1550);
+   player.kvy=clamp((player.kvy||0)+clamp(msg.vy,-1400,1400),-1550,1550);
+   floatText(player.x,player.y-38,'YEET!','#abffe9');return;
+  }
+  if(msg.t==='health'&&net.phase==='match'){if(!Number.isFinite(msg.hp))return;player.hp=clamp(msg.hp,0,maxHealth());if(Number.isFinite(msg.shield)){if(msg.shield<player.shield)player.shieldHitAt=clock;player.shield=clamp(msg.shield,0,shieldMax());}player.respawn=clamp(msg.respawn||0,0,5);player.invul=player.hp>0?1.1:0;if(Number.isFinite(msg.x)&&Number.isFinite(msg.y)){player.x=msg.x;player.y=msg.y;keys.clear();}return;}
  if(msg.t==='start'){netApplyRules(msg.rules||{});if(net.phase!=='match')netStartMatch();return;}
  if(msg.t==='break'&&net.phase==='match'&&(msg.kind==='goal'||msg.kind==='wave')){if(!roundBreak.kind)startRoundBreak(msg.kind,clamp(Number(msg.seconds)||10,1,30),true);else if(roundBreak.kind===msg.kind)roundBreak.until=clock+clamp(Number(msg.seconds)||0,0,30);return;}
  if(msg.t==='resume'&&net.phase==='match'){finishRoundBreak(true);if(Number.isFinite(msg.wave))wave=msg.wave;return;}
@@ -2462,14 +2474,16 @@ for(let i=bullets.length-1;i>=0;i--){
   }
   if(net.phase==='match'&&net.mode==='host'&&!removed&&!b.puckOnly){
    for(const [id,r] of net.remotes)if(id!==b.owner&&r.hp>0&&Math.hypot(r.x-b.x,r.y-b.y)<19+b.r){
-    netPvpHit(id,b.damage,!b.friend);if(b.explosive)smallExplosion(b.x,b.y,b,null);removed=true;break;
+    b.friend?netCombatImpact(b.owner,id,b.damage,b.vx,b.vy,b.precision?750:440):netPvpHit(id,b.damage,true);if(b.explosive)smallExplosion(b.x,b.y,b,null);removed=true;break;
    }
    if(!removed)for(const bot of net.bots)if(bot.id!==b.owner&&bot.hp>0&&Math.hypot(bot.x-b.x,bot.y-b.y)<19+b.r){
-    netBotHit(bot,b.damage,!b.friend);if(b.explosive)smallExplosion(b.x,b.y,b,null);removed=true;break;
+    b.friend?netCombatImpact(b.owner,bot.id,b.damage,b.vx,b.vy,b.precision?750:440):netBotHit(bot,b.damage,true);if(b.explosive)smallExplosion(b.x,b.y,b,null);removed=true;break;
    }
   }
   if(!removed&&!b.puckOnly&&(b.friend&&b.owner&&b.owner!=='host'||!b.friend)&&Math.hypot(player.x-b.x,player.y-b.y)<(player.roll>0&&player.rollMode==='slide'?9:player.r)+b.r){
-   if(net.phase!=='match'||net.mode==='host'&&(b.owner!=='host'))hurtPlayer(b.damage);removed=true;
+   if(net.phase==='match'&&net.mode==='host'&&b.owner!=='host'&&b.friend)netCombatImpact(b.owner,'host',b.damage,b.vx,b.vy,b.precision?750:440);
+    else if(net.phase!=='match'||net.mode==='host'&&b.owner!=='host')hurtPlayer(b.damage);
+    removed=true;
   }
   if(removed)break;
  }
