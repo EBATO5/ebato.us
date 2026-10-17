@@ -571,6 +571,7 @@ let shopTab='gun',selectedTreeNode='core',treePopupOpen=false,treePan={x:0,y:0},
 // Local audio controls, independent from multiplayer/gameplay state.
 const audioSettings=document.getElementById('audioSettings');
 const audioTrack=document.getElementById('musicTrack');
+let musicGain=null;
 const sfxLevel=document.getElementById('sfxLevel'),musicLevel=document.getElementById('musicLevel');
 const effectsToggle=document.getElementById('effectsToggle'),musicToggle=document.getElementById('musicToggle');
 const musicStatus=document.getElementById('musicStatus');
@@ -594,11 +595,25 @@ function paintAudioSettings(){
  effectsToggle.setAttribute('aria-pressed',String(soundOn));
  musicToggle.textContent=musicOn?'♫ MUSIC ON':'♫ MUSIC OFF';
  musicToggle.setAttribute('aria-pressed',String(musicOn));
- audioTrack.volume=musicVolume/100;
+ if(musicGain&&ac){musicGain.gain.setTargetAtTime(musicVolume/100,ac.currentTime,.025);audioTrack.volume=1;}
+ else audioTrack.volume=musicVolume/100;
  audioTrack.muted=!musicOn;
 }
 function playMusic(){
  if(!musicOn||musicVolume===0||document.hidden||!audioTrack.src)return;
+ // WebAudio gain, not HTMLMediaElement.volume, makes volume adjustable on iOS Safari.
+ if(!musicGain&&(window.AudioContext||window.webkitAudioContext)){
+  try{
+   ac=ac||new(window.AudioContext||window.webkitAudioContext)();
+   const source=ac.createMediaElementSource(audioTrack);
+   musicGain=ac.createGain();source.connect(musicGain);musicGain.connect(ac.destination);
+  }catch(e){/* Fall back to the element's volume control. */}
+ }
+ if(musicGain&&ac){
+  musicGain.gain.setTargetAtTime(musicVolume/100,ac.currentTime,.025);
+  audioTrack.volume=1;
+  if(ac.state==='suspended'){const resumed=ac.resume();if(resumed&&resumed.catch)resumed.catch(()=>{});}
+ }
  if(!audioTrack.paused)return;
  try{const promise=audioTrack.play();if(promise&&typeof promise.catch==='function')promise.catch(()=>{});}catch(e){}
 }
