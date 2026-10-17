@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
 <meta name="theme-color" content="#080e17" />
-<title>STRIKE VECTOR v1.4.0 — Multiplayer Lobby</title>
+<title>STRIKE VECTOR v1.4.1 — Arena Rules & Combat</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{color-scheme:dark;--bg:#080e17;--panel:#101b28;--border:#263746;--mint:#74f7d4;--text:#eef6f7;--muted:#8da4b3;--orange:#ffbd75}
@@ -276,6 +276,16 @@ body{font-family:Oxanium,Inter,ui-sans-serif,system-ui,sans-serif}
 .net-dock button{font-size:10px;padding:8px;border:1px solid #486b72;border-radius:7px;background:#0d303e;color:#e4faff;cursor:pointer;font-family:Oxanium,system-ui}
 .net-dock button:hover{background:#25505a}
 #puckScoreboard.online .puck-tally{color:#83fcfc}#puckScoreboard.online .puck-tally span{color:#ffb86b}
+.net-rules{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0}
+.net-rule{padding:10px 6px;text-align:left;min-height:65px;font:700 10px Oxanium,system-ui;letter-spacing:.05em;border:1px solid #3b6573;border-radius:8px;color:#e2fbff;background:#102c3b;cursor:pointer}
+.net-rule span{display:block;color:#8faebc;font-size:9px;font-weight:500;line-height:1.35;margin-top:6px}
+.net-rule.selected{border-color:#fdb774;background:#453020;color:#fff2db}
+.net-rule:disabled{opacity:.7;cursor:default}.net-rule:disabled.selected{border-color:#9e866c}
+.net-rules-help{font-size:10px;color:#9ac3c5;line-height:1.45}
+.net-roster .net-hp{color:#ffd69f;font-size:10px;font-weight:700}
+.net-health-tip{color:#ffbb88;font-size:10px;font-weight:700;letter-spacing:.06em}
+@media(max-width:560px){.net-rules{grid-template-columns:1fr}}
+
 @media(max-width:650px){.net-entry{grid-template-columns:1fr}.net-dock{top:auto;right:8px;bottom:180px;flex-wrap:wrap;max-width:200px}.net-panel{padding:16px}}
 
 </style>
@@ -296,7 +306,14 @@ body{font-family:Oxanium,Inter,ui-sans-serif,system-ui,sans-serif}
  <div class="net-options" style="margin-top:11px"><button class="net-btn" id="netCopyInvite">COPY INVITE LINK</button><button class="net-btn" id="netLeave">LEAVE LOBBY</button></div>
  <hr class="net-separator"><div class="net-kicker">CHANGE TEAM ANY TIME</div>
  <div class="net-options" style="margin-top:9px"><button class="net-btn" id="netChooseCyan">◉ CYAN · ATTACK RIGHT →</button><button class="net-btn" id="netChooseOrange">◉ ORANGE · ATTACK LEFT ←</button></div>
- <div class="net-roster" id="netRoster"></div><p>Share your room code with friends. No account required. Puck and score are synchronized by the lobby host; friendly fire is disabled.</p>
+ <div class="net-kicker" style="margin-top:14px">ARENA RULES // HOST CAN CHANGE LIVE</div>
+ <div class="net-rules" role="group" aria-label="Multiplayer arena options">
+  <button id="netRuleNPC" class="net-rule" type="button" aria-pressed="false">◯ HOSTILE NPCS<span>Enemies pursue and shoot everyone.</span></button>
+  <button id="netRuleCover" class="net-rule" type="button" aria-pressed="false">◯ DESTRUCTIBLE COVER<span>Walls and crates replenish as they break.</span></button>
+  <button id="netRulePVP" class="net-rule selected" type="button" aria-pressed="true">◉ PLAYER DAMAGE<span>Hit friends, even teammates. Goal-side respawns.</span></button>
+ </div>
+ <div class="net-rules-help" id="netRulesHelp">Host chooses the rules. Switch teams with T. Everyone respawns near their own goal. Invite-only rooms; no account required.</div>
+ <div class="net-roster" id="netRoster"></div><p>Share your room code to play together. The host controls puck, combat damage, cover, and NPC movement. Cross-network peer connectivity is still experimental.</p>
  <button class="cta" id="netBegin" type="button">START MATCH →</button><button class="net-btn" id="netLobbyClose" type="button" hidden>CLOSE ROSTER</button>
  </section></div>
 <div class="net-dock hidden" id="netDock"><b id="netDockRoom">ROOM</b><button id="netDockTeam" type="button" title="Switch team (T)">SWAP TEAM [T]</button><button id="netDockRoster" type="button" title="Lobby / roster [P]">LOBBY [P]</button></div>
@@ -311,7 +328,7 @@ const isCrouching=()=>keys.has('AltLeft')||keys.has('AltRight');
 const WORLD={w:2500,h:1700},TAU=Math.PI*2,clamp=(v,l,h)=>Math.max(l,Math.min(h,v)),rand=(a,b)=>a+Math.random()*(b-a),dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 let player,enemies=[],bullets=[],grenades=[],knives=[],particles=[],texts=[],wave=0,kills=0,score=0,credits=0,shopOpen=false,shopMode="between",toSpawn=0,spawnTimer=0,nextWaveTimer=0,bannerUntil=0,shake=0,obstacles=[],coverSpawnTimer=5;
 let puckEnabled=true,puck=null,teamGoals=0,rivalGoals=0,goalFlash=0;
-const net={mode:'solo',phase:'off',peer:null,conn:null,clients:new Map(),remotes:new Map(),id:'',code:'',name:'',team:'cyan',sendClock:0,connected:false,started:false,lastHostAt:0};
+const net={mode:'solo',phase:'off',peer:null,conn:null,clients:new Map(),remotes:new Map(),id:'',code:'',name:'',team:'cyan',sendClock:0,coverClock:0,npcClock:0,connected:false,started:false,lastHostAt:0,settings:{npcs:false,cover:false,pvp:true}};
 let shopTab='gun',selectedTreeNode='core',treePopupOpen=false,treePan={x:0,y:0},treeScale=1,treePanReady=false,treeDrag=null,treeSuppressUntil=0;let soundOn=true,ac=null,activeVoices=0;const soundTimes=Object.create(null);function sound(kind){if(!soundOn||activeVoices>=8)return;const now=performance.now(),limit=(kind==='hit'?65:kind==='pistol'||kind==='rifle'?36:kind==='grenade'?75:22);if(now-(soundTimes[kind]||-1000)<limit)return;soundTimes[kind]=now;try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended')ac.resume();const o=ac.createOscillator(),g=ac.createGain(),n=ac.currentTime;let f=220,d=.06,ty='triangle',vol=.027;if(kind==='pistol'){f=260;d=.085;ty='triangle';vol=.030}else if(kind==='buy'){f=650;d=.13;ty='sine';vol=.025}else if(kind==='rifle'){f=155;d=.055;ty='sawtooth';vol=.025}else if(kind==='sniper'){f=74;d=.22;ty='sawtooth';vol=.055}else if(kind==='grenade'){f=82;d=.36;ty='sawtooth';vol=.065}else if(kind==='knife'){f=450;d=.08}else if(kind==='hit'){f=90;d=.10;vol=.016}else if(kind==='dodge'){f=400;d=.13;vol=.020}else if(kind==='dry'){f=350;d=.035;vol=.014}o.type=ty;o.frequency.setValueAtTime(f,n);o.frequency.exponentialRampToValueAtTime(Math.max(28,f*.35),n+d);g.gain.setValueAtTime(vol,n);g.gain.exponentialRampToValueAtTime(.0001,n+d);o.connect(g);g.connect(ac.destination);activeVoices++;o.addEventListener('ended',()=>{activeVoices=Math.max(0,activeVoices-1);o.disconnect();g.disconnect()},{once:true});o.start(n);o.stop(n+d+.01)}catch(e){activeVoices=Math.max(0,activeVoices-1)}}
 function resize(){
  sw=innerWidth;sh=innerHeight;
@@ -1143,15 +1160,15 @@ function drawPuck(){
  ctx.restore();
 }
 function quickMelee(){
- if(!player||paused||ended||player.meleeCd>0)return false;
+ if(!player||paused||ended||player.hp<=0||player.meleeCd>0)return false;
  player.slash=.18;player.slashDir=mouseAim();player.slashKind=player.weapon===2?'knife':'quick';
  player.slashHits.clear();player.slashCoverDone=false;player.meleeCd=player.weapon===2?.35:.44;
- sound('knife');hitSlash();
+ sound('knife');hitSlash();if(net.phase==='match')netSendMelee('quick',player.slashDir);
  burst(player.x+Math.cos(player.slashDir)*30,player.y+Math.sin(player.slashDir)*30,5,'#a3f5e5',75);
  return true;
 }
 function startSlide(){
- if(!player||paused||ended||player.rollCd>0||player.roll>0)return false;
+ if(!player||paused||ended||player.hp<=0||player.rollCd>0||player.roll>0)return false;
  let vx=(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),vy=(keys.has('KeyS')?1:0)-(keys.has('KeyW')?1:0);
  if(!vx&&!vy){vx=Math.cos(player.angle);vy=Math.sin(player.angle)}
  const n=Math.hypot(vx,vy)||1;
@@ -1181,26 +1198,26 @@ function launchGrenade(){
  const target=aimWorld(),dx=target.x-player.x,dy=target.y-player.y,distance=Math.hypot(dx,dy),range=Math.min(distance,grenadeRange());
  const dur=Math.max(.36,range/830),vx=(dx/(distance||1))*range/dur,vy=(dy/(distance||1))*range/dur,sx=player.x,sy=player.y;
  const tx=reflectCoord(sx+vx*dur,58,WORLD.w-58),ty=reflectCoord(sy+vy*dur,58,WORLD.h-58);
- grenades.push({sx,sy,x:sx,y:sy,vx,vy,tx,ty,t:0,dur,fuse:Math.max(1.3,dur+.12),r:8,trail:[],radius:grenadeRadius(),damage:grenadeDamage(),bounces:0});sound('grenade');shake=Math.max(shake,2.5);return true;
+ grenades.push({sx,sy,x:sx,y:sy,vx,vy,tx,ty,t:0,dur,fuse:Math.max(1.3,dur+.12),r:8,trail:[],radius:grenadeRadius(),damage:grenadeDamage(),bounces:0,owner:net.mode==='guest'?'guest':'host',visualOnly:net.phase==='match'&&net.mode==='guest'});if(net.phase==='match')netSendGrenade(a,range);sound('grenade');shake=Math.max(shake,2.5);return true;
 }
 function fireBullet(a,spread,power=false,showEffects=true){
- if(net.phase==='match'&&showEffects){const data={t:'shot',x:player.x,y:player.y,a,explosive:player.explosiveOn};if(net.mode==='guest')netMsg(net.conn,data);else netBroadcast({...data,by:'host'});}
  const spec=gunSpec(),angle=a+rand(-spread,spread),speed=spec.velocity+player.mods.barrel*75;
  const damage=(spec.damage+player.mods.damage*7)*(power?2.65:1),pierce=player.mods.penetration+(power?2:0),color=power?'#ffca8c':player.explosiveOn?'#ffc07d':'#a1fff0';
- bullets.push({x:player.x+Math.cos(a)*29,y:player.y+Math.sin(a)*29,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,t:1,damage,friend:true,color,r:power?4.7:3,pierce,trace:power,explosive:player.explosiveOn});
+ bullets.push({x:player.x+Math.cos(a)*29,y:player.y+Math.sin(a)*29,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,t:1,damage,friend:true,color,r:power?4.7:3,pierce,trace:power,explosive:player.explosiveOn,owner:'host',visualOnly:net.phase==='match'&&net.mode==='guest'});
+ if(net.phase==='match'){const data={t:'shot',a:angle,explosive:player.explosiveOn,damage:Math.min(190,damage),velocity:speed};if(net.mode==='guest')netMsg(net.conn,data);else netBroadcast({...data,by:'host',x:player.x,y:player.y});}
  if(showEffects){burst(player.x+Math.cos(a)*29,player.y+Math.sin(a)*29,power?10:4,'#ffe6a4',power?210:130);shake=Math.max(shake,power?5:1.8);
  sound(power?'sniper':player.mods.receiver===2?'rifle':'pistol');}
 }
 function shoot(){
  const secondaryAttack=altHeld&&(player.weapon===2||(player.weapon===0&&player.secondary!=='aim'));
- if(paused||ended)return false;
+ if(paused||ended||player.hp<=0)return false;
  if(secondaryAttack&&player.secondaryCd>0)return false;
  if(!secondaryAttack&&player.fireCd>0)return false;
  const a=mouseAim(),crouch=isCrouching(),running=keys.has('ShiftLeft')||keys.has('ShiftRight');
  const movementSpread=(crouch?.36:running?1.75:1);
  if(player.weapon===2){
   if(altHeld){player.secondaryCd=.48;throwKnife();return true}
-  player.fireCd=.34;player.slash=.20;player.slashDir=a;player.slashKind='knife';player.slashHits.clear();player.slashCoverDone=false;sound('knife');hitSlash();return true;
+  player.fireCd=.34;player.slash=.20;player.slashDir=a;player.slashKind='knife';player.slashHits.clear();player.slashCoverDone=false;sound('knife');hitSlash();if(net.phase==='match')netSendMelee('knife',a);return true;
  }
  if(secondaryAttack&&player.secondary==='grenade')return launchGrenade();
  if(player.reload>0)return false;
@@ -1223,6 +1240,7 @@ function shoot(){
  return true;
 }
 function hitSlash(){
+ if(net.phase==='match'&&net.mode==='guest')return;
  const isGunStrike=player.slashKind==='quick'&&player.weapon===0;
  const bayonet=isGunStrike&&player.modules.bayonet&&player.bayonetOn;
  const reach=isGunStrike?(bayonet?112:79):99,damage=isGunStrike?(bayonet?57:30)+player.mods.knife*12:44+player.mods.knife*15;
@@ -1245,10 +1263,11 @@ function hitSlash(){
 }
 function throwKnife(){if(player.throwKnives<=0){sound('dry');return}player.throwKnives--;const a=mouseAim(),charge=clamp((clock-altStart)/.65,0,1);knives.push({x:player.x+Math.cos(a)*25,y:player.y+Math.sin(a)*25,vx:Math.cos(a)*(920+charge*340),vy:Math.sin(a)*(920+charge*340),angle:a,t:.8,damage:58+charge*46+0});burst(player.x,player.y,4,'#d4f6fb',160);sound('knife')}
 function hurtEnemy(e,damage,x,y){e.hp-=damage;e.flash=.10;burst(x,y,7,e.type==='rusher'?'#ffb176':'#dfc1ff',180);if(e.hp<=0){kills++;credits+=e.type==='rusher'?42:58;score+=e.type==='rusher'?125:175;burst(e.x,e.y,15,e.type==='rusher'?'#ed9871':'#bd99fa',240);floatText(e.x,e.y-26,'+'+(e.type==='rusher'?125:175));e.dead=true;sound('hit')}}
-function hurtPlayer(damage){if(player.invul>0||player.hp<=0)return;player.hp=Math.max(0,player.hp-damage);player.invul=.47;shake=Math.max(shake,7);burst(player.x,player.y,13,'#ff857d',190);sound('hit');if(player.hp<=0){ended=true;paused=true;fireHeld=false;altHeld=false;secondaryPending=false;showScreen('gameover')}}
-function boom(x,y,r=137,damage=100){puckBlast(x,y,r,1300+damage*3,'blast');shake=Math.max(shake,12);burst(x,y,50,'#ffa66b',440);burst(x,y,25,'#fff3c2',220);particles.push({x,y,vx:0,vy:0,life:.35,max:.35,color:'#ffaa70',r,ring:true});for(const e of enemies){let d=Math.hypot(e.x-x,e.y-y);if(d<r+e.r){hurtEnemy(e,Math.round(damage*(1-clamp(d/r,0,.8)*.45)),e.x,e.y);const a=Math.atan2(e.y-y,e.x-x);e.x+=Math.cos(a)*Math.max(0,28-d*.06);e.y+=Math.sin(a)*Math.max(0,28-d*.06)}}for(const o of [...obstacles]){const qx=clamp(x,o.x,o.x+o.w),qy=clamp(y,o.y,o.y+o.h),d=Math.hypot(x-qx,y-qy);if(d<r)damageCover(o,Math.max(30,Math.round(200*(1-d/r*.48))),qx,qy)}sound('grenade')}
+function hurtPlayer(damage){if(player.invul>0||player.hp<=0)return;player.hp=Math.max(0,player.hp-damage);player.invul=.47;shake=Math.max(shake,7);burst(player.x,player.y,13,'#ff857d',190);sound('hit');if(player.hp<=0){if(net.phase==='match'){player.respawn=1.9;fireHeld=false;altHeld=false;secondaryPending=false;floatText(player.x,player.y-32,'RESPAWNING','#ffc187');}else{ended=true;paused=true;fireHeld=false;altHeld=false;secondaryPending=false;showScreen('gameover')}}}
+function boom(x,y,r=137,damage=100,owner='host'){if(net.phase==='match'&&net.mode==='host'){netAreaDamage(x,y,r,damage,owner);netBroadcast({t:'explosion',x,y,r});}puckBlast(x,y,r,1300+damage*3,'blast');shake=Math.max(shake,12);burst(x,y,50,'#ffa66b',440);burst(x,y,25,'#fff3c2',220);particles.push({x,y,vx:0,vy:0,life:.35,max:.35,color:'#ffaa70',r,ring:true});for(const e of enemies){let d=Math.hypot(e.x-x,e.y-y);if(d<r+e.r){hurtEnemy(e,Math.round(damage*(1-clamp(d/r,0,.8)*.45)),e.x,e.y);const a=Math.atan2(e.y-y,e.x-x);e.x+=Math.cos(a)*Math.max(0,28-d*.06);e.y+=Math.sin(a)*Math.max(0,28-d*.06)}}for(const o of [...obstacles]){const qx=clamp(x,o.x,o.x+o.w),qy=clamp(y,o.y,o.y+o.h),d=Math.hypot(x-qx,y-qy);if(d<r)damageCover(o,Math.max(30,Math.round(200*(1-d/r*.48))),qx,qy)}sound('grenade')}
 function smallExplosion(x,y,b,skip){
  if(!b.explosive)return;
+ if(net.phase==='match'&&net.mode==='host')netAreaDamage(x,y,47,b.damage*.40,b.owner||'host');
  puckBlast(x,y,110,810,'blast');
  burst(x,y,11,'#ffb57e',125);
  const radius=46;
@@ -1278,19 +1297,99 @@ function loadPeerJS(){
  }).catch(err=>{peerLoader=null;throw err});
  return peerLoader;
 }
+
+const netGoalSpawn=(team,i=0)=>({x:team==='orange'?WORLD.w-204:204,y:clamp(WORLD.h*.5+((i%5)-2)*57,280,WORLD.h-280)});
+function netResetLocal(){const p=netGoalSpawn(net.team);player.x=p.x;player.y=p.y;player.hp=100;player.respawn=0;player.invul=1.5;player.roll=0;player.gun=clipSize();keys.clear();fireHeld=false;}
+function netRules(){return {npcs:!!net.settings.npcs,cover:!!net.settings.cover,pvp:!!net.settings.pvp}}
+function netApplyRules(data){
+ if(!data||typeof data!=='object')return;
+ const before=netRules();for(const k of ['npcs','cover','pvp'])if(typeof data[k]==='boolean')net.settings[k]=data[k];
+ if(net.phase==='match'){
+  if(!net.settings.npcs)enemies=[];
+  if(!net.settings.cover)obstacles=[];
+  else if(!before.cover&&net.mode==='host'){buildLevel();coverSpawnTimer=4.2;}
+  if(!before.npcs&&net.settings.npcs&&net.mode==='host')net.npcClock=0;
+ }
+ netUpdateLobby();
+}
+function netSetRule(key){if(net.mode!=='host'||!['npcs','cover','pvp'].includes(key))return;netApplyRules({[key]:!net.settings[key]});netBroadcast({t:'rules',rules:netRules()});}
+for(const [key,id] of [['npcs','netRuleNPC'],['cover','netRuleCover'],['pvp','netRulePVP']])$net(id).addEventListener('click',()=>netSetRule(key));
+function netPvpHit(id,amount,hostile=false){
+ if(net.mode!=='host'||net.phase!=='match'||(!net.settings.pvp&&!hostile))return;
+ if(id==='host'){hurtPlayer(amount);return}
+ const r=net.remotes.get(id);if(!r||r.hp<=0||r.invulUntil>clock)return;
+ r.hp=Math.max(0,r.hp-Math.max(1,Math.min(180,amount)));r.invulUntil=clock+.4;
+ if(r.hp<=0){r.respawn=1.9;floatText(r.x,r.y-27,'RESPAWNING',teamColor(r.team));}
+ netMsg(net.clients.get(id),{t:'health',hp:r.hp,respawn:r.respawn||0});
+}
+function netAreaDamage(x,y,r,amount,owner){
+ if(net.phase!=='match'||net.mode!=='host'||!net.settings.pvp)return;
+ if(owner!=='host'&&Math.hypot(player.x-x,player.y-y)<r+player.r)netPvpHit('host',amount*(1-.5*Math.min(1,Math.hypot(player.x-x,player.y-y)/r)));
+ for(const [id,p] of net.remotes)if(id!==owner&&Math.hypot(p.x-x,p.y-y)<r+18)netPvpHit(id,amount*(1-.5*Math.min(1,Math.hypot(p.x-x,p.y-y)/r)));
+}
+function netHostMelee(id,kind,angle){
+ if(net.mode!=='host'||net.phase!=='match'||!Number.isFinite(angle))return;
+ const p=id==='host'?player:net.remotes.get(id);if(!p||p.hp<=0)return;
+ const reach=kind==='knife'?99:110,damage=kind==='knife'?44:55;
+ const hits=(v)=>{const d=Math.hypot(v.x-p.x,v.y-p.y),a=Math.atan2(v.y-p.y,v.x-p.x);return d<reach+18&&Math.abs(Math.atan2(Math.sin(a-angle),Math.cos(a-angle)))<.9};
+ if(id!=='host'&&hits(player))netPvpHit('host',damage);
+ for(const [other,v] of net.remotes)if(other!==id&&hits(v))netPvpHit(other,damage);
+ if(id!=='host'){for(const e of enemies)if(!e.dead&&hits(e))hurtEnemy(e,damage,e.x,e.y);if(puck&&puck.respawn<=0&&hits(puck))puckImpulse(puck.x,puck.y,Math.cos(angle)*520,Math.sin(angle)*520,'melee',p.team);}
+}
+function netSendMelee(kind,a){
+ if(net.phase!=='match')return;
+ if(net.mode==='host'){netHostMelee('host',kind,a);netBroadcast({t:'melee',by:'host',a,kind});}
+ else netMsg(net.conn,{t:'melee',kind,a});
+}
+function netVisualMelee(id,a,kind){const r=net.remotes.get(id);if(!r)return;r.slash=.22;r.slashDir=a;r.slashKind=kind;burst(r.x+Math.cos(a)*45,r.y+Math.sin(a)*45,5,teamColor(r.team),90);}
+function netSendGrenade(a,range){
+ if(net.phase!=='match')return;
+ const data={t:'grenade',a,range,radius:grenadeRadius(),damage:grenadeDamage()};
+ if(net.mode==='guest')netMsg(net.conn,data);
+ else netBroadcast({...data,by:'host',sx:player.x,sy:player.y});
+}
+function netVisualGrenade(msg,owner,visualOnly){
+ const x=clamp(msg.sx,58,WORLD.w-58),y=clamp(msg.sy,58,WORLD.h-58),a=msg.a;
+ const range=clamp(msg.range,50,1300),dur=Math.max(.36,range/830),vx=Math.cos(a)*range/dur,vy=Math.sin(a)*range/dur;
+ const tx=reflectCoord(x+vx*dur,58,WORLD.w-58),ty=reflectCoord(y+vy*dur,58,WORLD.h-58);
+ grenades.push({sx:x,sy:y,x,y,vx,vy,tx,ty,t:0,dur,fuse:Math.max(1.3,dur+.12),r:8,trail:[],radius:clamp(msg.radius||137,90,290),damage:clamp(msg.damage||100,25,260),bounces:0,owner,visualOnly});
+}
+function netVisualShot(msg){
+ const a=msg.a||0,v=clamp(msg.velocity||1260,500,1950),x=clamp(msg.x,50,WORLD.w-50),y=clamp(msg.y,50,WORLD.h-50);
+ bullets.push({x:x+Math.cos(a)*29,y:y+Math.sin(a)*29,vx:Math.cos(a)*v,vy:Math.sin(a)*v,t:.65,damage:0,friend:true,visualOnly:true,owner:msg.by,color:msg.explosive?'#ffd080':teamColor(net.remotes.get(msg.by)?.team),r:3,pierce:0,explosive:!!msg.explosive});
+ if(bullets.length>240)bullets.shift();
+}
+function netCoverPack(){return obstacles.map(o=>{
+ const max=o.k==='crate'?22:39,damaged=[];
+ for(let i=0;i<o.cellHp.length;i++)if(o.cellHp[i]<max-.4)damaged.push(i,Math.round(o.cellHp[i]));
+ return {x:o.x,y:o.y,w:o.w,h:o.h,k:o.k,d:damaged};
+});}
+function netCoverRestore(list){
+ if(!net.settings.cover){obstacles=[];return}if(!Array.isArray(list)||list.length>32)return;
+ const previous=new Map(obstacles.map(o=>[`${o.x}|${o.y}|${o.w}|${o.h}|${o.k}`,o]));
+ obstacles=list.map(c=>{if(![c.x,c.y,c.w,c.h].every(Number.isFinite)||c.w<20||c.w>400||c.h<20||c.h>400)return null;
+  const id=`${c.x}|${c.y}|${c.w}|${c.h}|${c.k}`,o=previous.get(id)||makeCover({x:c.x,y:c.y,w:c.w,h:c.h,k:c.k==='wall'?'wall':'crate'});
+  const max=o.k==='crate'?22:39;let changed=false;o.cellHp.fill(max);
+  if(Array.isArray(c.d)&&c.d.length<o.cellHp.length*2+1)for(let j=0;j+1<c.d.length;j+=2){const idx=c.d[j];if(Number.isInteger(idx)&&idx>=0&&idx<o.cellHp.length)o.cellHp[idx]=clamp(c.d[j+1],0,max)}
+  o.hp=o.cellHp.reduce((a,b)=>a+b,0);o.dirty=true;return o;
+ }).filter(Boolean);
+}
+
 function netShowLobby(open){$net('netLobby').classList.toggle('hidden',!open);netUpdateLobby()}
 function netRosterData(){
- return [{id:net.id,name:net.name,team:net.team,host:net.mode==='host'},...Array.from(net.remotes.entries()).map(([id,r])=>({id,name:r.name,team:r.team,host:net.mode==='guest'&&id==='host'}))];
+ return [{id:net.id,name:net.name,team:net.team,host:net.mode==='host',hp:net.phase==='match'?player.hp:undefined},...Array.from(net.remotes.entries()).map(([id,r])=>({id,name:r.name,team:r.team,host:net.mode==='guest'&&id==='host',hp:r.hp}))];
 }
 function netUpdateLobby(){
  $net('netLobbyCode').textContent=net.code||'------';
+ for(const [key,id] of [['npcs','netRuleNPC'],['cover','netRuleCover'],['pvp','netRulePVP']]){const b=$net(id);b.classList.toggle('selected',net.settings[key]);b.setAttribute('aria-pressed',String(!!net.settings[key]));b.disabled=net.mode!=='host';b.firstChild.textContent=(net.settings[key]?'◉':'◯')+' '+(key==='npcs'?'HOSTILE NPCS':key==='cover'?'DESTRUCTIBLE COVER':'PLAYER DAMAGE');}
+ $net('netRulesHelp').textContent=net.mode==='host'?'You are the host: changes take effect immediately. PvP includes teammate damage.': 'The host controls arena rules. Team switching is always free.';
  $net('netBegin').hidden=net.mode!=='host'||net.phase!=='lobby';
  $net('netLobbyClose').hidden=net.phase!=='match';
  $net('netChooseCyan').classList.toggle('selected',net.team==='cyan');
  $net('netChooseOrange').classList.toggle('selected',net.team==='orange');
  $net('netDockRoom').textContent=net.code;
  $net('netDockTeam').textContent=(net.team==='cyan'?'CYAN':'ORANGE')+' · SWITCH [T]';
- $net('netRoster').innerHTML=netRosterData().map(p=>`<div><strong class="${p.team==='orange'?'orange':'cyan'}">${p.team==='orange'?'● ORANGE':'● CYAN'}</strong><br>${p.name.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')}${p.host?' ★ HOST':''}</div>`).join('');
+ $net('netRoster').innerHTML=netRosterData().map(p=>`<div><strong class="${p.team==='orange'?'orange':'cyan'}">${p.team==='orange'?'● ORANGE':'● CYAN'}</strong><br>${p.name.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')}${p.host?' ★ HOST':''}${Number.isFinite(p.hp)?`<br><span class="net-hp">HP ${Math.ceil(p.hp)}</span>`:''}</div>`).join('');
 }
 function netMsg(conn,data){if(conn&&conn.open)try{conn.send(data)}catch(e){console.warn('Peer send failed',e)}}
 function netBroadcast(data){for(const conn of net.clients.values())netMsg(conn,data)}
@@ -1299,31 +1398,31 @@ function netSendRoster(){
  netBroadcast({t:'roster',members:netRosterData().map(({id,name,team,host})=>({id,name,team,host}))});
  netUpdateLobby();
 }
-function netJoinRoomInfo(id,r){net.remotes.set(id,{name:safeName(r.name),team:r.team==='orange'?'orange':'cyan',x:WORLD.w*.5,y:WORLD.h*.5,r:18,a:0,weapon:0,seen:performance.now()});netUpdateLobby()}
+function netJoinRoomInfo(id,r){net.remotes.set(id,{name:safeName(r.name),team:r.team==='orange'?'orange':'cyan',x:WORLD.w*.5,y:WORLD.h*.5,r:18,a:0,weapon:0,laserOn:false,hp:100,respawn:0,invulUntil:0,slash:0,seen:performance.now()});netUpdateLobby()}
 function netClose(notice=''){const oldMode=net.mode;
  if(oldMode==='host')netBroadcast({t:'closed'});
  for(const c of net.clients.values())try{c.close()}catch(e){}
  try{net.conn?.close()}catch(e){}try{net.peer?.destroy()}catch(e){}
- net.mode='solo';net.phase='off';net.peer=null;net.conn=null;net.clients.clear();net.remotes.clear();net.code='';net.id='';net.connected=false;net.started=false;
+ net.mode='solo';net.phase='off';net.peer=null;net.conn=null;net.clients.clear();net.remotes.clear();net.code='';net.id='';net.connected=false;net.started=false;net.settings={npcs:false,cover:false,pvp:true};
  netShowLobby(false);$net('netDock').classList.add('hidden');$net('netLaunchError').textContent=notice;
  if(oldMode!=='solo'){started=false;ended=false;paused=true;shopOpen=false;reset();showScreen('title');}
 }
 function netTeam(team){
  if(net.mode==='solo')return;
  net.team=team==='orange'?'orange':'cyan';
- if(net.phase==='match'&&player){player.x=net.team==='cyan'?WORLD.w*.25:WORLD.w*.75;player.y=WORLD.h*.5;player.vx=0;player.vy=0;}
+ if(net.phase==='match'&&player){netResetLocal();if(net.mode==='guest')netMsg(net.conn,{t:'selfReset',team:net.team});}
  if(net.mode==='guest')netMsg(net.conn,{t:'team',team:net.team});
  if(net.mode==='host')netSendRoster();netUpdateLobby();
 }
 function netStartMatch(){
  if(net.mode==='solo')return;
- reset();puckEnabled=true;started=true;ended=false;paused=false;shopOpen=false;toSpawn=0;nextWaveTimer=-1;enemies=[];obstacles=[];wave=1;credits=4500;
- player.x=net.team==='cyan'?WORLD.w*.25:WORLD.w*.75;player.y=WORLD.h*.5;
+ reset();puckEnabled=true;started=true;ended=false;paused=false;shopOpen=false;toSpawn=0;nextWaveTimer=-1;enemies=[];obstacles=[];wave=1;credits=4500;net.coverClock=0;net.npcClock=0;
+ player.x=netGoalSpawn(net.team).x;player.y=netGoalSpawn(net.team).y;
  // Casual arena loadout: explosives and a launcher are available immediately.
  player.modules.grenade=true;player.modules.explosive=true;player.modules.laser=true;
  player.modules.bayonet=true;player.mods.fireControl=1;player.fireMode='auto';player.explosiveOn=true;player.bayonetOn=true;player.laserOn=true;player.secondary='grenade';
  cam.x=player.x-sw*.5;cam.y=player.y-sh*.5;
- net.phase='match';net.started=true;net.sendClock=0;
+ net.phase='match';net.started=true;net.sendClock=0;player.respawn=0;player.hp=100;player.invul=1.5;if(net.settings.cover&&net.mode==='host')buildLevel();
  $net('netLobby').classList.add('hidden');$net('netDock').classList.remove('hidden');
  ui.screen.classList.add('hidden');ui.puckBoard.hidden=false;netUpdateLobby();syncUI(1);
 }
@@ -1334,16 +1433,17 @@ function netHandleHostData(conn,msg){
   if(r)return;
   if(net.clients.size>7){netMsg(conn,{t:'error',message:'Lobby full (8 players).'});conn.close();return;}
   netJoinRoomInfo(conn.peer,{name:msg.name,team:msg.team});
-  netMsg(conn,{t:'welcome',id:conn.peer,code:net.code,started:net.phase==='match',members:netRosterData().map(({id,name,team,host})=>({id,name,team,host}))});
+  netMsg(conn,{t:'welcome',id:conn.peer,code:net.code,started:net.phase==='match',rules:netRules(),members:netRosterData().map(({id,name,team,host})=>({id,name,team,host}))});
   netSendRoster();if(net.phase==='match')netMsg(conn,{t:'start'});
   return;
  }
  if(!r)return;
- if(msg.t==='team'){r.team=msg.team==='orange'?'orange':'cyan';netSendRoster();return;}
+ if(msg.t==='team'){r.team=msg.team==='orange'?'orange':'cyan';const pos=netGoalSpawn(r.team);r.x=pos.x;r.y=pos.y;r.hp=100;r.respawn=0;r.invulUntil=clock+1.5;netMsg(conn,{t:'health',hp:100,respawn:0,x:r.x,y:r.y});netSendRoster();return;}
+ if(msg.t==='selfReset'&&net.phase==='match'){const pos=netGoalSpawn(r.team);r.x=pos.x;r.y=pos.y;r.hp=100;r.respawn=0;r.invulUntil=clock+1.5;netMsg(conn,{t:'health',hp:100,respawn:0,x:r.x,y:r.y});return;}
  if(msg.t==='state'){
   if(net.phase!=='match')return;
   if(![msg.x,msg.y,msg.a].every(Number.isFinite))return;
-  r.x=clamp(msg.x,65,WORLD.w-65);r.y=clamp(msg.y,65,WORLD.h-65);r.a=msg.a;r.weapon=msg.weapon===2?2:0;r.seen=performance.now();return;
+  if(r.hp>0){r.x=clamp(msg.x,65,WORLD.w-65);r.y=clamp(msg.y,65,WORLD.h-65);}r.a=msg.a;r.weapon=msg.weapon===2?2:0;r.laserOn=!!msg.laserOn;r.seen=performance.now();return;
  }
  if(msg.t==='impact'&&net.phase==='match'){
   if(![msg.x,msg.y,msg.vx,msg.vy].every(Number.isFinite)||!puck)return;
@@ -1360,9 +1460,23 @@ function netHandleHostData(conn,msg){
   const dx=puck.x-msg.x,dy=puck.y-msg.y,len=Math.hypot(dx,dy)||1;
   puckImpulse(puck.x,puck.y,dx/len*f,dy/len*f,'blast',r.team);return;
  }
- if(msg.t==='shot'&&net.phase==='match'&&[msg.x,msg.y,msg.a].every(Number.isFinite)){
-  netShowRemoteShot(msg);netBroadcast({t:'shot',by:conn.peer,x:clamp(msg.x,0,WORLD.w),y:clamp(msg.y,0,WORLD.h),a:msg.a,explosive:!!msg.explosive});
+ if(msg.t==='shot'&&net.phase==='match'&&Number.isFinite(msg.a)&&r.hp>0){
+  // Host reconstructs the projectile; guest-provided positions are not trusted.
+  const a=msg.a,v=clamp(msg.velocity||1260,500,1900),damage=clamp(msg.damage||26,6,150),explosive=!!msg.explosive;
+  if(!r.shotWindow||clock-r.shotWindow>1){r.shotWindow=clock;r.shotCount=0;}if(++r.shotCount>125)return;
+  bullets.push({x:r.x+Math.cos(a)*29,y:r.y+Math.sin(a)*29,vx:Math.cos(a)*v,vy:Math.sin(a)*v,t:1,damage,friend:true,color:explosive?'#ffd080':teamColor(r.team),r:3,pierce:0,explosive,owner:conn.peer});
+  netBroadcast({t:'shot',by:conn.peer,x:r.x,y:r.y,a,velocity:v,explosive});return;
  }
+ if(msg.t==='melee'&&net.phase==='match'&&Number.isFinite(msg.a)&&r.hp>0){
+  const kind=msg.kind==='knife'?'knife':'quick';if((r.meleeAt||-10)+.24>clock)return;r.meleeAt=clock;
+  netVisualMelee(conn.peer,msg.a,kind);netHostMelee(conn.peer,kind,msg.a);netBroadcast({t:'melee',by:conn.peer,a:msg.a,kind});return;
+ }
+ if(msg.t==='grenade'&&net.phase==='match'&&Number.isFinite(msg.a)&&r.hp>0){
+  if((r.grenadeAt||-10)+.48>clock)return;r.grenadeAt=clock;
+  const data={a:msg.a,range:clamp(msg.range||680,90,1250),radius:clamp(msg.radius||137,90,260),damage:clamp(msg.damage||100,25,240),sx:r.x,sy:r.y};
+  netVisualGrenade(data,conn.peer,false);netBroadcast({t:'grenade',by:conn.peer,...data});return;
+ }
+
 }
 function netHostConnect(conn){
  if(net.mode!=='host'){conn.close();return}
@@ -1376,7 +1490,7 @@ function netHandleGuestData(msg){
  if(msg.t==='error'){netNotify(msg.message||'Lobby unavailable');netClose(msg.message||'Lobby unavailable');return}
  if(msg.t==='closed'){netClose('The host closed the lobby.');return}
  if(msg.t==='welcome'){
-  net.connected=true;net.id=msg.id;net.code=safeCode(msg.code);
+  net.connected=true;net.id=msg.id;net.code=safeCode(msg.code);netApplyRules(msg.rules||{});
   net.remotes.clear();
   for(const r of msg.members||[])if(r.id!==net.id)netJoinRoomInfo(r.id,r);
   $net('netLobbyStatus').textContent='CONNECTED · Waiting for host';netUpdateLobby();
@@ -1391,7 +1505,9 @@ function netHandleGuestData(msg){
   for(const id of net.remotes.keys())if(!found.has(id))net.remotes.delete(id);
   netUpdateLobby();return;
  }
- if(msg.t==='start'){if(net.phase!=='match')netStartMatch();return;}
+ if(msg.t==='rules'){netApplyRules(msg.rules);return;}
+ if(msg.t==='health'&&net.phase==='match'){if(!Number.isFinite(msg.hp))return;player.hp=clamp(msg.hp,0,100);player.respawn=clamp(msg.respawn||0,0,5);player.invul=player.hp>0?1.1:0;if(Number.isFinite(msg.x)&&Number.isFinite(msg.y)){player.x=msg.x;player.y=msg.y;keys.clear();}return;}
+ if(msg.t==='start'){netApplyRules(msg.rules||{});if(net.phase!=='match')netStartMatch();return;}
  if(msg.t==='snapshot'&&net.phase==='match'){
   if(!puck)return;
   if(msg.p&&[msg.p.x,msg.p.y,msg.p.vx,msg.p.vy].every(Number.isFinite)){
@@ -1400,21 +1516,24 @@ function netHandleGuestData(msg){
   teamGoals=msg.cyan|0;rivalGoals=msg.orange|0;
   for(const v of msg.players||[]){if(v.id===net.id)continue;
    if(!net.remotes.has(v.id))netJoinRoomInfo(v.id,v);
-   const r=net.remotes.get(v.id);r.x=v.x;r.y=v.y;r.a=v.a;r.weapon=v.weapon;r.team=v.team;r.name=safeName(v.name);
+   const r=net.remotes.get(v.id);r.x=v.x;r.y=v.y;r.a=v.a;r.weapon=v.weapon;r.team=v.team;r.name=safeName(v.name);r.laserOn=!!v.laserOn;r.hp=clamp(Number.isFinite(v.hp)?v.hp:100,0,100);r.respawn=v.respawn||0;
   }
+  if(Array.isArray(msg.enemies)){enemies=msg.enemies.slice(0,25).filter(e=>[e.x,e.y,e.hp].every(Number.isFinite)).map(e=>({...e,flash:0,r:e.type==='rusher'?17:19}));}
   return;
  }
- if(msg.t==='shot'&&msg.by!==net.id)netShowRemoteShot(msg);
+ if(msg.t==='cover'&&net.phase==='match'){netCoverRestore(msg.list);return;}
+ if(msg.t==='npcShot'&&net.phase==='match'&&[msg.x,msg.y,msg.vx,msg.vy].every(Number.isFinite)){bullets.push({x:msg.x,y:msg.y,vx:msg.vx,vy:msg.vy,t:1.65,damage:0,friend:false,color:'#fc7b76',r:4,visualOnly:true});return;}
+ if(msg.t==='explosion'&&net.phase==='match'&&[msg.x,msg.y,msg.r].every(Number.isFinite)){burst(msg.x,msg.y,27,'#ffbd73',200);particles.push({x:msg.x,y:msg.y,vx:0,vy:0,life:.3,max:.3,color:'#ffbf81',r:msg.r,ring:true});return;}
+ if(msg.t==='melee'&&msg.by!==net.id){netVisualMelee(msg.by,msg.a,msg.kind);return;}
+ if(msg.t==='grenade'&&msg.by!==net.id){netVisualGrenade(msg,msg.by,true);return;}
+ if(msg.t==='shot'&&msg.by!==net.id)netVisualShot(msg);
 }
-function netShowRemoteShot(msg){
- const color=msg.explosive?'#ffb86b':'#7df7ff';
- for(let i=0;i<5;i++)particle(msg.x+Math.cos(msg.a)*rand(12,45),msg.y+Math.sin(msg.a)*rand(12,45),Math.cos(msg.a)*rand(80,210),Math.sin(msg.a)*rand(80,210),.13,color,rand(2,4));
-}
+function netShowRemoteShot(msg){netVisualShot(msg);}
 async function netCreateOrJoin(host){
  const code=host?Array.from(crypto.getRandomValues(new Uint8Array(6)),b=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b%32]).join(''):safeCode($net('netCodeInput').value);
  if(!host&&code.length!==6){netNotify('Enter a six-character lobby code.');return}
  if(net.mode!=='solo')netClose();
- net.mode=host?'host':'guest';net.phase='lobby';net.team='cyan';net.code=code;
+ net.mode=host?'host':'guest';net.phase='lobby';net.team='cyan';net.code=code;net.settings={npcs:false,cover:false,pvp:true};
  net.name=safeName($net('netNickname').value);net.id=host?'host':'';net.connected=false;
  netShowLobby(true);$net('netLobbyStatus').textContent='Connecting to PeerServer Cloud…';
  try{await loadPeerJS()}catch(e){netClose(e.message);return;}
@@ -1440,14 +1559,17 @@ function netTick(dt){
  if(net.phase!=='match')return;
  net.sendClock+=dt;if(net.sendClock<.083)return;net.sendClock=0;
  if(net.mode==='guest'){
-  netMsg(net.conn,{t:'state',x:player.x,y:player.y,a:player.angle,weapon:player.weapon,team:net.team});return;
+  netMsg(net.conn,{t:'state',x:player.x,y:player.y,a:player.angle,weapon:player.weapon,laserOn:player.laserOn,team:net.team});return;
  }
- const players=[{id:'host',name:net.name,team:net.team,x:player.x,y:player.y,a:player.angle,weapon:player.weapon},...Array.from(net.remotes.entries()).map(([id,r])=>({id,name:r.name,team:r.team,x:r.x,y:r.y,a:r.a,weapon:r.weapon}))];
- netBroadcast({t:'snapshot',players,p:{x:puck.x,y:puck.y,vx:puck.vx,vy:puck.vy,spin:puck.spin,respawn:puck.respawn},cyan:teamGoals,orange:rivalGoals});
+ for(const [id,r] of net.remotes){if(r.respawn>0){r.respawn=Math.max(0,r.respawn-.083);if(r.respawn<=0){const pos=netGoalSpawn(r.team);r.x=pos.x;r.y=pos.y;r.hp=100;r.invulUntil=clock+1.6;netMsg(net.clients.get(id),{t:'health',hp:100,respawn:0,x:pos.x,y:pos.y});}}}
+ const players=[{id:'host',name:net.name,team:net.team,x:player.x,y:player.y,a:player.angle,weapon:player.weapon,laserOn:player.laserOn,hp:player.hp,respawn:player.respawn||0},...Array.from(net.remotes.entries()).map(([id,r])=>({id,name:r.name,team:r.team,x:r.x,y:r.y,a:r.a,weapon:r.weapon,laserOn:r.laserOn,hp:r.hp,respawn:r.respawn||0}))];
+ netBroadcast({t:'snapshot',players,p:{x:puck.x,y:puck.y,vx:puck.vx,vy:puck.vy,spin:puck.spin,respawn:puck.respawn},cyan:teamGoals,orange:rivalGoals,enemies:net.settings.npcs?enemies.slice(0,20).map(e=>({x:e.x,y:e.y,hp:e.hp,maxHp:e.maxHp,type:e.type,dead:e.dead})):[]});
+ net.coverClock+=.083;if(net.settings.cover&&net.coverClock>=.7){net.coverClock=0;netBroadcast({t:'cover',list:netCoverPack()});}
+
 }
 $net('netCreate').addEventListener('click',()=>netCreateOrJoin(true));
 $net('netJoin').addEventListener('click',()=>netCreateOrJoin(false));
-$net('netBegin').addEventListener('click',()=>{if(net.mode!=='host'||!net.connected)return;netStartMatch();netBroadcast({t:'start'});netSendRoster()});
+$net('netBegin').addEventListener('click',()=>{if(net.mode!=='host'||!net.connected)return;netStartMatch();netBroadcast({t:'start',rules:netRules()});netSendRoster();if(net.settings.cover)netBroadcast({t:'cover',list:netCoverPack()});});
 $net('netChooseCyan').addEventListener('click',()=>netTeam('cyan'));
 $net('netChooseOrange').addEventListener('click',()=>netTeam('orange'));
 $net('netLeave').addEventListener('click',()=>netClose('You left the lobby.'));
@@ -1459,7 +1581,14 @@ const invited=safeCode(new URLSearchParams(location.search).get('room'));
 if(invited.length===6){$net('netCodeInput').value=invited;$net('netLaunchError').textContent='Invite detected — enter a callsign and click JOIN LOBBY.';}
 
 function nextWave(){wave++;toSpawn=4+wave*3;spawnTimer=.15;nextWaveTimer=-1;player.hp=Math.min(100,player.hp+(wave===1?0:22));if(wave>1)refillWeapons();spawnCover(Math.min(4,2+Math.floor(wave/3)));coverSpawnTimer=rand(3.3,5.2);ui.banner.innerHTML=`INCOMING HOSTILES<strong>WAVE ${String(wave).padStart(2,'0')}</strong>`;ui.banner.classList.add('show');bannerUntil=clock+1.8}
-function update(dt){clock+=dt;if(net.phase==='match'){toSpawn=0;nextWaveTimer=-1;enemies.length=0;}netTick(dt);shake=Math.max(0,shake-25*dt);if(ui.banner.classList.contains('show')&&clock>bannerUntil)ui.banner.classList.remove('show');if(nextWaveTimer>0){nextWaveTimer-=dt;if(nextWaveTimer<=0)nextWave()}if(wave>0&&net.phase!=='match'){
+function update(dt){clock+=dt;
+ if(net.phase==='match'){
+  toSpawn=0;nextWaveTimer=-1;
+  if(!net.settings.npcs)enemies.length=0;
+  if(net.mode==='host'&&net.settings.npcs){net.npcClock-=dt;if(net.npcClock<=0){if(enemies.length<8)spawnEnemy();net.npcClock=rand(1.6,2.7);}}
+  if(player.respawn>0){player.respawn=Math.max(0,player.respawn-dt);if(player.respawn===0&&net.mode==='host')netResetLocal();}
+ }
+ netTick(dt);shake=Math.max(0,shake-25*dt);if(ui.banner.classList.contains('show')&&clock>bannerUntil)ui.banner.classList.remove('show');if(nextWaveTimer>0){nextWaveTimer-=dt;if(nextWaveTimer<=0)nextWave()}if(wave>0&&(net.phase!=='match'||net.mode==='host'&&net.settings.cover)){
  coverSpawnTimer-=dt;
  if(coverSpawnTimer<=0){
   // Count mostly-destroyed walls as partial cover, not as fully intact blocks.
@@ -1474,7 +1603,7 @@ function update(dt){clock+=dt;if(net.phase==='match'){toSpawn=0;nextWaveTimer=-1
   // If there isn't space to place all pieces, don't brute-force retry each frame.
   if(created===0)coverSpawnTimer=Math.max(coverSpawnTimer,3.4);
  }
-}for(const o of obstacles){o.hit=Math.max(0,(o.hit||0)-dt);o.newborn=Math.max(0,(o.newborn||0)-dt)}if(toSpawn>0){spawnTimer-=dt;if(spawnTimer<=0){if(enemies.length<48){spawnEnemy();toSpawn--;spawnTimer=clamp(1.0-wave*.047,.40,1.0)}else spawnTimer=.35}}
+}for(const o of obstacles){o.hit=Math.max(0,(o.hit||0)-dt);o.newborn=Math.max(0,(o.newborn||0)-dt)}if(toSpawn>0&&net.phase!=='match'){spawnTimer-=dt;if(spawnTimer<=0){if(enemies.length<48){spawnEnemy();toSpawn--;spawnTimer=clamp(1.0-wave*.047,.40,1.0)}else spawnTimer=.35}}
 const c=isCrouching(),run=(keys.has('ShiftLeft')||keys.has('ShiftRight'))&&!c,movingX=(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),movingY=(keys.has('KeyS')?1:0)-(keys.has('KeyW')?1:0),norm=Math.hypot(movingX,movingY)||1;player.angle=mouseAim();player.step+=dt*(run?15:c?4:9)*Math.min(1,Math.hypot(movingX,movingY));player.fireCd=Math.max(0,player.fireCd-dt);player.secondaryCd=Math.max(0,player.secondaryCd-dt);player.rollCd=Math.max(0,player.rollCd-dt);player.meleeCd=Math.max(0,player.meleeCd-dt);player.invul=Math.max(0,player.invul-dt);player.slash=Math.max(0,player.slash-dt);
 if(player.reload>0){player.reload-=dt;if(player.reload<=0){player.reload=0;const num=Math.min(clipSize()-player.gun,player.gunReserve);player.gun+=num;player.gunReserve-=num}}
 if(player.grenadeReload>0){player.grenadeReload-=dt;if(player.grenadeReload<=0){player.grenadeReload=0;const count=Math.min(grenadeClipSize()-player.grenades,player.grenadeReserve);player.grenades+=count;player.grenadeReserve-=count;sound('buy')}}
@@ -1492,11 +1621,11 @@ if(player.roll>0){
  moveBody(player,player.rollDx*speed*dt,player.rollDy*speed*dt);
  if(Math.random()<.60)particle(player.x-player.rollDx*24+rand(-8,8),player.y-player.rollDy*24+rand(-8,8),-player.rollDx*rand(60,170),-player.rollDy*rand(60,170),.25,'#c8a88d',rand(1,3));
 }
-else{let speed=c?130:run?360:238;if(altHeld&&player.weapon===0&&player.secondary==='aim')speed*=.72;if(altHeld&&player.weapon===2)speed*=.76;moveBody(player,movingX/norm*speed*dt,movingY/norm*speed*dt)}
+else{let speed=player.hp<=0&&net.phase==='match'?0:c?130:run?360:238;if(altHeld&&player.weapon===0&&player.secondary==='aim')speed*=.72;if(altHeld&&player.weapon===2)speed*=.76;moveBody(player,movingX/norm*speed*dt,movingY/norm*speed*dt)}
 cam.x+=((player.x-sw/2)-cam.x)*Math.min(1,dt*8);cam.y+=((player.y-sh/2)-cam.y)*Math.min(1,dt*8);
-if(fireHeld&&altHeld&&(player.weapon===2||(player.weapon===0&&player.secondary!=='aim'))){
+if(player.hp>0&&fireHeld&&altHeld&&(player.weapon===2||(player.weapon===0&&player.secondary!=='aim'))){
  if(secondaryPending&&shoot())secondaryPending=false;
-}else if(player.weapon===0){
+}else if(player.weapon===0&&player.hp>0){
  if(player.burstShots>0&&player.fireCd<=0&&player.reload<=0){
   if(shoot())player.burstShots--;else player.burstShots=0;
  }
@@ -1507,13 +1636,14 @@ if(fireHeld&&altHeld&&(player.weapon===2||(player.weapon===0&&player.secondary!=
  }
 }
 if(player.slash>0)hitSlash();
-for(const e of enemies){if(e.dead)continue;const prevEX=e.x,prevEY=e.y;e.flash=Math.max(0,e.flash-dt);e.hitCd=Math.max(0,e.hitCd-dt);e.fire-=dt;const dx=player.x-e.x,dy=player.y-e.y,d=Math.hypot(dx,dy)||1,dirX=dx/d,dirY=dy/d;
- if((e.losTimer||0)<=0){e.visible=(d<1000)&&canSee(e.x,e.y,player.x,player.y);e.losTimer=.13+Math.random()*.07}
+for(const e of enemies){if(e.dead||net.phase==='match'&&net.mode==='guest')continue;const prevEX=e.x,prevEY=e.y;e.flash=Math.max(0,e.flash-dt);e.hitCd=Math.max(0,e.hitCd-dt);e.fire-=dt;const targets=net.phase==='match'&&net.mode==='host'?[{id:'host',...player},...Array.from(net.remotes.entries()).filter(([id,r])=>r.hp>0).map(([id,r])=>({id,...r}))]:[{id:'host',...player}];const target=targets.reduce((best,v)=>Math.hypot(v.x-e.x,v.y-e.y)<Math.hypot(best.x-e.x,best.y-e.y)?v:best,targets[0]);const dx=target.x-e.x,dy=target.y-e.y,d=Math.hypot(dx,dy)||1,dirX=dx/d,dirY=dy/d;
+ if((e.losTimer||0)<=0){e.visible=(d<1000)&&canSee(e.x,e.y,target.x,target.y);e.losTimer=.13+Math.random()*.07}
  else e.losTimer-=dt;
- const clear=!!e.visible;if(e.type==='rusher'){moveBody(e,dirX*e.spd*dt,dirY*e.spd*dt);if(d<e.r+player.r+6&&e.hitCd<=0){hurtPlayer(12);e.hitCd=.65}}else{let desired=d>320?1:d<215?-1:0;if(!clear)desired=1;const sid=Math.sin(clock*.8+e.sway)*.3;moveBody(e,(dirX*desired+(-dirY)*sid)*e.spd*dt,(dirY*desired+dirX*sid)*e.spd*dt);if(clear&&d<780&&e.fire<=0){e.fire=Math.max(.65,1.45-wave*.05)+rand(0,.5);let a=Math.atan2(dy,dx)+rand(-.12,.12);bullets.push({x:e.x+dirX*22,y:e.y+dirY*22,vx:Math.cos(a)*530,vy:Math.sin(a)*530,t:1.8,damage:10,friend:false,color:'#fc7b76',r:4,pierce:0})}}if((e.type==='rusher'||!clear||d>380)&&Math.hypot(e.x-prevEX,e.y-prevEY)<dt*5){e.stuck=(e.stuck||0)+dt;if(e.stuck>3.3){for(let j=0;j<30;j++){const angle=rand(0,TAU),range=rand(340,580),tx=clamp(player.x+Math.cos(angle)*range,85,WORLD.w-85),ty=clamp(player.y+Math.sin(angle)*range,85,WORLD.h-85);if(!blocked(tx,ty,e.r)&&!enemies.some(other=>other!==e&&dist(other,{x:tx,y:ty})<45)){burst(e.x,e.y,7,'#889ab1',100);e.x=tx;e.y=ty;burst(tx,ty,7,'#889ab1',90);break;}}e.stuck=0;}}else e.stuck=0;}
+ const clear=!!e.visible;if(e.type==='rusher'){moveBody(e,dirX*e.spd*dt,dirY*e.spd*dt);if(d<e.r+player.r+6&&e.hitCd<=0){net.phase==='match'&&net.mode==='host'&&target.id!=='host'?netPvpHit(target.id,12,true):hurtPlayer(12);e.hitCd=.65}}else{let desired=d>320?1:d<215?-1:0;if(!clear)desired=1;const sid=Math.sin(clock*.8+e.sway)*.3;moveBody(e,(dirX*desired+(-dirY)*sid)*e.spd*dt,(dirY*desired+dirX*sid)*e.spd*dt);if(clear&&d<780&&e.fire<=0){e.fire=Math.max(.65,1.45-wave*.05)+rand(0,.5);let a=Math.atan2(dy,dx)+rand(-.12,.12);bullets.push({x:e.x+dirX*22,y:e.y+dirY*22,vx:Math.cos(a)*530,vy:Math.sin(a)*530,t:1.8,damage:10,friend:false,color:'#fc7b76',r:4,pierce:0,owner:'npc'});if(net.phase==='match'&&net.mode==='host')netBroadcast({t:'npcShot',x:e.x+dirX*22,y:e.y+dirY*22,vx:Math.cos(a)*530,vy:Math.sin(a)*530})}}if((e.type==='rusher'||!clear||d>380)&&Math.hypot(e.x-prevEX,e.y-prevEY)<dt*5){e.stuck=(e.stuck||0)+dt;if(e.stuck>3.3){for(let j=0;j<30;j++){const angle=rand(0,TAU),range=rand(340,580),tx=clamp(player.x+Math.cos(angle)*range,85,WORLD.w-85),ty=clamp(player.y+Math.sin(angle)*range,85,WORLD.h-85);if(!blocked(tx,ty,e.r)&&!enemies.some(other=>other!==e&&dist(other,{x:tx,y:ty})<45)){burst(e.x,e.y,7,'#889ab1',100);e.x=tx;e.y=ty;burst(tx,ty,7,'#889ab1',90);break;}}e.stuck=0;}}else e.stuck=0;}
 enemies=enemies.filter(e=>!e.dead);
 for(let i=bullets.length-1;i>=0;i--){
  const b=bullets[i];b.t-=dt;
+ if(b.visualOnly){b.x+=b.vx*dt;b.y+=b.vy*dt;if(b.t<=0||b.x<50||b.x>WORLD.w-50||b.y<50||b.y>WORLD.h-50)bullets.splice(i,1);continue;}
  const steps=Math.max(1,Math.ceil(Math.hypot(b.vx*dt,b.vy*dt)/10));
  let removed=false;
  for(let s=0;s<steps;s++){
@@ -1532,8 +1662,14 @@ for(let i=bullets.length-1;i>=0;i--){
     if(b.pierce>0){b.pierce--;}else{removed=true;}
     break;
    }
-  }else if(Math.hypot(player.x-b.x,player.y-b.y)<(player.roll>0&&player.rollMode==='slide'?9:player.r)+b.r){
-   hurtPlayer(b.damage);removed=true;
+  }
+  if(net.phase==='match'&&net.mode==='host'&&!removed){
+   for(const [id,r] of net.remotes)if(id!==b.owner&&r.hp>0&&Math.hypot(r.x-b.x,r.y-b.y)<19+b.r){
+    netPvpHit(id,b.damage,!b.friend);if(b.explosive)smallExplosion(b.x,b.y,b,null);removed=true;break;
+   }
+  }
+  if(!removed&&(b.friend&&b.owner&&b.owner!=='host'||!b.friend)&&Math.hypot(player.x-b.x,player.y-b.y)<(player.roll>0&&player.rollMode==='slide'?9:player.r)+b.r){
+   if(net.phase!=='match'||net.mode==='host'&&(b.owner!=='host'))hurtPlayer(b.damage);removed=true;
   }
   if(removed)break;
  }
@@ -1546,7 +1682,7 @@ for(let i=grenades.length-1;i>=0;i--){
  const ny=rebound(g.y+g.vy*step,g.vy,58,WORLD.h-58);
  g.x=nx.position;g.y=ny.position;g.vx=nx.speed;g.vy=ny.speed;
  if(nx.bounces||ny.bounces){g.bounces+=nx.bounces+ny.bounces;burst(g.x,g.y,4,'#f8cf9d',90)}
- if(g.t>=g.dur-0.00001||g.t>=g.fuse){boom(g.x,g.y,g.radius,g.damage);grenades.splice(i,1)}
+ if(g.t>=g.dur-0.00001||g.t>=g.fuse){if(g.visualOnly){burst(g.x,g.y,12,'#ffd19b',120);}else boom(g.x,g.y,g.radius,g.damage,g.owner||'host');grenades.splice(i,1)}
 }
 for(let i=knives.length-1;i>=0;i--){const k=knives[i];k.t-=dt;let dead=false,steps=Math.max(1,Math.ceil(Math.hypot(k.vx*dt,k.vy*dt)/14));for(let s=0;s<steps;s++){k.x+=k.vx*dt/steps;k.y+=k.vy*dt/steps;if(puckEnabled&&puck&&puck.respawn===0&&Math.hypot(k.x-puck.x,k.y-puck.y)<puck.r+6){const n=Math.hypot(k.vx,k.vy)||1;puckImpulse(puck.x,puck.y,k.vx/n*490,k.vy/n*490,'shot','player');dead=true;break;}const o=intersectsCover(k.x,k.y,5);if(k.t<=0||o||k.x<49||k.y<49||k.x>WORLD.w-49||k.y>WORLD.h-49){if(o)damageCover(o,k.damage*.45,k.x,k.y);dead=true;burst(k.x,k.y,3,'#c9f0ed',70);break}for(const e of enemies){if(e.dead)continue;if(Math.hypot(k.x-e.x,k.y-e.y)<e.r+7){hurtEnemy(e,k.damage,k.x,k.y);dead=true;break}}if(dead)break}if(dead)knives.splice(i,1)}
 updatePuck(dt);goalFlash=Math.max(0,goalFlash-dt);
@@ -1582,11 +1718,15 @@ for(const b of bullets){ctx.strokeStyle=b.color;ctx.globalAlpha=b.friend?.84:.75
 for(const k of knives){ctx.save();ctx.translate(k.x,k.y);ctx.rotate(k.angle);ctx.strokeStyle='#ebf8f4';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(-10,0);ctx.lineTo(15,0);ctx.stroke();ctx.strokeStyle='#68dcbf';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-15,0);ctx.lineTo(-9,0);ctx.stroke();ctx.restore()}
 for(const e of enemies){ctx.fillStyle='#050f17aa';ctx.beginPath();ctx.ellipse(e.x+4,e.y+8,e.r+5,e.r*.75,0,0,TAU);ctx.fill();let a=Math.atan2(player.y-e.y,player.x-e.x);ctx.save();ctx.translate(e.x,e.y);ctx.rotate(a);ctx.fillStyle=e.flash>0?'#ffffff':e.type==='rusher'?'#fa996c':'#b696eb';ctx.strokeStyle=e.type==='rusher'?'#ffb17e':'#d7c3ff';ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,0,e.r,0,TAU);ctx.fill();ctx.stroke();ctx.fillStyle='#1c2732';rr(7,-5,e.type==='rusher'?12:22,10,3);ctx.fill();ctx.fillStyle='#fff4de';ctx.fillRect(12,-2,6,4);ctx.restore();if(e.hp<e.maxHp){ctx.fillStyle='#132329';ctx.fillRect(e.x-23,e.y-e.r-14,46,4);ctx.fillStyle=e.type==='rusher'?'#f6a36f':'#c6a1ff';ctx.fillRect(e.x-23,e.y-e.r-14,46*Math.max(0,e.hp/e.maxHp),4)}}
 if(net.phase==='match')for(const r of net.remotes.values()){
- const color=teamColor(r.team);ctx.save();ctx.translate(r.x,r.y);ctx.rotate(r.a||0);
+ const color=teamColor(r.team);if(r.hp<=0){ctx.globalAlpha=.3;}ctx.save();ctx.translate(r.x,r.y);ctx.rotate(r.a||0);
  ctx.fillStyle='rgba(0,0,0,.42)';ctx.beginPath();ctx.ellipse(4,8,25,19,0,0,TAU);ctx.fill();
  ctx.fillStyle=r.team==='orange'?'#683d21':'#1b5460';ctx.strokeStyle=color;ctx.lineWidth=3;ctx.beginPath();ctx.arc(0,0,19,0,TAU);ctx.fill();ctx.stroke();
  ctx.fillStyle=color;rr(7,-5,r.weapon===2?14:29,10,3);ctx.fill();ctx.restore();
- ctx.textAlign='center';ctx.font='bold 12px Oxanium,system-ui';ctx.fillStyle=color;ctx.fillText(r.name||'OPERATIVE',r.x,r.y-31);
+ ctx.textAlign='center';ctx.font='bold 12px Oxanium,system-ui';ctx.fillStyle=color;ctx.fillText(r.name||'OPERATIVE',r.x,r.y-34);
+ if(r.hp>0){ctx.fillStyle='#10262b';ctx.fillRect(r.x-22,r.y-29,44,4);ctx.fillStyle=color;ctx.fillRect(r.x-22,r.y-29,44*Math.max(0,r.hp/100),4);}
+ if(r.weapon===0&&r.laserOn&&r.hp>0){const ax=Math.cos(r.a||0),ay=Math.sin(r.a||0),len=rayCoverDistance(r.x,r.y,ax,ay,1000);ctx.strokeStyle='rgba(255,86,95,.85)';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(r.x+ax*29,r.y+ay*29);ctx.lineTo(r.x+ax*len,r.y+ay*len);ctx.stroke();}
+ if(r.slash>0){ctx.strokeStyle=r.team==='orange'?'#ffce86':'#a4fff2';ctx.lineWidth=9;ctx.beginPath();ctx.arc(r.x,r.y,96,(r.slashDir||0)-.7,(r.slashDir||0)+.7);ctx.stroke();}
+ ctx.globalAlpha=1;
  }
 const a=player.angle,roll=player.roll>0,sliding=roll,crouch=isCrouching(),running=keys.has('ShiftLeft')||keys.has('ShiftRight');
 // Slides show a flattened body, a skid trail and independently aiming weapon.
@@ -1623,6 +1763,7 @@ if(altHeld&&player.weapon===0&&player.secondary==='grenade'){
  ctx.strokeStyle='#ffc17d';ctx.beginPath();ctx.arc(tx,ty,8,0,TAU);ctx.stroke();ctx.fillStyle='#ffc481';ctx.font='bold 11px system-ui';ctx.fillText('LOB · ARENA-EDGE BOUNCE',tx+13,ty-13)
 }
 if(altHeld&&player.weapon===2){let charge=clamp((clock-altStart)/.65,0,1);ctx.strokeStyle='#8df7d5aa';ctx.lineWidth=2+charge*2;ctx.setLineDash([7,8]);ctx.beginPath();ctx.moveTo(player.x+Math.cos(a)*28,player.y+Math.sin(a)*28);ctx.lineTo(player.x+Math.cos(a)*690,player.y+Math.sin(a)*690);ctx.stroke();ctx.setLineDash([]);ctx.strokeStyle='#7af4d4';ctx.lineWidth=3;ctx.beginPath();ctx.arc(player.x,player.y,27,-Math.PI/2,-Math.PI/2+charge*TAU);ctx.stroke()}
+for(const r of net.remotes.values())if(r.slash>0)r.slash=Math.max(0,r.slash-1/60);
 for(const p of particles){if(p.x<cam.x-100||p.x>cam.x+sw+100||p.y<cam.y-100||p.y>cam.y+sh+100)continue;ctx.globalAlpha=clamp(p.life/p.max,0,1);if(p.ring){ctx.strokeStyle=p.color;ctx.lineWidth=5*(p.life/p.max);ctx.beginPath();ctx.arc(p.x,p.y,p.r*(1-p.life/p.max),0,TAU);ctx.stroke()}else{ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.r*(.5+p.life/p.max*.5),0,TAU);ctx.fill()}}ctx.globalAlpha=1;
 for(const t of texts){ctx.globalAlpha=1-t.t/t.max;ctx.fillStyle=t.color;ctx.font='bold 15px system-ui';ctx.textAlign='center';ctx.fillText(t.text,t.x,t.y)}ctx.globalAlpha=1;ctx.restore()}
 function reticle(){
@@ -1632,7 +1773,7 @@ function reticle(){
 }
 let uiTimer=0;function syncUI(dt){
  uiTimer-=dt;if(uiTimer>0)return;uiTimer=.06;
- ui.wave.textContent=net.phase==='match'?'MP':String(wave).padStart(2,'0');ui.kills.textContent=String(kills).padStart(3,'0');ui.score.textContent=String(score).padStart(5,'0');ui.credits.textContent='$'+credits.toLocaleString();ui.puckBoard.hidden=!puckEnabled||!started;ui.puckBoard.classList.toggle('online',net.phase==='match');ui.puckBoard.querySelector('.puck-head').textContent=net.phase==='match'?'ONLINE PUCK ARENA // '+net.code:'PUCK ARENA // BONUS OBJECTIVE';ui.puckBoard.querySelector('.puck-tally').firstChild.textContent=net.phase==='match'?'CYAN ':'YOU ';ui.puckBoard.querySelector('.puck-tally span').textContent=net.phase==='match'?' ORANGE':' RIVALS';ui.puckPlayerGoals.textContent=String(teamGoals);ui.puckEnemyGoals.textContent=String(rivalGoals);if(puckEnabled&&puck){const pdx=puck.x-player.x,pdy=puck.y-player.y;const arrow=Math.abs(pdx)>Math.abs(pdy)?(pdx>=0?'→':'←'):(pdy>=0?'↓':'↑');ui.puckDirection.innerHTML=puck.respawn>0?'PUCK RESETTING…':`PUCK ${arrow} ${Math.round(Math.hypot(pdx,pdy))}m · ${net.phase==='match'?(net.team==='cyan'?'ATTACK ORANGE →':'ATTACK CYAN ←'):'SCORE IN ORANGE GOAL'} · <strong>${net.phase==='match'?'T SWAPS TEAMS':'+2,500 PTS'}</strong>`;}ui.health.textContent=String(player.hp);ui.hpfill.style.width=player.hp+'%';ui.dodge.textContent=player.roll>0?'SLIDING':player.rollCd>0?player.rollCd.toFixed(1)+'s':'READY';ui.dodge.style.color=player.rollCd>0?'#e9b27f':'#c5faf0';
+ ui.wave.textContent=net.phase==='match'?'MP':String(wave).padStart(2,'0');ui.kills.textContent=String(kills).padStart(3,'0');ui.score.textContent=String(score).padStart(5,'0');ui.credits.textContent='$'+credits.toLocaleString();ui.puckBoard.hidden=!puckEnabled||!started;ui.puckBoard.classList.toggle('online',net.phase==='match');ui.puckBoard.querySelector('.puck-head').textContent=net.phase==='match'?'ONLINE PUCK ARENA // '+net.code:'PUCK ARENA // BONUS OBJECTIVE';ui.puckBoard.querySelector('.puck-tally').firstChild.textContent=net.phase==='match'?'CYAN ':'YOU ';ui.puckBoard.querySelector('.puck-tally span').textContent=net.phase==='match'?' ORANGE':' RIVALS';ui.puckPlayerGoals.textContent=String(teamGoals);ui.puckEnemyGoals.textContent=String(rivalGoals);if(puckEnabled&&puck){const pdx=puck.x-player.x,pdy=puck.y-player.y;const arrow=Math.abs(pdx)>Math.abs(pdy)?(pdx>=0?'→':'←'):(pdy>=0?'↓':'↑');ui.puckDirection.innerHTML=puck.respawn>0?'PUCK RESETTING…':`PUCK ${arrow} ${Math.round(Math.hypot(pdx,pdy))}m · ${net.phase==='match'?(net.team==='cyan'?'ATTACK ORANGE →':'ATTACK CYAN ←'):'SCORE IN ORANGE GOAL'} · <strong>${net.phase==='match'?'T SWAPS TEAMS':'+2,500 PTS'}</strong>`;}ui.health.textContent=player.hp<=0&&net.phase==='match'?'RESPAWN':String(Math.ceil(player.hp));ui.hpfill.style.width=player.hp+'%';ui.dodge.textContent=player.roll>0?'SLIDING':player.rollCd>0?player.rollCd.toFixed(1)+'s':'READY';ui.dodge.style.color=player.rollCd>0?'#e9b27f':'#c5faf0';
  if(player.weapon===2){ui.weapon.textContent='COMBAT KNIFE';ui.weaponSlot.textContent='01 / MELEE · '+(toSpawn+enemies.length)+(net.phase==='match'?' ONLINE TEAM ARENA':' HOSTILES LEFT');ui.ammo.innerHTML=(player.throwKnives===Infinity?'∞':player.throwKnives)+' <small>THROWING KNIVES</small>';ui.alt.textContent='SPACE / LMB · SLASH · RMB + LMB · THROW';return}
  ui.weapon.textContent=gunSpec().name+(projectileCount()>1?' · ×'+projectileCount()+' PELLETS':'')+' · '+fireModeLabel();ui.weaponSlot.textContent='02 / CUSTOM FIREARM · '+(toSpawn+enemies.length)+(net.phase==='match'?' ONLINE TEAM ARENA':' HOSTILES LEFT');
  ui.ammo.innerHTML=player.reload>0?`<span style="font-size:16px;color:#ffbf87">RELOADING ${player.reload.toFixed(1)}s</span>`:`${player.gun} <small>/ ${player.gunReserve===Infinity?'∞':player.gunReserve}</small>`;
