@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
 <meta name="theme-color" content="#080e17" />
-<title>STRIKE VECTOR v1.3.5 — Regenerating Arena</title>
+<title>STRIKE VECTOR v1.3.6 — Puck Arena</title>
 <style>
 :root{color-scheme:dark;--bg:#080e17;--panel:#101b28;--border:#263746;--mint:#74f7d4;--text:#eef6f7;--muted:#8da4b3;--orange:#ffbd75}
 *{box-sizing:border-box}html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text)}
@@ -223,6 +223,18 @@
 .tree-compact-node.branch-hub{z-index:2}
 @media(max-width:680px){.tree-map-hint{max-width:45%;font-size:8px}.tree-zoom-controls [data-tree-reset]{min-width:45px;font-size:0}.tree-zoom-controls [data-tree-reset]::after{content:'FIT';font-size:10px}.tree-zoom-controls output{min-width:35px}}
 
+/* v1.3.6 -- puck arena optional arcade objective */
+#puckModeToggle{width:100%;margin:10px 0 0;background:#152b36;color:#bee7de;border:1px solid #406f76;border-radius:9px;padding:12px 15px;cursor:pointer;font-weight:850;letter-spacing:.08em;line-height:1.3}
+#puckModeToggle:hover{border-color:#7cf6d5;background:#1a3c45}
+#puckModeToggle[aria-pressed="true"]{background:#174536;border-color:#74dec0;color:#d7fff2}
+#puckScoreboard{position:fixed;z-index:2;top:78px;left:50%;transform:translateX(-50%);width:max-content;max-width:min(95vw,600px);padding:10px 17px 8px;border:1px solid #437782;border-radius:12px;background:rgba(8,24,34,.85);box-shadow:0 12px 32px rgba(0,0,0,.25);text-align:center;pointer-events:none}
+#puckScoreboard[hidden]{display:none}
+.puck-head{color:#ffce91;font-size:10px;font-weight:900;letter-spacing:.18em}
+.puck-tally{font-size:18px;font-weight:900;color:#b0ffe4;letter-spacing:.08em;margin-top:2px}
+.puck-tally span{color:#ffae88}.puck-tally em{font-style:normal;color:#7799a2;padding:0 12px}
+.puck-hint{font-size:10px;color:#bdd0d2;margin-top:3px}
+.puck-hint strong{color:#ffd598}
+@media(max-width:600px){#puckScoreboard{top:76px;padding:8px 9px}.puck-tally{font-size:13px}.puck-hint{font-size:9px}}
 </style>
 </head>
 <body>
@@ -233,15 +245,17 @@
 </div>
 <div id="banner"></div>
 <button id="sound" type="button">♪ SOUND ON</button>
-<div id="screen"><section class="modal"><div class="kicker" id="kicker">OPERATION // ARCADE PROTOTYPE</div><h1 id="modalTitle">STRIKE <span>VECTOR</span></h1><p class="intro" id="modalIntro">Start with one 9mm pistol. Fire pellets from a single cartridge, unlock all fire modes in one purchase, and fire or strike during a slide.</p><div class="legend" id="legend"><div class="legend-item"><span class="key">WASD</span>Move / strafe</div><div class="legend-item"><span class="key">MOUSE</span>Tap for semi/burst; hold for automatic fire</div><div class="legend-item"><span class="key">F</span>Switch unlocked SEMI / BURST / AUTO modes</div><div class="legend-item"><span class="key">SPACE</span>Slide / dodge · steer while sliding and fire freely</div><div class="legend-item"><span class="key">SHIFT</span>Hold to sprint</div><div class="legend-item"><span class="key">E</span>Quick buttstock / bayonet strike, even mid-slide</div><div class="legend-item"><span class="key">ALT</span>Hold to crouch · slower movement, tighter spread</div><div class="legend-item"><span class="key">RMB + LMB</span>Secondary attack / ADS shot</div><div class="legend-item"><span class="key">1 / 2 / 3–5</span>Knife / custom firearm / secondary abilities</div><div class="legend-item"><span class="key">R / TAB</span>Reload / armory pause</div><div class="legend-item"><span class="key">L / ESC</span>Laser [L] · ammo [X] / pause</div></div><div id="shop"><div class="shop-summary"><div class="shop-bank" id="shopBank">$0 <small>AVAILABLE</small></div><div class="shop-message" id="shopMessage">BUY / REFUND AS MUCH AS YOU LIKE</div></div><div class="shop-stats" id="shopStats"></div><div class="shop-tabs" id="shopTabs" role="tablist" aria-label="Armory categories"></div><div class="shop-grid" id="shopGrid"></div><div class="shop-note" id="shopNote"></div></div><button class="cta" id="start">DEPLOY OPERATIVE →</button><div class="hint" id="hint">Desktop keyboard + mouse recommended · Survive as long as you can</div></section></div>
+<div id="puckScoreboard" hidden aria-live="polite"><div class="puck-head">PUCK ARENA // BONUS OBJECTIVE</div><div class="puck-tally">YOU <b id="puckPlayerGoals">0</b><em>:</em><b id="puckEnemyGoals">0</b> <span>RIVALS</span></div><div class="puck-hint" id="puckDirection">Shoot the puck → orange goal for <strong>+2,500 points</strong></div></div>
+<div id="screen"><section class="modal"><div class="kicker" id="kicker">OPERATION // ARCADE PROTOTYPE</div><h1 id="modalTitle">STRIKE <span>VECTOR</span></h1><p class="intro" id="modalIntro">Start with one 9mm pistol. Fire pellets from a single cartridge, unlock all fire modes in one purchase, and fire or strike during a slide.</p><div class="legend" id="legend"><div class="legend-item"><span class="key">WASD</span>Move / strafe</div><div class="legend-item"><span class="key">MOUSE</span>Tap for semi/burst; hold for automatic fire</div><div class="legend-item"><span class="key">F</span>Switch unlocked SEMI / BURST / AUTO modes</div><div class="legend-item"><span class="key">SPACE</span>Slide / dodge · steer while sliding and fire freely</div><div class="legend-item"><span class="key">SHIFT</span>Hold to sprint</div><div class="legend-item"><span class="key">E</span>Quick buttstock / bayonet strike, even mid-slide</div><div class="legend-item"><span class="key">ALT</span>Hold to crouch · slower movement, tighter spread</div><div class="legend-item"><span class="key">RMB + LMB</span>Secondary attack / ADS shot</div><div class="legend-item"><span class="key">1 / 2 / 3–5</span>Knife / custom firearm / secondary abilities</div><div class="legend-item"><span class="key">R / TAB</span>Reload / armory pause</div><div class="legend-item"><span class="key">L / ESC</span>Laser [L] · ammo [X] / pause</div></div><div id="shop"><div class="shop-summary"><div class="shop-bank" id="shopBank">$0 <small>AVAILABLE</small></div><div class="shop-message" id="shopMessage">BUY / REFUND AS MUCH AS YOU LIKE</div></div><div class="shop-stats" id="shopStats"></div><div class="shop-tabs" id="shopTabs" role="tablist" aria-label="Armory categories"></div><div class="shop-grid" id="shopGrid"></div><div class="shop-note" id="shopNote"></div></div><button type="button" id="puckModeToggle" aria-pressed="true">◉ PUCK ARENA: ON · SHOOT THE PUCK INTO THE ORANGE GOAL</button><button class="cta" id="start">DEPLOY OPERATIVE →</button><div class="hint" id="hint">Desktop keyboard + mouse recommended · Survive as long as you can</div></section></div>
 <script>
 (()=>{'use strict';
 const canvas=document.getElementById('game'),ctx=canvas.getContext('2d',{alpha:false});
-const ui={wave:document.getElementById('wave'),kills:document.getElementById('kills'),score:document.getElementById('score'),credits:document.getElementById('credits'),health:document.getElementById('health'),hpfill:document.getElementById('hpfill'),dodge:document.getElementById('dodge'),weaponSlot:document.getElementById('weaponSlot'),weapon:document.getElementById('weapon'),ammo:document.getElementById('ammo'),alt:document.getElementById('alt'),banner:document.getElementById('banner'),screen:document.getElementById('screen'),kicker:document.getElementById('kicker'),title:document.getElementById('modalTitle'),intro:document.getElementById('modalIntro'),legend:document.getElementById('legend'),start:document.getElementById('start'),hint:document.getElementById('hint'),sound:document.getElementById('sound'),shop:document.getElementById('shop'),shopGrid:document.getElementById('shopGrid'),shopBank:document.getElementById('shopBank'),shopMessage:document.getElementById('shopMessage'),shopNote:document.getElementById('shopNote'),shopTabs:document.getElementById('shopTabs'),shopStats:document.getElementById('shopStats')};
+const ui={wave:document.getElementById('wave'),kills:document.getElementById('kills'),score:document.getElementById('score'),credits:document.getElementById('credits'),health:document.getElementById('health'),hpfill:document.getElementById('hpfill'),dodge:document.getElementById('dodge'),weaponSlot:document.getElementById('weaponSlot'),weapon:document.getElementById('weapon'),ammo:document.getElementById('ammo'),alt:document.getElementById('alt'),banner:document.getElementById('banner'),screen:document.getElementById('screen'),kicker:document.getElementById('kicker'),title:document.getElementById('modalTitle'),intro:document.getElementById('modalIntro'),legend:document.getElementById('legend'),start:document.getElementById('start'),hint:document.getElementById('hint'),sound:document.getElementById('sound'),shop:document.getElementById('shop'),shopGrid:document.getElementById('shopGrid'),shopBank:document.getElementById('shopBank'),shopMessage:document.getElementById('shopMessage'),shopNote:document.getElementById('shopNote'),shopTabs:document.getElementById('shopTabs'),shopStats:document.getElementById('shopStats'),puckToggle:document.getElementById('puckModeToggle'),puckBoard:document.getElementById('puckScoreboard'),puckPlayerGoals:document.getElementById('puckPlayerGoals'),puckEnemyGoals:document.getElementById('puckEnemyGoals'),puckDirection:document.getElementById('puckDirection')};
 let sw=innerWidth,sh=innerHeight,dpr=1,renderedStill=false,cam={x:0,y:0},clock=0,last=0,started=false,paused=true,ended=false,fireHeld=false,altHeld=false,secondaryPending=false,altStart=0,mouse={x:innerWidth*.64,y:innerHeight*.5,active:false},keys=new Set(),lastShiftTap=-Infinity;
 const isCrouching=()=>keys.has('AltLeft')||keys.has('AltRight');
 const WORLD={w:2500,h:1700},TAU=Math.PI*2,clamp=(v,l,h)=>Math.max(l,Math.min(h,v)),rand=(a,b)=>a+Math.random()*(b-a),dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 let player,enemies=[],bullets=[],grenades=[],knives=[],particles=[],texts=[],wave=0,kills=0,score=0,credits=0,shopOpen=false,shopMode="between",toSpawn=0,spawnTimer=0,nextWaveTimer=0,bannerUntil=0,shake=0,obstacles=[],coverSpawnTimer=5;
+let puckEnabled=true,puck=null,teamGoals=0,rivalGoals=0,goalFlash=0;
 let shopTab='gun',selectedTreeNode='core',treePopupOpen=false,treePan={x:0,y:0},treeScale=1,treePanReady=false,treeDrag=null,treeSuppressUntil=0;let soundOn=true,ac=null,activeVoices=0;const soundTimes=Object.create(null);function sound(kind){if(!soundOn||activeVoices>=8)return;const now=performance.now(),limit=(kind==='hit'?65:kind==='pistol'||kind==='rifle'?36:kind==='grenade'?75:22);if(now-(soundTimes[kind]||-1000)<limit)return;soundTimes[kind]=now;try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended')ac.resume();const o=ac.createOscillator(),g=ac.createGain(),n=ac.currentTime;let f=220,d=.06,ty='triangle',vol=.027;if(kind==='pistol'){f=260;d=.085;ty='triangle';vol=.030}else if(kind==='buy'){f=650;d=.13;ty='sine';vol=.025}else if(kind==='rifle'){f=155;d=.055;ty='sawtooth';vol=.025}else if(kind==='sniper'){f=74;d=.22;ty='sawtooth';vol=.055}else if(kind==='grenade'){f=82;d=.36;ty='sawtooth';vol=.065}else if(kind==='knife'){f=450;d=.08}else if(kind==='hit'){f=90;d=.10;vol=.016}else if(kind==='dodge'){f=400;d=.13;vol=.020}else if(kind==='dry'){f=350;d=.035;vol=.014}o.type=ty;o.frequency.setValueAtTime(f,n);o.frequency.exponentialRampToValueAtTime(Math.max(28,f*.35),n+d);g.gain.setValueAtTime(vol,n);g.gain.exponentialRampToValueAtTime(.0001,n+d);o.connect(g);g.connect(ac.destination);activeVoices++;o.addEventListener('ended',()=>{activeVoices=Math.max(0,activeVoices-1);o.disconnect();g.disconnect()},{once:true});o.start(n);o.stop(n+d+.01)}catch(e){activeVoices=Math.max(0,activeVoices-1)}}
 function resize(){
  sw=innerWidth;sh=innerHeight;
@@ -262,7 +276,7 @@ function reset(){
   modules:{laser:false,grenade:false,power:false,explosive:false,bayonet:false},laserOn:false,explosiveOn:false,bayonetOn:false,secondary:'aim',
   roll:0,rollMax:.78,rollMode:'slide',rollDx:0,rollDy:0,rollCd:0,invul:0,slideTurn:0,fireCd:0,secondaryCd:0,slash:0,slashDir:0,slashHits:new Set(),
   reload:0,gun:14,gunReserve:Infinity,grenades:5,grenadeReserve:Infinity,grenadeReload:0,throwKnives:Infinity,step:0,meleeCd:0,slashKind:'knife',triggerQueue:0,triggerExpiry:0,fireMode:'semi',burstShots:0};
- enemies=[];bullets=[];grenades=[];knives=[];particles=[];texts=[];clock=0;wave=0;kills=0;score=0;credits=0;
+ enemies=[];bullets=[];grenades=[];knives=[];particles=[];texts=[];clock=0;wave=0;kills=0;score=0;credits=0;teamGoals=0;rivalGoals=0;goalFlash=0;resetPuck();
  shopOpen=false;shopTab='gun';shopMode='between';coverSpawnTimer=4.5;toSpawn=0;spawnTimer=0;nextWaveTimer=1.1;shake=0;
  fireHeld=false;altHeld=false;secondaryPending=false;ended=false;keys.clear();cam.x=player.x-sw/2;cam.y=player.y-sh/2;
 }
@@ -721,6 +735,7 @@ function closeFieldShop(){renderedStill=false;shopOpen=false;paused=false;ui.scr
 function toggleTabShop(){if(!started||ended)return;if(shopOpen){if(shopMode==='field')closeFieldShop();return}openShop('field')}
 function showScreen(type){
  renderedStill=false;ui.screen.classList.remove('hidden');
+ ui.puckToggle.hidden=type!=='title';ui.puckBoard.hidden=!started||!puckEnabled;
  ui.shop.classList.toggle('show',type==='shop'||type==='fieldShop');ui.screen.querySelector('.modal').classList.toggle('shop-mode',type==='shop'||type==='fieldShop');
  if(type==='shop'||type==='fieldShop'){
   ui.kicker.textContent=type==='fieldShop'?'TACTICAL PAUSE // WAVE '+String(wave).padStart(2,'0'):'ARMORY // WAVE '+String(wave).padStart(2,'0')+' COMPLETE';
@@ -733,10 +748,11 @@ function showScreen(type){
  }else if(type==='pause'){
   ui.kicker.textContent='OPERATION SUSPENDED';ui.title.innerHTML='ON <span>HOLD</span>';ui.intro.textContent='Your operative is paused. Resume when ready.';ui.legend.style.display='grid';ui.start.textContent='RESUME OPERATION →';ui.hint.textContent='ESC resumes · TAB opens armory';
  }else{
-  ui.kicker.textContent='OPERATION // MODULAR ARSENAL';ui.title.innerHTML='STRIKE <span>VECTOR</span>';ui.intro.textContent='One evolving gun. Fire buckshot-style pellets without extra ammo cost, unlock all three fire modes with one purchase, then press Space to slide while firing.';ui.legend.style.display='grid';ui.start.textContent='DEPLOY OPERATIVE →';ui.hint.textContent='WASD move · SPACE slide/dodge · E melee · SHIFT sprint · ALT crouch · F fire mode · TAB armory';
+  ui.kicker.textContent='OPERATION // MODULAR ARSENAL';ui.title.innerHTML='STRIKE <span>VECTOR</span>';ui.intro.textContent='Survive hostile waves and customize one evolving gun. Turn on PUCK ARENA to shoot a physics puck into the rival goal for big bonus points. Explosions hit much harder.';ui.legend.style.display='grid';ui.start.textContent='DEPLOY OPERATIVE →';ui.hint.textContent='WASD move · SPACE slide/dodge · E melee · SHIFT sprint · ALT crouch · F fire mode · TAB armory';
  }
 }
-function begin(){lastShiftTap=-Infinity;renderedStill=false;if(shopOpen){const cleared=shopMode==='between';closeFieldShop();if(cleared)nextWave();sound('buy');return}if(!started||ended){reset();started=true}paused=false;ui.screen.classList.add('hidden');sound('dodge')}
+function begin(){lastShiftTap=-Infinity;renderedStill=false;if(shopOpen){const cleared=shopMode==='between';closeFieldShop();if(cleared)nextWave();sound('buy');return}if(!started||ended){reset();started=true}paused=false;ui.puckBoard.hidden=!puckEnabled;ui.screen.classList.add('hidden');sound('dodge')}
+ui.puckToggle.addEventListener('click',()=>{puckEnabled=!puckEnabled;ui.puckToggle.setAttribute('aria-pressed',String(puckEnabled));ui.puckToggle.textContent=puckEnabled?'◉ PUCK ARENA: ON · SHOOT THE PUCK INTO THE ORANGE GOAL':'○ PUCK ARENA: OFF · CLASSIC SURVIVAL ONLY';});
 ui.start.addEventListener('click',begin);ui.sound.addEventListener('click',()=>{soundOn=!soundOn;ui.sound.textContent=soundOn?'♪ SOUND ON':'♪ SOUND OFF'});
 function switchWeapon(n){if(!started||paused||ended||(n!==0&&n!==2))return;if(player.weapon===n)return;player.weapon=n;player.fireCd=Math.min(player.fireCd,.10);player.slash=0;player.triggerQueue=0;player.burstShots=0;secondaryPending=false;sound('dry')}
 window.addEventListener('keydown',e=>{const c=e.code;
@@ -929,7 +945,7 @@ function spawnCover(n=1){
    const a=rand(0,TAU),d=rand(250,780),k=Math.random()<.70?'crate':'wall',w=Math.round(rand(64,122)),h=Math.round(rand(60,109));
    const x=clamp(player.x+Math.cos(a)*d-w/2,95,WORLD.w-w-95),y=clamp(player.y+Math.sin(a)*d-h/2,95,WORLD.h-h-95);
    const cx=x+w/2,cy=y+h/2;
-   if(Math.hypot(player.x-cx,player.y-cy)<230||enemies.some(e=>!e.dead&&Math.hypot(e.x-cx,e.y-cy)<Math.max(w,h)+75)||obstacles.some(o=>x<o.x+o.w+38&&x+w+38>o.x&&y<o.y+o.h+38&&y+h+38>o.y))continue;
+   if((puckEnabled&&((puck&&Math.hypot(puck.x-cx,puck.y-cy)<160)||(cx<300&&Math.abs(cy-WORLD.h/2)<GOAL_HALF+130)||(cx>WORLD.w-300&&Math.abs(cy-WORLD.h/2)<GOAL_HALF+130)))||Math.hypot(player.x-cx,player.y-cy)<230||enemies.some(e=>!e.dead&&Math.hypot(e.x-cx,e.y-cy)<Math.max(w,h)+75)||obstacles.some(o=>x<o.x+o.w+38&&x+w+38>o.x&&y<o.y+o.h+38&&y+h+38>o.y))continue;
    const hp=k==='crate'?145:360;
    obstacles.push(makeCover({x,y,w,h,k,newborn:.7}));burst(cx,cy,9,'#75b9b5',90);created++;break;
   }
@@ -944,6 +960,109 @@ function reload(){
  if(player.weapon===0&&player.secondary==='grenade')startGrenadeReload();
  if(player.weapon!==0||player.reload>0||player.gun>=clipSize()||player.gunReserve<=0)return;
  player.reload=reloadDuration();player.fireCd=0;sound('dry');
+}
+// Puck Arena is an OPTIONAL single-player objective, with team-neutral physics.
+// The interface is structured around two score totals so future multiplayer can
+// replace bot projectiles with remote-player projectiles without new scoring rules.
+const GOAL_HALF=160,GOAL_X=95,PUCK_R=21;
+function resetPuck(){puck={x:WORLD.w*.5,y:WORLD.h*.5,vx:0,vy:0,r:PUCK_R,spin:0,trail:[],lastTouch:'none',lastTeam:'none',respawn:0};}
+function puckImpulse(x,y,vx,vy,kind='shot',team='player'){
+ if(!puckEnabled||!puck||puck.respawn>0)return false;
+ const len=Math.hypot(vx,vy);if(len<1)return false;
+ puck.vx+=vx;puck.vy+=vy;
+ const speed=Math.hypot(puck.vx,puck.vy);
+ if(speed>1600){puck.vx*=1600/speed;puck.vy*=1600/speed;}
+ puck.lastTouch=kind;puck.lastTeam=team;
+ puck.spin+=(vx*puck.vy-vy*puck.vx)*.000003;
+ burst(puck.x,puck.y,kind==='blast'?13:5,kind==='blast'?'#ffcb73':'#b7fff3',kind==='blast'?180:95);
+ return true;
+}
+function puckBlast(x,y,r,force,kind='blast'){
+ if(!puckEnabled||!puck||puck.respawn>0)return;
+ const dx=puck.x-x,dy=puck.y-y,d=Math.hypot(dx,dy);
+ if(d>r+puck.r)return;
+ // Explosion displacement intentionally MUCH stronger than ordinary gunfire.
+ const falloff=1-Math.min(.85,d/(r+puck.r)*.72);
+ const nx=d>2?dx/d:Math.cos(player.angle),ny=d>2?dy/d:Math.sin(player.angle);
+ puckImpulse(puck.x,puck.y,nx*force*falloff,ny*force*falloff,kind,'player');
+}
+function scorePuck(side){
+ const playerScored=side==='right';
+ if(playerScored){
+  teamGoals++;
+  const bonus=puck.lastTouch==='blast'?3250:2500;
+  score+=bonus;credits+=puck.lastTouch==='blast'?900:700;
+  floatText(puck.x,puck.y-35,'GOAL! +'+bonus.toLocaleString(),'#baffd2');
+ }else{rivalGoals++;floatText(puck.x,puck.y-35,'RIVAL GOAL','#ffb099');}
+ goalFlash=1.3;shake=Math.max(shake,12);
+ burst(puck.x,puck.y,60,playerScored?'#a8ffe2':'#ffad92',300);
+ ui.banner.innerHTML=(playerScored?'GOAL SCORED':'RIVAL GOAL')+`<strong>${teamGoals} : ${rivalGoals}</strong>`;
+ ui.banner.classList.add('show');bannerUntil=clock+1.8;
+ const p=puck;resetPuck();puck.respawn=1.5;
+ sound('buy');syncUI(1);
+}
+function updatePuck(dt){
+ if(!puckEnabled||!puck)return;
+ if(puck.respawn>0){puck.respawn=Math.max(0,puck.respawn-dt);return;}
+ // Inelastic friction; a flick continues to coast for several seconds.
+ const friction=Math.exp(-1.08*dt);puck.vx*=friction;puck.vy*=friction;
+ if(Math.hypot(puck.vx,puck.vy)<3){puck.vx=0;puck.vy=0;}
+ const steps=Math.max(1,Math.ceil(Math.hypot(puck.vx,puck.vy)*dt/8));
+ for(let i=0;i<steps;i++){
+  const step=dt/steps;
+  const nx=puck.x+puck.vx*step,ny=puck.y+puck.vy*step;
+  if(!intersectsCover(nx,puck.y,puck.r))puck.x=nx;else puck.vx*=-.7;
+  if(!intersectsCover(puck.x,ny,puck.r))puck.y=ny;else puck.vy*=-.7;
+  // Goal mouths are open, unlike the solid top / bottom arena borders.
+  if(puck.x>WORLD.w-GOAL_X&&Math.abs(puck.y-WORLD.h/2)<GOAL_HALF){scorePuck('right');return;}
+  if(puck.x<GOAL_X&&Math.abs(puck.y-WORLD.h/2)<GOAL_HALF){scorePuck('left');return;}
+  if(puck.x<65+puck.r){puck.x=65+puck.r;puck.vx=Math.abs(puck.vx)*.78;}
+  if(puck.x>WORLD.w-65-puck.r){puck.x=WORLD.w-65-puck.r;puck.vx=-Math.abs(puck.vx)*.78;}
+  if(puck.y<65+puck.r){puck.y=65+puck.r;puck.vy=Math.abs(puck.vy)*.78;}
+  if(puck.y>WORLD.h-65-puck.r){puck.y=WORLD.h-65-puck.r;puck.vy=-Math.abs(puck.vy)*.78;}
+ }
+ // Bodies can shoulder-check the puck, while gunfire remains primary propulsion.
+ for(const body of [player,...enemies]){
+  if(!body||body.dead)continue;
+  const dx=puck.x-body.x,dy=puck.y-body.y,d=Math.hypot(dx,dy)||1;
+  const reach=puck.r+body.r;
+  if(d<reach){const nx=dx/d,ny=dy/d;puck.x=body.x+nx*(reach+1);puck.y=body.y+ny*(reach+1);
+   const power=body===player?(player.roll>0?180:72):82;
+   puck.vx+=nx*power*dt*6;puck.vy+=ny*power*dt*6;
+  }
+ }
+ puck.spin+=(puck.vx*.0005)*dt;
+ if(Math.hypot(puck.vx,puck.vy)>35){puck.trail.unshift({x:puck.x,y:puck.y});if(puck.trail.length>12)puck.trail.pop();}
+ else if(puck.trail.length)puck.trail.pop();
+}
+function drawPuckFieldBackdrop(){
+ if(!puckEnabled)return;
+ ctx.save();
+ const mid=WORLD.h*.5;
+ ctx.strokeStyle='rgba(197,224,215,.19)';ctx.lineWidth=3;ctx.setLineDash([14,19]);
+ ctx.beginPath();ctx.moveTo(WORLD.w/2,70);ctx.lineTo(WORLD.w/2,WORLD.h-70);ctx.stroke();ctx.setLineDash([]);
+ ctx.strokeStyle='rgba(158,227,220,.16)';ctx.beginPath();ctx.arc(WORLD.w/2,mid,140,0,TAU);ctx.stroke();
+ for(const side of ['left','right']){
+  const left=side==='left',x=left?60:WORLD.w-60,netX=left?52:WORLD.w-52;
+  const hue=left?'#7de8ed':'#ffad83';
+  ctx.fillStyle=left?'rgba(65,184,205,.16)':'rgba(255,155,98,.16)';
+  ctx.fillRect(left?52:x-16,mid-GOAL_HALF,24,GOAL_HALF*2);
+  ctx.strokeStyle=hue;ctx.lineWidth=9;ctx.beginPath();ctx.moveTo(x,mid-GOAL_HALF);ctx.lineTo(x,mid+GOAL_HALF);ctx.stroke();
+  ctx.lineWidth=3;ctx.strokeRect(left?57:WORLD.w-107,mid-GOAL_HALF,50,GOAL_HALF*2);
+  ctx.fillStyle=hue;ctx.font='bold 20px system-ui';ctx.textAlign='center';ctx.fillText(left?'YOUR GOAL':'RIVAL GOAL',left?188:WORLD.w-188,mid-GOAL_HALF-24);
+  ctx.fillStyle=hue;ctx.globalAlpha=.8;ctx.font='bold 32px system-ui';ctx.fillText(left?'◀':'▶',left?176:WORLD.w-176,mid);ctx.globalAlpha=1;
+ }
+ ctx.restore();
+}
+function drawPuck(){
+ if(!puckEnabled||!puck||puck.respawn>0)return;
+ ctx.save();ctx.translate(-cam.x,-cam.y);
+ for(let i=puck.trail.length-1;i>=0;i--){const t=puck.trail[i];ctx.globalAlpha=.05+.24*(1-i/puck.trail.length);ctx.fillStyle='#b7fff0';ctx.beginPath();ctx.arc(t.x,t.y,PUCK_R*(1-i/(puck.trail.length+1)),0,TAU);ctx.fill();}
+ ctx.globalAlpha=1;ctx.translate(puck.x,puck.y);ctx.rotate(puck.spin);
+ ctx.fillStyle='rgba(0,0,0,.48)';ctx.beginPath();ctx.ellipse(5,9,28,17,0,0,TAU);ctx.fill();
+ ctx.fillStyle='#183d4a';ctx.strokeStyle='#bafcf1';ctx.lineWidth=4;ctx.beginPath();ctx.arc(0,0,puck.r,0,TAU);ctx.fill();ctx.stroke();
+ ctx.fillStyle='#98e8db';ctx.beginPath();ctx.arc(0,0,11,0,TAU);ctx.fill();ctx.fillStyle='#244d5a';ctx.fillRect(-3,-9,6,18);ctx.fillRect(-9,-3,18,6);
+ ctx.restore();
 }
 function quickMelee(){
  if(!player||paused||ended||player.meleeCd>0)return false;
@@ -1038,6 +1157,7 @@ function hitSlash(){
  }
  // A buttstock or bayonet can also chip a bit of destructible cover.
  if(!player.slashCoverDone){
+  if(puckEnabled&&puck&&puck.respawn===0){const d=Math.hypot(puck.x-player.x,puck.y-player.y),da=Math.atan2(Math.sin(Math.atan2(puck.y-player.y,puck.x-player.x)-player.slashDir),Math.cos(Math.atan2(puck.y-player.y,puck.x-player.x)-player.slashDir));if(d<reach+puck.r&&Math.abs(da)<.8)puckImpulse(puck.x,puck.y,Math.cos(player.slashDir)*520,Math.sin(player.slashDir)*520,'melee','player');}
   const impactX=player.x+Math.cos(player.slashDir)*(reach-12),impactY=player.y+Math.sin(player.slashDir)*(reach-12);
   const cover=intersectsCover(impactX,impactY,13);
   if(cover)damageCover(cover,bayonet?56:27,impactX,impactY);
@@ -1047,9 +1167,10 @@ function hitSlash(){
 function throwKnife(){if(player.throwKnives<=0){sound('dry');return}player.throwKnives--;const a=mouseAim(),charge=clamp((clock-altStart)/.65,0,1);knives.push({x:player.x+Math.cos(a)*25,y:player.y+Math.sin(a)*25,vx:Math.cos(a)*(920+charge*340),vy:Math.sin(a)*(920+charge*340),angle:a,t:.8,damage:58+charge*46+0});burst(player.x,player.y,4,'#d4f6fb',160);sound('knife')}
 function hurtEnemy(e,damage,x,y){e.hp-=damage;e.flash=.10;burst(x,y,7,e.type==='rusher'?'#ffb176':'#dfc1ff',180);if(e.hp<=0){kills++;credits+=e.type==='rusher'?42:58;score+=e.type==='rusher'?125:175;burst(e.x,e.y,15,e.type==='rusher'?'#ed9871':'#bd99fa',240);floatText(e.x,e.y-26,'+'+(e.type==='rusher'?125:175));e.dead=true;sound('hit')}}
 function hurtPlayer(damage){if(player.invul>0||player.hp<=0)return;player.hp=Math.max(0,player.hp-damage);player.invul=.47;shake=Math.max(shake,7);burst(player.x,player.y,13,'#ff857d',190);sound('hit');if(player.hp<=0){ended=true;paused=true;fireHeld=false;altHeld=false;secondaryPending=false;showScreen('gameover')}}
-function boom(x,y,r=137,damage=100){shake=Math.max(shake,12);burst(x,y,50,'#ffa66b',440);burst(x,y,25,'#fff3c2',220);particles.push({x,y,vx:0,vy:0,life:.35,max:.35,color:'#ffaa70',r,ring:true});for(const e of enemies){let d=Math.hypot(e.x-x,e.y-y);if(d<r+e.r){hurtEnemy(e,Math.round(damage*(1-clamp(d/r,0,.8)*.45)),e.x,e.y);const a=Math.atan2(e.y-y,e.x-x);e.x+=Math.cos(a)*Math.max(0,28-d*.06);e.y+=Math.sin(a)*Math.max(0,28-d*.06)}}for(const o of [...obstacles]){const qx=clamp(x,o.x,o.x+o.w),qy=clamp(y,o.y,o.y+o.h),d=Math.hypot(x-qx,y-qy);if(d<r)damageCover(o,Math.max(30,Math.round(200*(1-d/r*.48))),qx,qy)}sound('grenade')}
+function boom(x,y,r=137,damage=100){puckBlast(x,y,r,1300+damage*3,'blast');shake=Math.max(shake,12);burst(x,y,50,'#ffa66b',440);burst(x,y,25,'#fff3c2',220);particles.push({x,y,vx:0,vy:0,life:.35,max:.35,color:'#ffaa70',r,ring:true});for(const e of enemies){let d=Math.hypot(e.x-x,e.y-y);if(d<r+e.r){hurtEnemy(e,Math.round(damage*(1-clamp(d/r,0,.8)*.45)),e.x,e.y);const a=Math.atan2(e.y-y,e.x-x);e.x+=Math.cos(a)*Math.max(0,28-d*.06);e.y+=Math.sin(a)*Math.max(0,28-d*.06)}}for(const o of [...obstacles]){const qx=clamp(x,o.x,o.x+o.w),qy=clamp(y,o.y,o.y+o.h),d=Math.hypot(x-qx,y-qy);if(d<r)damageCover(o,Math.max(30,Math.round(200*(1-d/r*.48))),qx,qy)}sound('grenade')}
 function smallExplosion(x,y,b,skip){
  if(!b.explosive)return;
+ puckBlast(x,y,110,810,'blast');
  burst(x,y,11,'#ffb57e',125);
  const radius=46;
  for(const e of enemies){if(e.dead||e===skip)continue;const d=Math.hypot(e.x-x,e.y-y);if(d<radius+e.r)hurtEnemy(e,Math.round(b.damage*.35*(1-Math.min(.7,d/(radius+e.r)))),e.x,e.y)}
@@ -1117,6 +1238,7 @@ for(let i=bullets.length-1;i>=0;i--){
  let removed=false;
  for(let s=0;s<steps;s++){
   b.x+=b.vx*dt/steps;b.y+=b.vy*dt/steps;
+  if(puckEnabled&&puck&&puck.respawn===0&&Math.hypot(b.x-puck.x,b.y-puck.y)<puck.r+b.r){const speed=Math.hypot(b.vx,b.vy)||1;const force=b.friend?Math.min(620,260+b.damage*3.5):165;puckImpulse(puck.x,puck.y,b.vx/speed*force,b.vy/speed*force,b.friend?'shot':'enemy',b.friend?'player':'rival');if(b.friend&&b.explosive)smallExplosion(b.x,b.y,b,null);removed=true;break;}
   const impact=intersectsCover(b.x,b.y,b.r);if(b.t<=0||impact||b.x<b.r+44||b.y<b.r+44||b.x>WORLD.w-b.r-44||b.y>WORLD.h-b.r-44){if(impact)damageCover(impact,b.friend?b.damage*(b.trace?1.25:1):b.damage*.8,b.x,b.y);if(b.friend&&b.explosive)smallExplosion(b.x,b.y,b,null);burst(b.x,b.y,3,b.color,75);removed=true;break}
   if(b.friend){
    // Remember each enemy a projectile has already hit, preventing repeated
@@ -1146,7 +1268,8 @@ for(let i=grenades.length-1;i>=0;i--){
  if(nx.bounces||ny.bounces){g.bounces+=nx.bounces+ny.bounces;burst(g.x,g.y,4,'#f8cf9d',90)}
  if(g.t>=g.dur-0.00001||g.t>=g.fuse){boom(g.x,g.y,g.radius,g.damage);grenades.splice(i,1)}
 }
-for(let i=knives.length-1;i>=0;i--){const k=knives[i];k.t-=dt;let dead=false,steps=Math.max(1,Math.ceil(Math.hypot(k.vx*dt,k.vy*dt)/14));for(let s=0;s<steps;s++){k.x+=k.vx*dt/steps;k.y+=k.vy*dt/steps;const o=intersectsCover(k.x,k.y,5);if(k.t<=0||o||k.x<49||k.y<49||k.x>WORLD.w-49||k.y>WORLD.h-49){if(o)damageCover(o,k.damage*.45,k.x,k.y);dead=true;burst(k.x,k.y,3,'#c9f0ed',70);break}for(const e of enemies){if(e.dead)continue;if(Math.hypot(k.x-e.x,k.y-e.y)<e.r+7){hurtEnemy(e,k.damage,k.x,k.y);dead=true;break}}if(dead)break}if(dead)knives.splice(i,1)}
+for(let i=knives.length-1;i>=0;i--){const k=knives[i];k.t-=dt;let dead=false,steps=Math.max(1,Math.ceil(Math.hypot(k.vx*dt,k.vy*dt)/14));for(let s=0;s<steps;s++){k.x+=k.vx*dt/steps;k.y+=k.vy*dt/steps;if(puckEnabled&&puck&&puck.respawn===0&&Math.hypot(k.x-puck.x,k.y-puck.y)<puck.r+6){const n=Math.hypot(k.vx,k.vy)||1;puckImpulse(puck.x,puck.y,k.vx/n*490,k.vy/n*490,'shot','player');dead=true;break;}const o=intersectsCover(k.x,k.y,5);if(k.t<=0||o||k.x<49||k.y<49||k.x>WORLD.w-49||k.y>WORLD.h-49){if(o)damageCover(o,k.damage*.45,k.x,k.y);dead=true;burst(k.x,k.y,3,'#c9f0ed',70);break}for(const e of enemies){if(e.dead)continue;if(Math.hypot(k.x-e.x,k.y-e.y)<e.r+7){hurtEnemy(e,k.damage,k.x,k.y);dead=true;break}}if(dead)break}if(dead)knives.splice(i,1)}
+updatePuck(dt);goalFlash=Math.max(0,goalFlash-dt);
 for(let i=particles.length-1;i>=0;i--){let p=particles[i];p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=Math.max(0,1-dt*3);p.vy*=Math.max(0,1-dt*3);if(p.life<=0)particles.splice(i,1)}for(let i=texts.length-1;i>=0;i--){let t=texts[i];t.t+=dt;t.y-=30*dt;if(t.t>t.max)texts.splice(i,1)}
 if(toSpawn===0&&enemies.length===0&&nextWaveTimer<0&&!shopOpen)openShop()
 }
@@ -1154,6 +1277,7 @@ function rr(x,y,w,h,r=8){ctx.beginPath();ctx.roundRect(x,y,w,h,r)}
 function bg(){ctx.fillStyle='#0a1720';ctx.fillRect(0,0,sw,sh);ctx.save();ctx.translate(-cam.x,-cam.y);ctx.fillStyle='#10222c';ctx.fillRect(0,0,WORLD.w,WORLD.h);
 let left=Math.floor(cam.x/80)*80,top=Math.floor(cam.y/80)*80;ctx.strokeStyle='rgba(126,195,195,.055)';ctx.lineWidth=1;ctx.beginPath();for(let x=left;x<cam.x+sw+90;x+=80){ctx.moveTo(x,Math.max(0,cam.y-20));ctx.lineTo(x,Math.min(WORLD.h,cam.y+sh+20))}for(let y=top;y<cam.y+sh+90;y+=80){ctx.moveTo(Math.max(0,cam.x-20),y);ctx.lineTo(Math.min(WORLD.w,cam.x+sw+20),y)}ctx.stroke();
 ctx.strokeStyle='rgba(105,168,172,.15)';ctx.lineWidth=2;ctx.setLineDash([12,15]);ctx.strokeRect(50,50,WORLD.w-100,WORLD.h-100);ctx.setLineDash([]);
+drawPuckFieldBackdrop();
 for(let i=0;i<20;i++){let x=150+(i*311)%2170,y=105+(i*241)%1480;ctx.fillStyle='rgba(109,178,181,.055)';ctx.fillRect(x,y,60,3);ctx.fillRect(x+28,y-20,3,44)}
 for(const o of obstacles){
  if(o.x>cam.x+sw+40||o.y>cam.y+sh+40||o.x+o.w<cam.x-40||o.y+o.h<cam.y-40)continue;
@@ -1221,7 +1345,7 @@ function reticle(){
 }
 let uiTimer=0;function syncUI(dt){
  uiTimer-=dt;if(uiTimer>0)return;uiTimer=.06;
- ui.wave.textContent=String(wave).padStart(2,'0');ui.kills.textContent=String(kills).padStart(3,'0');ui.score.textContent=String(score).padStart(5,'0');ui.credits.textContent='$'+credits.toLocaleString();ui.health.textContent=String(player.hp);ui.hpfill.style.width=player.hp+'%';ui.dodge.textContent=player.roll>0?'SLIDING':player.rollCd>0?player.rollCd.toFixed(1)+'s':'READY';ui.dodge.style.color=player.rollCd>0?'#e9b27f':'#c5faf0';
+ ui.wave.textContent=String(wave).padStart(2,'0');ui.kills.textContent=String(kills).padStart(3,'0');ui.score.textContent=String(score).padStart(5,'0');ui.credits.textContent='$'+credits.toLocaleString();ui.puckBoard.hidden=!puckEnabled||!started;ui.puckPlayerGoals.textContent=String(teamGoals);ui.puckEnemyGoals.textContent=String(rivalGoals);if(puckEnabled&&puck){const pdx=puck.x-player.x,pdy=puck.y-player.y;const arrow=Math.abs(pdx)>Math.abs(pdy)?(pdx>=0?'→':'←'):(pdy>=0?'↓':'↑');ui.puckDirection.innerHTML=puck.respawn>0?'PUCK RESETTING…':`PUCK ${arrow} ${Math.round(Math.hypot(pdx,pdy))}m · SCORE IN ORANGE GOAL · <strong>+2,500 PTS</strong>`;}ui.health.textContent=String(player.hp);ui.hpfill.style.width=player.hp+'%';ui.dodge.textContent=player.roll>0?'SLIDING':player.rollCd>0?player.rollCd.toFixed(1)+'s':'READY';ui.dodge.style.color=player.rollCd>0?'#e9b27f':'#c5faf0';
  if(player.weapon===2){ui.weapon.textContent='COMBAT KNIFE';ui.weaponSlot.textContent='01 / MELEE · '+(toSpawn+enemies.length)+' HOSTILES LEFT';ui.ammo.innerHTML=(player.throwKnives===Infinity?'∞':player.throwKnives)+' <small>THROWING KNIVES</small>';ui.alt.textContent='SPACE / LMB · SLASH · RMB + LMB · THROW';return}
  ui.weapon.textContent=gunSpec().name+(projectileCount()>1?' · ×'+projectileCount()+' PELLETS':'')+' · '+fireModeLabel();ui.weaponSlot.textContent='02 / CUSTOM FIREARM · '+(toSpawn+enemies.length)+' HOSTILES LEFT';
  ui.ammo.innerHTML=player.reload>0?`<span style="font-size:16px;color:#ffbf87">RELOADING ${player.reload.toFixed(1)}s</span>`:`${player.gun} <small>/ ${player.gunReserve===Infinity?'∞':player.gunReserve}</small>`;
@@ -1231,7 +1355,7 @@ let uiTimer=0;function syncUI(dt){
  (altHeld?'RMB + LMB · POWER SHOT (3 ROUNDS)':'RMB + LMB · POWER SHOT');
  ui.alt.textContent=sec+laser+explosive+' · SPACE STRIKE'+(player.bayonetOn?' (BAYONET)':'');
 }
-function draw(){const sx=shake?rand(-shake,shake):0,sy=shake?rand(-shake,shake):0;ctx.save();ctx.translate(sx,sy);bg();drawEntities();ctx.restore();if(started)reticle()}
+function draw(){const sx=shake?rand(-shake,shake):0,sy=shake?rand(-shake,shake):0;ctx.save();ctx.translate(sx,sy);bg();drawEntities();drawPuck();ctx.restore();if(started)reticle()}
 let frameErrors=0;
 function loop(t){
  try{
