@@ -560,7 +560,7 @@ function absorbDamage(target,amount){
 }
 function rechargeShield(target,dt){
  const mods=target.defense||target.mods||player.mods,max=shieldMax(mods);
- if(target.hp>0&&max>0&&target.shield<max&&clock-(target.shieldHitAt||-999)>=shieldDelayTime(mods))
+ if(target.hp>0&&max>0&&target.shield<max&&clock-(target.shieldHitAt??-999)>=shieldDelayTime(mods))
   target.shield=Math.min(max,(target.shield||0)+shieldRate(mods)*dt);
 }
 const FIRE_MODES=['semi','burst','auto'];
