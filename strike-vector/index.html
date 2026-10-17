@@ -956,7 +956,7 @@ function finishRoundBreak(confirmedByHost=false){
  if(net.phase==='match'){
   if(kind==='goal'){
    netResetLocal();puck.respawn=.55;
-   if(net.mode==='host')for(const [id,r] of net.remotes){const pt=netGoalSpawn(r.team);r.x=pt.x;r.y=pt.y;r.hp=100;r.respawn=0;r.invulUntil=clock+1.5;netMsg(net.clients.get(id),{t:'health',hp:100,respawn:0,x:r.x,y:r.y});}
+   if(net.mode==='host')for(const [id,r] of net.remotes){const pt=netGoalSpawn(r.team);r.x=pt.x;r.y=pt.y;r.hp=100;r.shield=shieldMax(r.defense);r.shieldHitAt=-999;r.respawn=0;r.invulUntil=clock+1.5;netMsg(net.clients.get(id),{t:'health',hp:100,shield:r.shield,respawn:0,x:r.x,y:r.y});}
   }
   if(net.mode==='host'&&net.settings.npcs){
    if(kind==='goal'){enemies=[];net.npcRemaining=0;wave=Math.max(1,wave);}
@@ -1723,8 +1723,8 @@ function netVisualGrenade(msg,owner,visualOnly){
  grenades.push({id,sx:x,sy:y,x,y,vx,vy,tx,ty,t:0,dur,fuse:Math.max(1.3,dur+.12),r:8,trail:[],radius:clamp(msg.radius||137,90,290),damage:clamp(msg.damage||100,25,260),bounces:0,owner,visualOnly});
 }
 function netVisualShot(msg){
- const a=msg.a||0,v=clamp(msg.velocity||1260,500,1950),x=clamp(msg.x,50,WORLD.w-50),y=clamp(msg.y,50,WORLD.h-50);
- bullets.push({x:x+Math.cos(a)*29,y:y+Math.sin(a)*29,vx:Math.cos(a)*v,vy:Math.sin(a)*v,t:.65,damage:0,friend:true,visualOnly:true,owner:msg.by,color:msg.explosive?'#ffd080':teamColor(net.remotes.get(msg.by)?.team),r:3,pierce:0,explosive:!!msg.explosive});
+ const a=msg.a||0,v=clamp(msg.velocity||1260,500,1950),x=clamp(msg.x,50,WORLD.w-50),y=clamp(msg.y,50,WORLD.h-50),radius=clamp(Number(msg.r)||3.2,2.5,9);
+ bullets.push({x:x+Math.cos(a)*29,y:y+Math.sin(a)*29,vx:Math.cos(a)*v,vy:Math.sin(a)*v,t:.65,damage:0,friend:true,visualOnly:true,owner:msg.by,color:msg.explosive?'#ffd080':teamColor(net.remotes.get(msg.by)?.team),r:radius,pierce:0,explosive:!!msg.explosive});
  if(bullets.length>240)bullets.shift();
 }
 function netCoverPack(){return obstacles.map(o=>{
@@ -1815,8 +1815,8 @@ function netHandleHostData(conn,msg){
  }
  if(!r)return;
  if(roundBreak.kind&&!['team','selfReset','state'].includes(msg.t))return;
- if(msg.t==='team'){r.team=msg.team==='orange'?'orange':'cyan';const pos=netGoalSpawn(r.team);r.x=pos.x;r.y=pos.y;r.hp=100;r.respawn=0;r.invulUntil=clock+1.5;netMsg(conn,{t:'health',hp:100,respawn:0,x:r.x,y:r.y});netSendRoster();return;}
- if(msg.t==='selfReset'&&net.phase==='match'){const pos=netGoalSpawn(r.team);r.x=pos.x;r.y=pos.y;r.hp=100;r.respawn=0;r.invulUntil=clock+1.5;netMsg(conn,{t:'health',hp:100,respawn:0,x:r.x,y:r.y});return;}
+ if(msg.t==='team'){r.team=msg.team==='orange'?'orange':'cyan';const pos=netGoalSpawn(r.team);r.x=pos.x;r.y=pos.y;r.hp=100;r.shield=shieldMax(r.defense);r.shieldHitAt=-999;r.respawn=0;r.invulUntil=clock+1.5;netMsg(conn,{t:'health',hp:100,shield:r.shield,respawn:0,x:r.x,y:r.y});netSendRoster();return;}
+ if(msg.t==='selfReset'&&net.phase==='match'){const pos=netGoalSpawn(r.team);r.x=pos.x;r.y=pos.y;r.hp=100;r.shield=shieldMax(r.defense);r.shieldHitAt=-999;r.respawn=0;r.invulUntil=clock+1.5;netMsg(conn,{t:'health',hp:100,shield:r.shield,respawn:0,x:r.x,y:r.y});return;}
  if(msg.t==='state'){
   if(net.phase!=='match')return;
   if(![msg.x,msg.y,msg.a].every(Number.isFinite))return;
@@ -1846,10 +1846,10 @@ function netHandleHostData(conn,msg){
  }
  if(msg.t==='shot'&&net.phase==='match'&&Number.isFinite(msg.a)&&r.hp>0){
   // Host reconstructs the projectile; guest-provided positions are not trusted.
-  const a=msg.a,v=clamp(msg.velocity||1260,500,1900),damage=clamp(msg.damage||26,6,150),explosive=!!msg.explosive;
+  const a=msg.a,v=clamp(msg.velocity||1260,500,1900),damage=clamp(msg.damage||26,6,150),explosive=!!msg.explosive,radius=clamp(Number(msg.r)||3.2,2.5,9);
   if(!r.shotWindow||clock-r.shotWindow>1){r.shotWindow=clock;r.shotCount=0;}if(++r.shotCount>125)return;
-  bullets.push({x:r.x+Math.cos(a)*29,y:r.y+Math.sin(a)*29,vx:Math.cos(a)*v,vy:Math.sin(a)*v,t:1,damage,friend:true,color:explosive?'#ffd080':teamColor(r.team),r:3,pierce:0,explosive,owner:conn.peer});
-  netBroadcast({t:'shot',by:conn.peer,x:r.x,y:r.y,a,velocity:v,explosive});return;
+  bullets.push({x:r.x+Math.cos(a)*29,y:r.y+Math.sin(a)*29,vx:Math.cos(a)*v,vy:Math.sin(a)*v,t:1,damage,friend:true,color:explosive?'#ffd080':teamColor(r.team),r:radius,pierce:0,explosive,owner:conn.peer});
+  netBroadcast({t:'shot',by:conn.peer,x:r.x,y:r.y,a,velocity:v,explosive,r:radius});return;
  }
  if(msg.t==='melee'&&net.phase==='match'&&Number.isFinite(msg.a)&&r.hp>0){
   const kind=msg.kind==='knife'?'knife':'quick';if((r.meleeAt||-10)+.24>clock)return;r.meleeAt=clock;
