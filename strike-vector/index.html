@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
 <meta name="theme-color" content="#080e17" />
-<title>STRIKE VECTOR v1.5.3 — Precision Alternate Fire</title>
+<title>STRIKE VECTOR v1.5.3 — Precision, Vitality & Puck Launches</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{color-scheme:dark;--bg:#080e17;--panel:#101b28;--border:#263746;--mint:#74f7d4;--text:#eef6f7;--muted:#8da4b3;--orange:#ffbd75}
@@ -580,7 +580,7 @@ function reset(){
   mods:{receiver:0,barrel:0,damage:0,trigger:0,fireControl:0,mag:0,projectiles:0,penetration:0,reloadSpeed:0,blast:0,knife:0,grenadePower:0,grenadeRange:0,grenadeMag:0,grenadeReload:0,grenadeCycle:0,shieldCapacity:0,shieldRegen:0,shieldDelay:0,armor:0,maxHealth:0,dodgeCooldown:0},
   modules:{laser:false,grenade:false,power:false,explosive:false,bayonet:false},laserOn:false,explosiveOn:false,bayonetOn:false,secondary:'aim',
   shield:0,shieldHitAt:-999,roll:0,rollMax:.78,rollMode:'slide',rollDx:0,rollDy:0,rollCd:0,invul:0,slideTurn:0,fireCd:0,secondaryCd:0,slash:0,slashDir:0,slashHits:new Set(),
-  reload:0,gun:14,gunReserve:Infinity,grenades:5,grenadeReserve:Infinity,grenadeReload:0,throwKnives:Infinity,step:0,meleeCd:0,slashKind:'knife',triggerQueue:0,triggerExpiry:0,fireMode:'semi',burstShots:0};
+  reload:0,gun:14,gunReserve:Infinity,grenades:5,grenadeReserve:Infinity,grenadeReload:0,kvx:0,kvy:0,throwKnives:Infinity,step:0,meleeCd:0,slashKind:'knife',triggerQueue:0,triggerExpiry:0,fireMode:'semi',burstShots:0};
  enemies=[];bullets=[];grenades=[];knives=[];particles=[];texts=[];clock=0;wave=0;kills=0;score=0;credits=0;teamGoals=0;rivalGoals=0;goalFlash=0;resetPuck();roundBreak.kind='';roundBreak.until=0;roundBreak.lastShown=-1;document.getElementById('roundBreakPanel').classList.remove('active');document.getElementById('touchShopClose').disabled=false;document.getElementById('reopenArmory').classList.remove('active');ui.start.disabled=false;
  shopOpen=false;shopTab='gun';shopMode='between';coverSpawnTimer=4.5;toSpawn=0;spawnTimer=0;nextWaveTimer=1.1;shake=0;
  fireHeld=false;altHeld=false;secondaryPending=false;ended=false;keys.clear();cam.x=player.x-sw/2;cam.y=player.y-sh/2;
@@ -606,7 +606,7 @@ const OPTIONS=[
  {id:'grenadeMag',name:'GRENADE FEED CAPACITY',price:295,step:175,max:5,detail:'+1 loaded grenade per tier',requires:'grenade'},
  {id:'grenadeReload',name:'GRENADE LOADING SPEED',price:245,step:135,detail:'15% faster grenade reload per tier',requires:'grenade'},
  {id:'grenadeCycle',name:'GRENADE FIRING MECHANISM',price:275,step:150,detail:'15% faster follow-up grenade shots per tier',requires:'grenade'},
- {id:'knife',name:'MELEE EDGE',price:190,step:105,detail:'+26 knife slash, +20 buttstock, +24 bayonet, and +18 thrown-knife damage per tier. Fully refundable.'},
+ {id:'knife',name:'MELEE EDGE',price:190,step:105,detail:'+42 knife slash, +36 buttstock, +48 bayonet, and +18 thrown-knife damage per tier. Fully refundable.'},
  {id:'maxHealth',name:'VITALITY TRAINING',price:350,step:210,max:5,detail:'+25 maximum health per tier (100 → 225 HP). Buying restores +25 HP; fully refundable.'},
  {id:'shieldCapacity',name:'ENERGY SHIELD ARRAY',price:340,step:190,max:5,detail:'+35 regenerating shield points per tier. New capacity immediately charges.'},
  {id:'shieldRegen',name:'SHIELD RECHARGE',price:290,step:170,max:5,detail:'+6 shield per second per tier, once shield capacity is installed.'},
@@ -632,7 +632,7 @@ function shieldDelayTime(mods=player.mods){return Math.max(1,3.5-.5*(mods.shield
 function shieldProtection(mods=player.mods){return Math.min(.35,.07*(mods.armor||0))}
 function barrelSpread(level=player.mods.barrel){return gunSpec().spread*Math.pow(.68,level)}
 function pelletFan(level=player.mods.barrel){return Math.pow(.79,level)}
-function meleeDamage(kind,level=player.mods.knife,bayonet=false){return kind==='knife'?80+26*level:bayonet?102+24*level:70+20*level}
+function meleeDamage(kind,level=player.mods.knife,bayonet=false){return kind==='knife'?155+42*level:bayonet?190+48*level:132+36*level}
 function dodgeCooldown(level=player.mods.dodgeCooldown){return Math.max(1,2-.2*level)}
 function projectileRadius(receiver=player.mods.receiver,power=false){return (3.2+receiver*1.55)*(power?1.4:1)}
 function absorbDamage(target,amount){
@@ -1588,8 +1588,10 @@ function updatePuck(dt){
   const dx=puck.x-body.x,dy=puck.y-body.y,d=Math.hypot(dx,dy)||1;
   const reach=puck.r+body.r;
   if(d<reach){const nx=dx/d,ny=dy/d;puck.x=body.x+nx*(reach+1);puck.y=body.y+ny*(reach+1);
+   const momentum=Math.hypot(body.kvx||0,body.kvy||0);
    const power=body===player?(player.roll>0?180:72):82;
-   puck.vx+=nx*power*dt*6;puck.vy+=ny*power*dt*6;
+   puck.vx+=nx*(power*dt*6+momentum*.65);puck.vy+=ny*(power*dt*6+momentum*.65);
+   const velocity=Math.hypot(puck.vx,puck.vy);if(velocity>1600){puck.vx*=1600/velocity;puck.vy*=1600/velocity;}
   }
  }
  puck.spin+=(puck.vx*.0005)*dt;
@@ -1820,7 +1822,7 @@ function loadPeerJS(){
 }
 
 const netGoalSpawn=(team,i=0)=>({x:team==='orange'?WORLD.w-204:204,y:clamp(WORLD.h*.5+((i%5)-2)*57,280,WORLD.h-280)});
-function netResetLocal(){const p=netGoalSpawn(net.team);player.x=p.x;player.y=p.y;player.maxHp=maxHealth();player.hp=maxHealth();player.shield=shieldMax();player.shieldHitAt=-999;player.respawn=0;player.invul=1.5;player.roll=0;player.gun=clipSize();keys.clear();fireHeld=false;}
+function netResetLocal(){const p=netGoalSpawn(net.team);player.x=p.x;player.y=p.y;player.maxHp=maxHealth();player.hp=maxHealth();player.kvx=0;player.kvy=0;player.shield=shieldMax();player.shieldHitAt=-999;player.respawn=0;player.invul=1.5;player.roll=0;player.gun=clipSize();keys.clear();fireHeld=false;}
 function netRules(){return {npcs:!!net.settings.npcs,cover:!!net.settings.cover,pvp:!!net.settings.pvp,npcPuck:!!net.settings.npcPuck,teamLock:!!net.settings.teamLock}}
 function netApplyRules(data){
  if(!data||typeof data!=='object')return;
@@ -1848,6 +1850,39 @@ function netPvpHit(id,amount,hostile=false){
  const hit=absorbDamage(r,Math.max(1,Math.min(180,amount)));r.hp=Math.max(0,r.hp-hit.hpDamage);r.invulUntil=clock+.4;
  if(r.hp<=0){r.respawn=1.9;floatText(r.x,r.y-27,'RESPAWNING',teamColor(r.team));}
  netMsg(net.clients.get(id),{t:'health',hp:r.hp,shield:r.shield,respawn:r.respawn||0});
+}
+// Allied weapon hits cause motion, not health damage. The host owns impacts;
+// guests receive only finite host-authoritative velocity impulses.
+function combatTeam(id){
+ if(id==='host')return net.team;
+ return net.remotes.get(id)?.team||net.bots.find(bot=>bot.id===id)?.team||null;
+}
+function applyKnockbackMotion(body,dt){
+ const vx=body.kvx||0,vy=body.kvy||0;
+ if(Math.hypot(vx,vy)<3){body.kvx=0;body.kvy=0;return;}
+ moveBody(body,vx*dt,vy*dt);
+ const decay=Math.exp(-2.45*dt);
+ body.kvx=vx*decay;body.kvy=vy*decay;
+}
+function netPushBody(id,dx,dy,power){
+ if(net.mode!=='host'||net.phase!=='match')return;
+ const body=id==='host'?player:net.remotes.get(id)||net.bots.find(b=>b.id===id);
+ if(!body||body.hp<=0)return;
+ const n=Math.hypot(dx,dy)||1,force=clamp(power,0,1400),vx=dx/n*force,vy=dy/n*force;
+ body.kvx=clamp((body.kvx||0)+vx,-1550,1550);
+ body.kvy=clamp((body.kvy||0)+vy,-1550,1550);
+ if(id!=='host'&&!id.startsWith('bot-'))netMsg(net.clients.get(id),{t:'impulse',vx,vy});
+ floatText(body.x,body.y-40,'YEET!',teamColor(combatTeam(id)));
+ burst(body.x,body.y,8,teamColor(combatTeam(id)),100);
+}
+function netCombatImpact(owner,id,damage,dx,dy,power,hostile=false){
+ if(id===owner)return;
+ const attackTeam=combatTeam(owner),defenseTeam=combatTeam(id);
+ const allied=!hostile&&attackTeam&&defenseTeam&&attackTeam===defenseTeam;
+ if(allied||net.settings.pvp&&!hostile)netPushBody(id,dx,dy,allied?power:power*.55);
+ if(allied)return;
+ if(id==='host'||net.remotes.has(id))netPvpHit(id,damage,hostile);
+ else netBotHit(net.bots.find(b=>b.id===id),damage,hostile);
 }
 function netAreaDamage(x,y,r,amount,owner){
  if(net.phase!=='match'||net.mode!=='host'||!net.settings.pvp)return;
@@ -1928,7 +1963,7 @@ function netRosterData(){
 }
 function netPlaceBot(bot){
  const slot=net.bots.indexOf(bot)+1,p=netGoalSpawn(bot.team,slot);
- bot.x=p.x;bot.y=p.y;bot.hp=100;bot.r=18;bot.a=bot.team==='cyan'?0:Math.PI;bot.shotCd=.45+Math.random()*.6;bot.combatCd=.2+Math.random()*.4;bot.grenadeCd=2.5+Math.random()*3;bot.meleeCd=1+Math.random();bot.flash=0;bot.respawn=0;bot.invulUntil=clock+1.5;
+ bot.x=p.x;bot.y=p.y;bot.hp=100;bot.r=18;bot.a=bot.team==='cyan'?0:Math.PI;bot.shotCd=.45+Math.random()*.6;bot.combatCd=.2+Math.random()*.4;bot.grenadeCd=2.5+Math.random()*3;bot.meleeCd=1+Math.random();bot.flash=0;bot.kvx=0;bot.kvy=0;bot.respawn=0;bot.invulUntil=clock+1.5;
 }
 function netAddBot(){
  if(net.mode!=='host'||net.clients.size+net.bots.length>=7)return;
@@ -2000,7 +2035,7 @@ function netSendRoster(){
  netBroadcast({t:'roster',members:netRosterData().map(({id,name,team,host,bot})=>({id,name,team,host,bot}))});
  netUpdateLobby();
 }
-function netJoinRoomInfo(id,r){net.remotes.set(id,{name:safeName(r.name),team:r.team==='orange'?'orange':'cyan',x:WORLD.w*.5,y:WORLD.h*.5,r:18,a:0,weapon:0,laserOn:false,hp:100,defense:{shieldCapacity:0,shieldRegen:0,shieldDelay:0,armor:0,maxHealth:0},meleeTier:0,bayonetOn:false,shield:0,shieldMax:0,shieldHitAt:-999,respawn:0,invulUntil:0,slash:0,seen:performance.now()});netUpdateLobby()}
+function netJoinRoomInfo(id,r){net.remotes.set(id,{name:safeName(r.name),team:r.team==='orange'?'orange':'cyan',x:WORLD.w*.5,y:WORLD.h*.5,r:18,a:0,weapon:0,laserOn:false,hp:100,kvx:0,kvy:0,defense:{shieldCapacity:0,shieldRegen:0,shieldDelay:0,armor:0,maxHealth:0},meleeTier:0,bayonetOn:false,shield:0,shieldMax:0,shieldHitAt:-999,respawn:0,invulUntil:0,slash:0,seen:performance.now()});netUpdateLobby()}
 function netClose(notice=''){const oldMode=net.mode;
  if(oldMode==='host')netBroadcast({t:'closed'});
  for(const c of net.clients.values())try{c.close()}catch(e){}
@@ -2023,7 +2058,7 @@ function netStartMatch(){
  // Start all operatives with the regular 9mm and an underbarrel grenade launcher.
  player.modules.grenade=true;player.secondary='grenade';
  cam.x=player.x-sw*.5;cam.y=player.y-sh*.5;
- net.phase='match';net.started=true;net.sendClock=0;net.npcRemaining=net.settings.npcs&&net.mode==='host'?npcWavePopulation(wave,true):0;player.respawn=0;player.maxHp=maxHealth();player.hp=maxHealth();player.invul=1.5;if(net.settings.cover&&net.mode==='host')buildLevel();
+ net.phase='match';net.started=true;net.sendClock=0;net.npcRemaining=net.settings.npcs&&net.mode==='host'?npcWavePopulation(wave,true):0;player.respawn=0;player.maxHp=maxHealth();player.hp=maxHealth();player.kvx=0;player.kvy=0;player.invul=1.5;if(net.settings.cover&&net.mode==='host')buildLevel();
  $net('netLobby').classList.add('hidden');$net('netDock').classList.remove('hidden');
  ui.screen.classList.add('hidden');ui.puckBoard.hidden=false;netUpdateLobby();syncUI(1);
 }
@@ -2045,7 +2080,7 @@ function netHandleHostData(conn,msg){
  if(msg.t==='state'){
   if(net.phase!=='match')return;
   if(![msg.x,msg.y,msg.a].every(Number.isFinite))return;
-  if(r.hp>0){r.x=clamp(msg.x,65,WORLD.w-65);r.y=clamp(msg.y,65,WORLD.h-65);}r.a=msg.a;r.weapon=msg.weapon===2?2:0;r.laserOn=!!msg.laserOn;r.bayonetOn=!!msg.bayonetOn;r.meleeTier=clamp(Math.floor(Number(msg.meleeTier)||0),0,40);r.seen=performance.now();
+  if(r.hp>0){r.x=clamp(msg.x,65,WORLD.w-65);r.y=clamp(msg.y,65,WORLD.h-65);r.kvx=clamp(Number(msg.kvx)||0,-1400,1400);r.kvy=clamp(Number(msg.kvy)||0,-1400,1400);}r.a=msg.a;r.weapon=msg.weapon===2?2:0;r.laserOn=!!msg.laserOn;r.bayonetOn=!!msg.bayonetOn;r.meleeTier=clamp(Math.floor(Number(msg.meleeTier)||0),0,40);r.seen=performance.now();
    if(msg.defense&&typeof msg.defense==='object'){
     const prevMax=shieldMax(r.defense),next={};
     for(const key of ['shieldCapacity','shieldRegen','shieldDelay','armor','maxHealth'])next[key]=clamp(Math.floor(Number(msg.defense[key])||0),0,5);
@@ -2252,6 +2287,7 @@ function netBotAI(dt){
   b.combatCd=Math.max(0,(b.combatCd||0)-dt);
   b.grenadeCd=Math.max(0,(b.grenadeCd||0)-dt);
   b.meleeCd=Math.max(0,(b.meleeCd||0)-dt);
+  applyKnockbackMotion(b,dt);
   const foe=netBotCombatTarget(b);
   let tx=b.x,ty=b.y;
   if(foe&&foe.range<550){
@@ -2297,7 +2333,7 @@ function netTick(dt){
  if(net.phase!=='match')return;
  net.sendClock+=dt;if(net.sendClock<.083)return;net.sendClock=0;
  if(net.mode==='guest'){
-  netMsg(net.conn,{t:'state',x:player.x,y:player.y,a:player.angle,weapon:player.weapon,laserOn:player.laserOn,bayonetOn:player.bayonetOn,meleeTier:player.mods.knife,team:net.team,defense:{shieldCapacity:player.mods.shieldCapacity,shieldRegen:player.mods.shieldRegen,shieldDelay:player.mods.shieldDelay,armor:player.mods.armor,maxHealth:player.mods.maxHealth}});return;
+  netMsg(net.conn,{t:'state',x:player.x,y:player.y,a:player.angle,kvx:player.kvx||0,kvy:player.kvy||0,weapon:player.weapon,laserOn:player.laserOn,bayonetOn:player.bayonetOn,meleeTier:player.mods.knife,team:net.team,defense:{shieldCapacity:player.mods.shieldCapacity,shieldRegen:player.mods.shieldRegen,shieldDelay:player.mods.shieldDelay,armor:player.mods.armor,maxHealth:player.mods.maxHealth}});return;
  }
  for(const [id,r] of net.remotes){if(r.hp>0&&!roundBreak.kind)rechargeShield(r,.083);if(r.respawn>0){r.respawn=Math.max(0,r.respawn-.083);if(r.respawn<=0){const pos=netGoalSpawn(r.team);r.x=pos.x;r.y=pos.y;r.hp=maxHealth(r.defense);r.shield=shieldMax(r.defense);r.shieldHitAt=-999;r.invulUntil=clock+1.6;netMsg(net.clients.get(id),{t:'health',hp:r.hp,maxHp:maxHealth(r.defense),shield:r.shield,respawn:0,x:pos.x,y:pos.y});}}}
  const players=[{id:'host',name:net.name,team:net.team,x:player.x,y:player.y,a:player.angle,weapon:player.weapon,laserOn:player.laserOn,hp:player.hp,maxHp:maxHealth(),shield:player.shield,shieldMax:shieldMax(),respawn:player.respawn||0},...Array.from(net.remotes.entries()).map(([id,r])=>({id,name:r.name,team:r.team,x:r.x,y:r.y,a:r.a,weapon:r.weapon,laserOn:r.laserOn,hp:r.hp,maxHp:maxHealth(r.defense),shield:r.shield,shieldMax:shieldMax(r.defense),respawn:r.respawn||0}))];
@@ -2372,7 +2408,8 @@ if(player.roll>0){
  if(Math.random()<.60)particle(player.x-player.rollDx*24+rand(-8,8),player.y-player.rollDy*24+rand(-8,8),-player.rollDx*rand(60,170),-player.rollDy*rand(60,170),.25,'#c8a88d',rand(1,3));
 }
 else{let speed=player.hp<=0&&net.phase==='match'?0:c?130:run?360:238;if(altHeld&&player.weapon===0&&player.secondary==='aim')speed*=.72;if(altHeld&&player.weapon===2)speed*=.76;moveBody(player,movingX/norm*speed*dt,movingY/norm*speed*dt)}
-cam.x+=((player.x-sw/2)-cam.x)*Math.min(1,dt*8);cam.y+=((player.y-sh/2)-cam.y)*Math.min(1,dt*8);if(touchState.activeAim)positionTouchAim();
+applyKnockbackMotion(player,dt);
+ cam.x+=((player.x-sw/2)-cam.x)*Math.min(1,dt*8);cam.y+=((player.y-sh/2)-cam.y)*Math.min(1,dt*8);if(touchState.activeAim)positionTouchAim();
 if(player.hp>0&&fireHeld&&altHeld){
  if(secondaryPending&&shoot())secondaryPending=false;
 }else if(player.weapon===0&&player.hp>0&&!altHeld){
