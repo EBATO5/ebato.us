@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
 <meta name="theme-color" content="#080e17" />
-<title>STRIKE VECTOR v1.4.7 — AI Puck League & Team Draft</title>
+<title>STRIKE VECTOR v1.4.8 — NPC Crossfire & Heavy Melee</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{color-scheme:dark;--bg:#080e17;--panel:#101b28;--border:#263746;--mint:#74f7d4;--text:#eef6f7;--muted:#8da4b3;--orange:#ffbd75}
@@ -561,7 +561,7 @@ const OPTIONS=[
  {id:'grenadeMag',name:'GRENADE FEED CAPACITY',price:295,step:175,max:5,detail:'+1 loaded grenade per tier',requires:'grenade'},
  {id:'grenadeReload',name:'GRENADE LOADING SPEED',price:245,step:135,detail:'15% faster grenade reload per tier',requires:'grenade'},
  {id:'grenadeCycle',name:'GRENADE FIRING MECHANISM',price:275,step:150,detail:'15% faster follow-up grenade shots per tier',requires:'grenade'},
- {id:'knife',name:'MELEE EDGE',price:190,step:105,detail:'+15 slash damage per tier'},
+ {id:'knife',name:'MELEE EDGE',price:190,step:105,detail:'+26 knife slash, +18 buttstock, +22 bayonet, and +18 thrown-knife damage per tier. Fully refundable.'},
  {id:'shieldCapacity',name:'ENERGY SHIELD ARRAY',price:340,step:190,max:5,detail:'+35 regenerating shield points per tier. New capacity immediately charges.'},
  {id:'shieldRegen',name:'SHIELD RECHARGE',price:290,step:170,max:5,detail:'+6 shield per second per tier, once shield capacity is installed.'},
  {id:'shieldDelay',name:'SHIELD RECOVERY TIMER',price:265,step:160,max:5,detail:'Each tier shortens the delay after damage by 0.5 seconds (minimum 1 second).'},
@@ -585,6 +585,7 @@ function shieldDelayTime(mods=player.mods){return Math.max(1,3.5-.5*(mods.shield
 function shieldProtection(mods=player.mods){return Math.min(.35,.07*(mods.armor||0))}
 function barrelSpread(level=player.mods.barrel){return gunSpec().spread*Math.pow(.68,level)}
 function pelletFan(level=player.mods.barrel){return Math.pow(.79,level)}
+function meleeDamage(kind,level=player.mods.knife,bayonet=false){return kind==='knife'?80+26*level:bayonet?92+22*level:56+18*level}
 function dodgeCooldown(level=player.mods.dodgeCooldown){return Math.max(1,2-.2*level)}
 function projectileRadius(receiver=player.mods.receiver,power=false){return (3.2+receiver*1.55)*(power?1.4:1)}
 function absorbDamage(target,amount){
@@ -680,7 +681,7 @@ function statText(o,lvl){
   case 'grenadeMag':return {now:`${grenadeClipSize()} grenades / mag`,next:o.max===lvl?'MAX':`${grenadeClipSize()+1} grenades / mag`};
   case 'grenadeReload':return {now:`${grenadeReloadDuration().toFixed(2)}s reload`,next:`${Math.max(.38,1.6*Math.pow(.85,next)).toFixed(2)}s reload`};
   case 'grenadeCycle':return {now:`${grenadeInterval().toFixed(2)}s launcher cycle`,next:`${Math.max(.15,.76*Math.pow(.85,next)).toFixed(2)}s cycle`};
-  case 'knife':return {now:`${44+curr*15} slash damage`,next:`${44+next*15} slash damage`};
+  case 'knife':return {now:`${meleeDamage('knife',curr)} slash / ${meleeDamage('quick',curr)} buttstock`,next:`${meleeDamage('knife',next)} slash / ${meleeDamage('quick',next)} buttstock`,hint:`Bayonet: ${meleeDamage('quick',curr,true)} → ${meleeDamage('quick',next,true)} · Throwing knife: ${78+curr*18} → ${78+next*18} base damage`};
    case 'shieldCapacity':return {now:`${shieldMax()} shield max`,next:`${shieldMax()+35} shield max`,hint:`Currently charged: ${Math.ceil(player.shield)}`};
    case 'shieldRegen':return {now:`${shieldRate()} shield / sec`,next:`${shieldMax()>0?shieldRate()+6:0} shield / sec`};
    case 'shieldDelay':return {now:`${shieldDelayTime().toFixed(1)}s delay`,next:`${Math.max(1,shieldDelayTime()-.5).toFixed(1)}s delay`};
@@ -1633,7 +1634,7 @@ function hitSlash(){
  if(net.phase==='match'&&net.mode==='guest')return;
  const isGunStrike=player.slashKind==='quick'&&player.weapon===0;
  const bayonet=isGunStrike&&player.modules.bayonet&&player.bayonetOn;
- const reach=isGunStrike?(bayonet?112:79):99,damage=isGunStrike?(bayonet?57:30)+player.mods.knife*12:44+player.mods.knife*15;
+ const reach=isGunStrike?(bayonet?112:79):99,damage=meleeDamage(isGunStrike?'quick':'knife',player.mods.knife,bayonet);
  for(const e of enemies){
   if(e.hp<=0||player.slashHits.has(e))continue;
   const dx=e.x-player.x,dy=e.y-player.y,d=Math.hypot(dx,dy),raw=Math.atan2(dy,dx)-player.slashDir,da=Math.atan2(Math.sin(raw),Math.cos(raw));
@@ -1651,17 +1652,19 @@ function hitSlash(){
   player.slashCoverDone=true;
  }
 }
-function throwKnife(){if(player.throwKnives<=0){sound('dry');return}player.throwKnives--;const a=mouseAim(),charge=clamp((clock-altStart)/.65,0,1);knives.push({x:player.x+Math.cos(a)*25,y:player.y+Math.sin(a)*25,vx:Math.cos(a)*(920+charge*340),vy:Math.sin(a)*(920+charge*340),angle:a,t:.8,damage:58+charge*46+0});burst(player.x,player.y,4,'#d4f6fb',160);sound('knife')}
-function hurtEnemy(e,damage,x,y){
+function throwKnife(){if(player.throwKnives<=0){sound('dry');return}player.throwKnives--;const a=mouseAim(),charge=clamp((clock-altStart)/.65,0,1);knives.push({x:player.x+Math.cos(a)*25,y:player.y+Math.sin(a)*25,vx:Math.cos(a)*(920+charge*340),vy:Math.sin(a)*(920+charge*340),angle:a,t:.8,damage:78+charge*46+player.mods.knife*18});burst(player.x,player.y,4,'#d4f6fb',160);sound('knife')}
+function hurtEnemy(e,damage,x,y,source='player'){
  if(e.dead)return;
  e.hp-=damage;e.flash=.10;burst(x,y,7,e.type==='rusher'?'#ffb176':'#dfc1ff',180);
  if(e.hp<=0){
   e.dead=true;const earned=e.type==='rusher'?42:58,points=e.type==='rusher'?125:175;
-  kills++;credits+=earned;score+=points;
-  // Shared income lets guests buy upgrades when their side kills NPCs.
-  if(net.phase==='match'&&net.mode==='host')netBroadcast({t:'reward',credits:earned,points,kills:1});
+  // Hostile crossfire doesn't grant player rewards for NPCs' own mistakes.
+  if(source!=='npc'){
+   kills++;credits+=earned;score+=points;
+   if(net.phase==='match'&&net.mode==='host')netBroadcast({t:'reward',credits:earned,points,kills:1});
+  }
   burst(e.x,e.y,15,e.type==='rusher'?'#ed9871':'#bd99fa',240);
-  floatText(e.x,e.y-26,'+'+points);sound('hit');
+  floatText(e.x,e.y-26,source==='npc'?'CROSS FIRE':'+'+points,source==='npc'?'#ffa77f':'#f8cf8c');sound('hit');
  }
 }
 function hurtPlayer(damage){if(player.invul>0||player.hp<=0)return;const hit=absorbDamage(player,damage);player.hp=Math.max(0,player.hp-hit.hpDamage);player.invul=.47;shake=Math.max(shake,hit.absorbed>0?4:7);burst(player.x,player.y,hit.absorbed>0?9:13,hit.absorbed>0?'#70eaff':'#ff857d',190);sound('hit');if(player.hp<=0){if(net.phase==='match'){player.respawn=1.9;fireHeld=false;altHeld=false;secondaryPending=false;floatText(player.x,player.y-32,'RESPAWNING','#ffc187');}else{ended=true;paused=true;fireHeld=false;altHeld=false;secondaryPending=false;showScreen('gameover')}}}
@@ -1737,7 +1740,8 @@ function netAreaDamage(x,y,r,amount,owner){
 function netHostMelee(id,kind,angle){
  if(net.mode!=='host'||net.phase!=='match'||!Number.isFinite(angle))return;
  const p=id==='host'?player:net.remotes.get(id);if(!p||p.hp<=0)return;
- const reach=kind==='knife'?99:110,damage=kind==='knife'?44:55;
+ const bayonet=kind!=='knife'&&!!p.bayonetOn,level=clamp(Math.floor(Number(id==='host'?player.mods.knife:p.meleeTier)||0),0,40);
+ const reach=kind==='knife'?99:bayonet?112:79,damage=meleeDamage(kind,level,bayonet);
  const hits=(v)=>{const d=Math.hypot(v.x-p.x,v.y-p.y),a=Math.atan2(v.y-p.y,v.x-p.x);return d<reach+18&&Math.abs(Math.atan2(Math.sin(a-angle),Math.cos(a-angle)))<.9};
  if(id!=='host'&&hits(player))netPvpHit('host',damage);
  for(const [other,v] of net.remotes)if(other!==id&&hits(v))netPvpHit(other,damage);
@@ -1877,7 +1881,7 @@ function netSendRoster(){
  netBroadcast({t:'roster',members:netRosterData().map(({id,name,team,host,bot})=>({id,name,team,host,bot}))});
  netUpdateLobby();
 }
-function netJoinRoomInfo(id,r){net.remotes.set(id,{name:safeName(r.name),team:r.team==='orange'?'orange':'cyan',x:WORLD.w*.5,y:WORLD.h*.5,r:18,a:0,weapon:0,laserOn:false,hp:100,defense:{shieldCapacity:0,shieldRegen:0,shieldDelay:0,armor:0},shield:0,shieldMax:0,shieldHitAt:-999,respawn:0,invulUntil:0,slash:0,seen:performance.now()});netUpdateLobby()}
+function netJoinRoomInfo(id,r){net.remotes.set(id,{name:safeName(r.name),team:r.team==='orange'?'orange':'cyan',x:WORLD.w*.5,y:WORLD.h*.5,r:18,a:0,weapon:0,laserOn:false,hp:100,defense:{shieldCapacity:0,shieldRegen:0,shieldDelay:0,armor:0},meleeTier:0,bayonetOn:false,shield:0,shieldMax:0,shieldHitAt:-999,respawn:0,invulUntil:0,slash:0,seen:performance.now()});netUpdateLobby()}
 function netClose(notice=''){const oldMode=net.mode;
  if(oldMode==='host')netBroadcast({t:'closed'});
  for(const c of net.clients.values())try{c.close()}catch(e){}
@@ -1922,7 +1926,7 @@ function netHandleHostData(conn,msg){
  if(msg.t==='state'){
   if(net.phase!=='match')return;
   if(![msg.x,msg.y,msg.a].every(Number.isFinite))return;
-  if(r.hp>0){r.x=clamp(msg.x,65,WORLD.w-65);r.y=clamp(msg.y,65,WORLD.h-65);}r.a=msg.a;r.weapon=msg.weapon===2?2:0;r.laserOn=!!msg.laserOn;r.seen=performance.now();
+  if(r.hp>0){r.x=clamp(msg.x,65,WORLD.w-65);r.y=clamp(msg.y,65,WORLD.h-65);}r.a=msg.a;r.weapon=msg.weapon===2?2:0;r.laserOn=!!msg.laserOn;r.bayonetOn=!!msg.bayonetOn;r.meleeTier=clamp(Math.floor(Number(msg.meleeTier)||0),0,40);r.seen=performance.now();
    if(msg.defense&&typeof msg.defense==='object'){
     const prevMax=shieldMax(r.defense),next={};
     for(const key of ['shieldCapacity','shieldRegen','shieldDelay','armor'])next[key]=clamp(Math.floor(Number(msg.defense[key])||0),0,5);
@@ -2096,7 +2100,7 @@ function netTick(dt){
  if(net.phase!=='match')return;
  net.sendClock+=dt;if(net.sendClock<.083)return;net.sendClock=0;
  if(net.mode==='guest'){
-  netMsg(net.conn,{t:'state',x:player.x,y:player.y,a:player.angle,weapon:player.weapon,laserOn:player.laserOn,team:net.team,defense:{shieldCapacity:player.mods.shieldCapacity,shieldRegen:player.mods.shieldRegen,shieldDelay:player.mods.shieldDelay,armor:player.mods.armor}});return;
+  netMsg(net.conn,{t:'state',x:player.x,y:player.y,a:player.angle,weapon:player.weapon,laserOn:player.laserOn,bayonetOn:player.bayonetOn,meleeTier:player.mods.knife,team:net.team,defense:{shieldCapacity:player.mods.shieldCapacity,shieldRegen:player.mods.shieldRegen,shieldDelay:player.mods.shieldDelay,armor:player.mods.armor}});return;
  }
  for(const [id,r] of net.remotes){if(r.hp>0&&!roundBreak.kind)rechargeShield(r,.083);if(r.respawn>0){r.respawn=Math.max(0,r.respawn-.083);if(r.respawn<=0){const pos=netGoalSpawn(r.team);r.x=pos.x;r.y=pos.y;r.hp=100;r.shield=shieldMax(r.defense);r.shieldHitAt=-999;r.invulUntil=clock+1.6;netMsg(net.clients.get(id),{t:'health',hp:100,shield:r.shield,respawn:0,x:pos.x,y:pos.y});}}}
  const players=[{id:'host',name:net.name,team:net.team,x:player.x,y:player.y,a:player.angle,weapon:player.weapon,laserOn:player.laserOn,hp:player.hp,shield:player.shield,shieldMax:shieldMax(),respawn:player.respawn||0},...Array.from(net.remotes.entries()).map(([id,r])=>({id,name:r.name,team:r.team,x:r.x,y:r.y,a:r.a,weapon:r.weapon,laserOn:r.laserOn,hp:r.hp,shield:r.shield,shieldMax:shieldMax(r.defense),respawn:r.respawn||0}))];
@@ -2187,7 +2191,7 @@ if(player.slash>0)hitSlash();
 for(const e of enemies){if(e.dead||net.phase==='match'&&net.mode==='guest')continue;const prevEX=e.x,prevEY=e.y;e.flash=Math.max(0,e.flash-dt);e.hitCd=Math.max(0,e.hitCd-dt);e.fire-=dt;const targets=net.phase==='match'&&net.mode==='host'?[{id:'host',...player},...Array.from(net.remotes.entries()).filter(([id,r])=>r.hp>0).map(([id,r])=>({id,...r}))]:[{id:'host',...player}];const target=targets.reduce((best,v)=>Math.hypot(v.x-e.x,v.y-e.y)<Math.hypot(best.x-e.x,best.y-e.y)?v:best,targets[0]);const dx=target.x-e.x,dy=target.y-e.y,d=Math.hypot(dx,dy)||1,dirX=dx/d,dirY=dy/d;
  if((e.losTimer||0)<=0){e.visible=(d<1000)&&canSee(e.x,e.y,target.x,target.y);e.losTimer=.13+Math.random()*.07}
  else e.losTimer-=dt;
- const clear=!!e.visible;if(e.type==='rusher'){moveBody(e,dirX*e.spd*dt,dirY*e.spd*dt);if(d<e.r+player.r+6&&e.hitCd<=0){net.phase==='match'&&net.mode==='host'&&target.id!=='host'?netPvpHit(target.id,12,true):hurtPlayer(12);e.hitCd=.65}}else{let desired=d>320?1:d<215?-1:0;if(!clear)desired=1;const sid=Math.sin(clock*.8+e.sway)*.3;moveBody(e,(dirX*desired+(-dirY)*sid)*e.spd*dt,(dirY*desired+dirX*sid)*e.spd*dt);if(clear&&d<780&&e.fire<=0){e.fire=Math.max(.65,1.45-wave*.05)+rand(0,.5);let a=Math.atan2(dy,dx)+rand(-.12,.12);bullets.push({x:e.x+dirX*22,y:e.y+dirY*22,vx:Math.cos(a)*530,vy:Math.sin(a)*530,t:1.8,damage:10,friend:false,color:'#fc7b76',r:4,pierce:0,owner:'npc'});if(net.phase==='match'&&net.mode==='host')netBroadcast({t:'npcShot',x:e.x+dirX*22,y:e.y+dirY*22,vx:Math.cos(a)*530,vy:Math.sin(a)*530})}}if((e.type==='rusher'||!clear||d>380)&&Math.hypot(e.x-prevEX,e.y-prevEY)<dt*5){e.stuck=(e.stuck||0)+dt;if(e.stuck>3.3){for(let j=0;j<30;j++){const angle=rand(0,TAU),range=rand(340,580),tx=clamp(player.x+Math.cos(angle)*range,85,WORLD.w-85),ty=clamp(player.y+Math.sin(angle)*range,85,WORLD.h-85);if(!blocked(tx,ty,e.r)&&!enemies.some(other=>other!==e&&dist(other,{x:tx,y:ty})<45)){burst(e.x,e.y,7,'#889ab1',100);e.x=tx;e.y=ty;burst(tx,ty,7,'#889ab1',90);break;}}e.stuck=0;}}else e.stuck=0;}
+ const clear=!!e.visible;if(e.type==='rusher'){moveBody(e,dirX*e.spd*dt,dirY*e.spd*dt);if(d<e.r+player.r+6&&e.hitCd<=0){net.phase==='match'&&net.mode==='host'&&target.id!=='host'?netPvpHit(target.id,12,true):hurtPlayer(12);e.hitCd=.65}}else{let desired=d>320?1:d<215?-1:0;if(!clear)desired=1;const sid=Math.sin(clock*.8+e.sway)*.3;moveBody(e,(dirX*desired+(-dirY)*sid)*e.spd*dt,(dirY*desired+dirX*sid)*e.spd*dt);if(clear&&d<780&&e.fire<=0){e.fire=Math.max(.65,1.45-wave*.05)+rand(0,.5);let a=Math.atan2(dy,dx)+rand(-.12,.12);bullets.push({x:e.x+dirX*22,y:e.y+dirY*22,vx:Math.cos(a)*530,vy:Math.sin(a)*530,t:1.8,damage:10,friend:false,color:'#fc7b76',r:4,pierce:0,owner:'npc',sourceEnemy:e});if(net.phase==='match'&&net.mode==='host')netBroadcast({t:'npcShot',x:e.x+dirX*22,y:e.y+dirY*22,vx:Math.cos(a)*530,vy:Math.sin(a)*530})}}if((e.type==='rusher'||!clear||d>380)&&Math.hypot(e.x-prevEX,e.y-prevEY)<dt*5){e.stuck=(e.stuck||0)+dt;if(e.stuck>3.3){for(let j=0;j<30;j++){const angle=rand(0,TAU),range=rand(340,580),tx=clamp(player.x+Math.cos(angle)*range,85,WORLD.w-85),ty=clamp(player.y+Math.sin(angle)*range,85,WORLD.h-85);if(!blocked(tx,ty,e.r)&&!enemies.some(other=>other!==e&&dist(other,{x:tx,y:ty})<45)){burst(e.x,e.y,7,'#889ab1',100);e.x=tx;e.y=ty;burst(tx,ty,7,'#889ab1',90);break;}}e.stuck=0;}}else e.stuck=0;}
 enemies=enemies.filter(e=>!e.dead);
 for(let i=bullets.length-1;i>=0;i--){
  const b=bullets[i];b.t-=dt;
@@ -2198,7 +2202,16 @@ for(let i=bullets.length-1;i>=0;i--){
   b.x+=b.vx*dt/steps;b.y+=b.vy*dt/steps;
   if(puckEnabled&&puck&&puck.respawn===0&&(b.friend||net.phase!=='match'||net.settings.npcPuck)&&Math.hypot(b.x-puck.x,b.y-puck.y)<puck.r+b.r){const speed=Math.hypot(b.vx,b.vy)||1;const force=b.puckOnly?590:b.friend?Math.min(620,260+b.damage*3.5):165;puckImpulse(puck.x,puck.y,b.vx/speed*force,b.vy/speed*force,b.friend?'shot':'enemy',b.friend?(b.owner==='host'?'player':net.bots.find(v=>v.id===b.owner)?.team||net.remotes.get(b.owner)?.team||net.team):'rival');if(b.friend&&b.explosive)smallExplosion(b.x,b.y,b,null);removed=true;break;}
   const impact=intersectsCover(b.x,b.y,b.r);if(b.t<=0||impact||b.x<b.r+44||b.y<b.r+44||b.x>WORLD.w-b.r-44||b.y>WORLD.h-b.r-44){if(impact)damageCover(impact,b.friend?b.damage*(b.trace?1.25:1):b.damage*.8,b.x,b.y);if(b.friend&&b.explosive)smallExplosion(b.x,b.y,b,null);burst(b.x,b.y,3,b.color,75);removed=true;break}
-  if(b.friend&&!b.puckOnly){
+  // Host and solo simulate NPC crossfire; the shooter is immune to its own muzzle.
+  // Guest NPC shots are visuals only, so they never simulate damage twice.
+  if(!removed&&!b.friend&&b.owner==='npc'&&net.mode!=='guest'){
+   for(const e of enemies){
+    if(e.dead||e===b.sourceEnemy||Math.hypot(e.x-b.x,e.y-b.y)>e.r+b.r)continue;
+    hurtEnemy(e,b.damage,b.x,b.y,'npc');
+    removed=true;break;
+   }
+  }
+  if(!removed&&b.friend&&!b.puckOnly){
    // Remember each enemy a projectile has already hit, preventing repeated
    // damage while travelling through that enemy's collision circle.
    if(!b.hitEnemies)b.hitEnemies=new Set();
