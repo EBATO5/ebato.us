@@ -1853,20 +1853,21 @@ document.addEventListener('dragend',()=>document.querySelectorAll('.net-team-lan
 function netUpdateLobby(){
  $net('netLobbyCode').textContent=net.code||'------';
  for(const [key,id] of [['npcs','netRuleNPC'],['cover','netRuleCover'],['pvp','netRulePVP'],['npcPuck','netRuleNpcPuck'],['teamLock','netRuleTeamLock']]){const b=$net(id);b.classList.toggle('selected',net.settings[key]);b.setAttribute('aria-pressed',String(!!net.settings[key]));b.disabled=net.mode!=='host';b.firstChild.textContent=(net.settings[key]?'◉':'◯')+' '+(key==='npcs'?'HOSTILE NPCS':key==='cover'?'DESTRUCTIBLE COVER':key==='pvp'?'PLAYER DAMAGE':key==='npcPuck'?'NPC SHOTS MOVE PUCK':'HOST-LOCKED TEAMS');}
- $net('netRulesHelp').textContent=net.mode==='host'?'You are the host: changes take effect immediately. PvP includes teammate damage.': 'The host controls arena rules. Team switching is always free.';
+ $net('netRulesHelp').textContent=net.mode==='host'?'Drag players between teams; manage bots and rules live.':'Host manages bots and teams. '+(net.settings.teamLock?'Teams are host-locked.':'Team switching allowed.');
  $net('netBegin').hidden=net.mode!=='host'||net.phase!=='lobby';
  $net('netLobbyClose').hidden=net.phase!=='match';
  $net('netChooseCyan').classList.toggle('selected',net.team==='cyan');
  $net('netChooseOrange').classList.toggle('selected',net.team==='orange');
  $net('netDockRoom').textContent=net.code;
- $net('netDockTeam').textContent=(net.team==='cyan'?'CYAN':'ORANGE')+' · SWITCH [T]';
+ $net('netDockTeam').textContent=(net.team==='cyan'?'CYAN':'ORANGE')+(net.settings.teamLock&&net.mode==='guest'?' · LOCKED':' · SWITCH [T]');
+ $net('netDockTeam').disabled=net.settings.teamLock&&net.mode==='guest';$net('netChooseCyan').disabled=net.settings.teamLock&&net.mode==='guest';$net('netChooseOrange').disabled=net.settings.teamLock&&net.mode==='guest';netRenderTeamBoard();
  $net('netRoster').innerHTML=netRosterData().map(p=>`<div><strong class="${p.team==='orange'?'orange':'cyan'}">${p.team==='orange'?'● ORANGE':'● CYAN'}</strong><br>${p.name.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')}${p.host?' ★ HOST':''}${Number.isFinite(p.hp)?`<br><span class="net-hp">HP ${Math.ceil(p.hp)}</span>`:''}</div>`).join('');
 }
 function netMsg(conn,data){if(conn&&conn.open)try{conn.send(data)}catch(e){console.warn('Peer send failed',e)}}
 function netBroadcast(data){for(const conn of net.clients.values())netMsg(conn,data)}
 function netSendRoster(){
  if(net.mode!=='host')return;
- netBroadcast({t:'roster',members:netRosterData().map(({id,name,team,host})=>({id,name,team,host}))});
+ netBroadcast({t:'roster',members:netRosterData().map(({id,name,team,host,bot})=>({id,name,team,host,bot}))});
  netUpdateLobby();
 }
 function netJoinRoomInfo(id,r){net.remotes.set(id,{name:safeName(r.name),team:r.team==='orange'?'orange':'cyan',x:WORLD.w*.5,y:WORLD.h*.5,r:18,a:0,weapon:0,laserOn:false,hp:100,defense:{shieldCapacity:0,shieldRegen:0,shieldDelay:0,armor:0},shield:0,shieldMax:0,shieldHitAt:-999,respawn:0,invulUntil:0,slash:0,seen:performance.now()});netUpdateLobby()}
@@ -1879,7 +1880,7 @@ function netClose(notice=''){const oldMode=net.mode;
  if(oldMode!=='solo'){started=false;ended=false;paused=true;shopOpen=false;reset();showScreen('title');}
 }
 function netTeam(team){
- if(net.mode==='solo')return;
+ if(net.mode==='solo'||net.mode==='guest'&&net.settings.teamLock)return;
  net.team=team==='orange'?'orange':'cyan';
  if(net.phase==='match'&&player){netResetLocal();if(net.mode==='guest')netMsg(net.conn,{t:'selfReset',team:net.team});}
  if(net.mode==='guest')netMsg(net.conn,{t:'team',team:net.team});
@@ -1903,14 +1904,14 @@ function netHandleHostData(conn,msg){
   if(r)return;
   if(net.clients.size+net.bots.length>7){netMsg(conn,{t:'error',message:'Lobby full (8 total human and AI players).'});conn.close();return;}
   netJoinRoomInfo(conn.peer,{name:msg.name,team:msg.team});
-  netMsg(conn,{t:'welcome',id:conn.peer,code:net.code,started:net.phase==='match',rules:netRules(),members:netRosterData().map(({id,name,team,host})=>({id,name,team,host}))});
+  netMsg(conn,{t:'welcome',id:conn.peer,code:net.code,started:net.phase==='match',rules:netRules(),members:netRosterData().map(({id,name,team,host,bot})=>({id,name,team,host,bot}))});
   netSendRoster();if(net.phase==='match'){netMsg(conn,{t:'start'});if(roundBreak.kind)netMsg(conn,{t:'break',kind:roundBreak.kind,seconds:roundBreakLeft()});}
   return;
  }
  if(!r)return;
  if(roundBreak.kind&&!['team','selfReset','state'].includes(msg.t))return;
- if(msg.t==='team'){r.team=msg.team==='orange'?'orange':'cyan';const pos=netGoalSpawn(r.team);r.x=pos.x;r.y=pos.y;r.hp=100;r.shield=shieldMax(r.defense);r.shieldHitAt=-999;r.respawn=0;r.invulUntil=clock+1.5;netMsg(conn,{t:'health',hp:100,shield:r.shield,respawn:0,x:r.x,y:r.y});netSendRoster();return;}
- if(msg.t==='selfReset'&&net.phase==='match'){const pos=netGoalSpawn(r.team);r.x=pos.x;r.y=pos.y;r.hp=100;r.shield=shieldMax(r.defense);r.shieldHitAt=-999;r.respawn=0;r.invulUntil=clock+1.5;netMsg(conn,{t:'health',hp:100,shield:r.shield,respawn:0,x:r.x,y:r.y});return;}
+ if(msg.t==='team'){if(net.settings.teamLock)return;r.team=msg.team==='orange'?'orange':'cyan';const pos=netGoalSpawn(r.team);r.x=pos.x;r.y=pos.y;r.hp=100;r.shield=shieldMax(r.defense);r.shieldHitAt=-999;r.respawn=0;r.invulUntil=clock+1.5;netMsg(conn,{t:'health',hp:100,shield:r.shield,respawn:0,x:r.x,y:r.y});netSendRoster();return;}
+ if(msg.t==='selfReset'&&net.phase==='match'&&!net.settings.teamLock){const pos=netGoalSpawn(r.team);r.x=pos.x;r.y=pos.y;r.hp=100;r.shield=shieldMax(r.defense);r.shieldHitAt=-999;r.respawn=0;r.invulUntil=clock+1.5;netMsg(conn,{t:'health',hp:100,shield:r.shield,respawn:0,x:r.x,y:r.y});return;}
  if(msg.t==='state'){
   if(net.phase!=='match')return;
   if(![msg.x,msg.y,msg.a].every(Number.isFinite))return;
@@ -1967,19 +1968,24 @@ function netHandleGuestData(msg){
  if(!msg||typeof msg!=='object')return;
  if(msg.t==='error'){netNotify(msg.message||'Lobby unavailable');netClose(msg.message||'Lobby unavailable');return}
  if(msg.t==='closed'){netClose('The host closed the lobby.');return}
+ if(msg.t==='assignment'&&net.mode==='guest'){
+  net.team=msg.team==='orange'?'orange':'cyan';if(net.phase==='match')netResetLocal();netUpdateLobby();return;
+ }
  if(msg.t==='welcome'){
   net.connected=true;net.id=msg.id;net.code=safeCode(msg.code);netApplyRules(msg.rules||{});
   net.remotes.clear();
-  for(const r of msg.members||[])if(r.id!==net.id)netJoinRoomInfo(r.id,r);
+  for(const m of msg.members||[])if(m.bot)net.bots.push({...m,x:WORLD.w*.5,y:WORLD.h*.5,r:18,hp:100,a:0});else if(m.id!==net.id)netJoinRoomInfo(m.id,m);
   $net('netLobbyStatus').textContent='CONNECTED · Waiting for host';netUpdateLobby();
   if(msg.started)netStartMatch();return;
  }
  if(msg.t==='roster'){
   const found=new Set();
-  for(const r of msg.members||[]){if(r.id===net.id)continue;found.add(r.id);
+  for(const r of msg.members||[]){if(r.bot||r.id===net.id)continue;found.add(r.id);
    if(!net.remotes.has(r.id))netJoinRoomInfo(r.id,r);
    else{const target=net.remotes.get(r.id);target.team=r.team==='orange'?'orange':'cyan';target.name=safeName(r.name)}
   }
+  const oldBots=new Map(net.bots.map(b=>[b.id,b]));
+  net.bots=(msg.members||[]).filter(m=>m.bot).slice(0,7).map(m=>({...oldBots.get(m.id),id:m.id,name:safeName(m.name),team:m.team==='orange'?'orange':'cyan',r:18,x:oldBots.get(m.id)?.x??WORLD.w*.5,y:oldBots.get(m.id)?.y??WORLD.h*.5,a:oldBots.get(m.id)?.a||0,hp:100}));
   for(const id of net.remotes.keys())if(!found.has(id))net.remotes.delete(id);
   netUpdateLobby();return;
  }
