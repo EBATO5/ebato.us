@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
 <meta name="theme-color" content="#080e17" />
-<title>STRIKE VECTOR v1.4.2 — Mobile Twin-Stick Edition</title>
+<title>STRIKE VECTOR v1.4.4 — Synchronized Grenades & Intermissions</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{color-scheme:dark;--bg:#080e17;--panel:#101b28;--border:#263746;--mint:#74f7d4;--text:#eef6f7;--muted:#8da4b3;--orange:#ffbd75}
@@ -373,6 +373,19 @@ body.touch-ready .net-btn{padding:8px 5px;font-size:10px}
 @media(max-width:600px) and (orientation:portrait){.touch-bar{top:calc(156px + env(safe-area-inset-top,0px))}.touch-bar button{background:rgba(6,37,54,.96)}}
 @media(max-width:390px){.touch-actions{grid-template-columns:repeat(3,45px);gap:4px;right:7px}.touch-actions button{min-height:37px;font-size:8px}.touch-bar button{padding:5px}.touch-note{font-size:8px}}
 @media(max-height:500px){.touch-stick{width:clamp(90px,22vh,108px);height:clamp(90px,22vh,108px);bottom:calc(8px + env(safe-area-inset-bottom,0px))}.touch-actions{bottom:calc(116px + env(safe-area-inset-bottom,0px));grid-template-columns:repeat(3,44px);gap:3px}.touch-actions button{min-height:31px;font-size:8px}.touch-note{display:none}.touch-bar{top:3px}.touch-bar button{min-height:24px;font-size:8px}body.touch-ready .bottom{top:37px}body.touch-ready #hud .topbar{opacity:.5}body.touch-ready #puckScoreboard{top:80px;transform:translateX(-50%) scale(.83)}body.touch-ready #sound{display:none}}
+
+/* v1.4.3 // EBATO synchronized intermission countdown */
+#roundBreakPanel{display:none;position:sticky;top:0;z-index:42;padding:12px 16px 11px;margin:0 0 13px;border:1px solid rgba(255,171,82,.7);border-radius:11px;background:linear-gradient(105deg,#103645f7,#142535f7);box-shadow:0 0 25px #ffab5220,0 12px 30px #000a;color:#dffcff;align-items:center;justify-content:space-between;gap:12px}
+#roundBreakPanel.active{display:flex}
+#roundBreakPanel .rb-heading{font:bold 12px Oxanium,system-ui;letter-spacing:.13em;color:#ffc787}
+#roundBreakPanel .rb-caption{font:600 10px Oxanium,system-ui;line-height:1.4;color:#add5d6;margin-top:4px}
+#roundBreakPanel .rb-count{font:900 clamp(24px,5vw,42px) Oxanium,system-ui;color:#83fbff;white-space:nowrap;text-shadow:0 0 13px #7df7ff66}
+#roundBreakPanel .rb-count small{font:700 10px Oxanium,system-ui;letter-spacing:.15em;color:#ffc787}
+#roundBreakPanel .rb-bar{position:absolute;left:12px;right:12px;bottom:0;height:3px;background:#164350;border-radius:4px;overflow:hidden}
+#roundBreakPanel #rbProgress{height:100%;width:100%;background:linear-gradient(90deg,#ffab52,#7df7ff);transition:width .14s linear}
+#roundBreakPanel .rb-help{font-size:10px}
+#screen .cta:disabled,#touchShopClose:disabled{cursor:not-allowed!important;opacity:.56!important}
+@media(max-width:600px){#roundBreakPanel{padding:9px 10px;gap:7px}#roundBreakPanel .rb-heading{font-size:10px}#roundBreakPanel .rb-caption{font-size:9px}#roundBreakPanel .rb-count{font-size:23px}}
 </style>
 </head>
 <body>
@@ -420,7 +433,7 @@ body.touch-ready .net-btn{padding:8px 5px;font-size:10px}
  </section></div>
 <div class="net-dock hidden" id="netDock"><b id="netDockRoom">ROOM</b><button id="netDockTeam" type="button" title="Switch team (T)">SWAP TEAM [T]</button><button id="netDockRoster" type="button" title="Lobby / roster [P]">LOBBY [P]</button></div>
 
-<div id="screen"><section class="modal"><div class="kicker" id="kicker">OPERATION // ARCADE PROTOTYPE</div><h1 id="modalTitle">STRIKE <span>VECTOR</span></h1><p class="intro" id="modalIntro">Start with one 9mm pistol. Fire pellets from a single cartridge, unlock all fire modes in one purchase, and fire or strike during a slide.</p><div class="legend" id="legend"><div class="legend-item"><span class="key">WASD</span>Move / strafe</div><div class="legend-item"><span class="key">MOUSE</span>Tap for semi/burst; hold for automatic fire</div><div class="legend-item"><span class="key">F</span>Switch unlocked SEMI / BURST / AUTO modes</div><div class="legend-item"><span class="key">SPACE</span>Slide / dodge · steer while sliding and fire freely</div><div class="legend-item"><span class="key">SHIFT</span>Hold to sprint</div><div class="legend-item"><span class="key">E</span>Quick buttstock / bayonet strike, even mid-slide</div><div class="legend-item"><span class="key">ALT</span>Hold to crouch · slower movement, tighter spread</div><div class="legend-item"><span class="key">RMB + LMB</span>Secondary attack / ADS shot</div><div class="legend-item"><span class="key">1 / 2 / 3–5</span>Knife / custom firearm / secondary abilities</div><div class="legend-item"><span class="key">R / TAB</span>Reload / armory pause</div><div class="legend-item"><span class="key">L / ESC</span>Laser [L] · ammo [X] / pause</div></div><div id="shop"><button type="button" id="touchShopClose">← RESUME GAME</button><div class="shop-summary"><div class="shop-bank" id="shopBank">$0 <small>AVAILABLE</small></div><div class="shop-message" id="shopMessage">BUY / REFUND AS MUCH AS YOU LIKE</div></div><div class="shop-stats" id="shopStats"></div><div class="shop-tabs" id="shopTabs" role="tablist" aria-label="Armory categories"></div><div class="shop-grid" id="shopGrid"></div><div class="shop-note" id="shopNote"></div></div><div class="net-launch" id="netLaunch"><div class="net-launch-head">▣ EBATO // MULTIPLAYER CONNECTION</div><div class="net-entry"><input id="netNickname" class="net-input" maxlength="18" aria-label="Your multiplayer nickname" placeholder="Your callsign" value="Operative"><input id="netCodeInput" class="net-input" maxlength="6" autocomplete="off" aria-label="Lobby code" placeholder="ROOM CODE (JOIN)"></div><div class="net-actions"><button class="net-btn" type="button" id="netCreate">+ CREATE LOBBY</button><button class="net-btn" type="button" id="netJoin">→ JOIN LOBBY</button></div><div class="net-launch-note">Live peer-to-peer rooms, up to 8 players. Share a six-character code or invite link. Press <b>T</b> anytime in a match to swap teams. Host must stay online.</div><div class="net-error" id="netLaunchError" role="status" aria-live="polite"></div></div><button type="button" id="puckModeToggle" aria-pressed="true">◉ PUCK ARENA: ON · SHOOT THE PUCK INTO THE ORANGE GOAL</button><button class="cta" id="start">DEPLOY OPERATIVE →</button><div class="hint" id="hint">Desktop keyboard + mouse recommended · Survive as long as you can</div></section></div>
+<div id="screen"><section class="modal"><div class="kicker" id="kicker">OPERATION // ARCADE PROTOTYPE</div><h1 id="modalTitle">STRIKE <span>VECTOR</span></h1><p class="intro" id="modalIntro">Start with one 9mm pistol. Fire pellets from a single cartridge, unlock all fire modes in one purchase, and fire or strike during a slide.</p><div class="legend" id="legend"><div class="legend-item"><span class="key">WASD</span>Move / strafe</div><div class="legend-item"><span class="key">MOUSE</span>Tap for semi/burst; hold for automatic fire</div><div class="legend-item"><span class="key">F</span>Switch unlocked SEMI / BURST / AUTO modes</div><div class="legend-item"><span class="key">SPACE</span>Slide / dodge · steer while sliding and fire freely</div><div class="legend-item"><span class="key">SHIFT</span>Hold to sprint</div><div class="legend-item"><span class="key">E</span>Quick buttstock / bayonet strike, even mid-slide</div><div class="legend-item"><span class="key">ALT</span>Hold to crouch · slower movement, tighter spread</div><div class="legend-item"><span class="key">RMB + LMB</span>Secondary attack / ADS shot</div><div class="legend-item"><span class="key">1 / 2 / 3–5</span>Knife / custom firearm / secondary abilities</div><div class="legend-item"><span class="key">R / TAB</span>Reload / armory pause</div><div class="legend-item"><span class="key">L / ESC</span>Laser [L] · ammo [X] / pause</div></div><div id="shop"><div id="roundBreakPanel" role="timer" aria-label="Intermission countdown"><div><div class="rb-heading" id="rbHeading">GOAL SCORED // SHOP BREAK</div><div class="rb-caption" id="rbCaption">Use the armory. The next round starts automatically.</div></div><div class="rb-count"><span id="rbSeconds">30</span><small> SEC</small></div><div class="rb-bar"><div id="rbProgress"></div></div></div><button type="button" id="touchShopClose">← RESUME GAME</button><div class="shop-summary"><div class="shop-bank" id="shopBank">$0 <small>AVAILABLE</small></div><div class="shop-message" id="shopMessage">BUY / REFUND AS MUCH AS YOU LIKE</div></div><div class="shop-stats" id="shopStats"></div><div class="shop-tabs" id="shopTabs" role="tablist" aria-label="Armory categories"></div><div class="shop-grid" id="shopGrid"></div><div class="shop-note" id="shopNote"></div></div><div class="net-launch" id="netLaunch"><div class="net-launch-head">▣ EBATO // MULTIPLAYER CONNECTION</div><div class="net-entry"><input id="netNickname" class="net-input" maxlength="18" aria-label="Your multiplayer nickname" placeholder="Your callsign" value="Operative"><input id="netCodeInput" class="net-input" maxlength="6" autocomplete="off" aria-label="Lobby code" placeholder="ROOM CODE (JOIN)"></div><div class="net-actions"><button class="net-btn" type="button" id="netCreate">+ CREATE LOBBY</button><button class="net-btn" type="button" id="netJoin">→ JOIN LOBBY</button></div><div class="net-launch-note">Live peer-to-peer rooms, up to 8 players. Share a six-character code or invite link. Press <b>T</b> anytime in a match to swap teams. Host must stay online.</div><div class="net-error" id="netLaunchError" role="status" aria-live="polite"></div></div><button type="button" id="puckModeToggle" aria-pressed="true">◉ PUCK ARENA: ON · SHOOT THE PUCK INTO THE ORANGE GOAL</button><button class="cta" id="start">DEPLOY OPERATIVE →</button><div class="hint" id="hint">Desktop keyboard + mouse recommended · Survive as long as you can</div></section></div>
 <script>
 (()=>{'use strict';
 const canvas=document.getElementById('game'),ctx=canvas.getContext('2d',{alpha:false});
@@ -434,7 +447,9 @@ const isCrouching=()=>keys.has('AltLeft')||keys.has('AltRight')||touchState.crou
 const WORLD={w:2500,h:1700},TAU=Math.PI*2,clamp=(v,l,h)=>Math.max(l,Math.min(h,v)),rand=(a,b)=>a+Math.random()*(b-a),dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 let player,enemies=[],bullets=[],grenades=[],knives=[],particles=[],texts=[],wave=0,kills=0,score=0,credits=0,shopOpen=false,shopMode="between",toSpawn=0,spawnTimer=0,nextWaveTimer=0,bannerUntil=0,shake=0,obstacles=[],coverSpawnTimer=5;
 let puckEnabled=true,puck=null,teamGoals=0,rivalGoals=0,goalFlash=0;
-const net={mode:'solo',phase:'off',peer:null,conn:null,clients:new Map(),remotes:new Map(),id:'',code:'',name:'',team:'cyan',sendClock:0,coverClock:0,npcClock:0,connected:false,started:false,lastHostAt:0,settings:{npcs:false,cover:false,pvp:true}};
+const roundBreak={kind:'',until:0,duration:0,lastShown:-1};
+let netGrenadeSeq=0;
+const net={mode:'solo',phase:'off',peer:null,conn:null,clients:new Map(),remotes:new Map(),id:'',code:'',name:'',team:'cyan',sendClock:0,coverClock:0,npcClock:0,npcRemaining:0,connected:false,started:false,lastHostAt:0,settings:{npcs:false,cover:false,pvp:true}};
 let shopTab='gun',selectedTreeNode='core',treePopupOpen=false,treePan={x:0,y:0},treeScale=1,treePanReady=false,treeDrag=null,treeSuppressUntil=0;let soundOn=true,ac=null,activeVoices=0;const soundTimes=Object.create(null);function sound(kind){if(!soundOn||activeVoices>=8)return;const now=performance.now(),limit=(kind==='hit'?65:kind==='pistol'||kind==='rifle'?36:kind==='grenade'?75:22);if(now-(soundTimes[kind]||-1000)<limit)return;soundTimes[kind]=now;try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended')ac.resume();const o=ac.createOscillator(),g=ac.createGain(),n=ac.currentTime;let f=220,d=.06,ty='triangle',vol=.027;if(kind==='pistol'){f=260;d=.085;ty='triangle';vol=.030}else if(kind==='buy'){f=650;d=.13;ty='sine';vol=.025}else if(kind==='rifle'){f=155;d=.055;ty='sawtooth';vol=.025}else if(kind==='sniper'){f=74;d=.22;ty='sawtooth';vol=.055}else if(kind==='grenade'){f=82;d=.36;ty='sawtooth';vol=.065}else if(kind==='knife'){f=450;d=.08}else if(kind==='hit'){f=90;d=.10;vol=.016}else if(kind==='dodge'){f=400;d=.13;vol=.020}else if(kind==='dry'){f=350;d=.035;vol=.014}o.type=ty;o.frequency.setValueAtTime(f,n);o.frequency.exponentialRampToValueAtTime(Math.max(28,f*.35),n+d);g.gain.setValueAtTime(vol,n);g.gain.exponentialRampToValueAtTime(.0001,n+d);o.connect(g);g.connect(ac.destination);activeVoices++;o.addEventListener('ended',()=>{activeVoices=Math.max(0,activeVoices-1);o.disconnect();g.disconnect()},{once:true});o.start(n);o.stop(n+d+.01)}catch(e){activeVoices=Math.max(0,activeVoices-1)}}
 function resize(){
  sw=innerWidth;sh=innerHeight;
@@ -455,7 +470,7 @@ function reset(){
   modules:{laser:false,grenade:false,power:false,explosive:false,bayonet:false},laserOn:false,explosiveOn:false,bayonetOn:false,secondary:'aim',
   roll:0,rollMax:.78,rollMode:'slide',rollDx:0,rollDy:0,rollCd:0,invul:0,slideTurn:0,fireCd:0,secondaryCd:0,slash:0,slashDir:0,slashHits:new Set(),
   reload:0,gun:14,gunReserve:Infinity,grenades:5,grenadeReserve:Infinity,grenadeReload:0,throwKnives:Infinity,step:0,meleeCd:0,slashKind:'knife',triggerQueue:0,triggerExpiry:0,fireMode:'semi',burstShots:0};
- enemies=[];bullets=[];grenades=[];knives=[];particles=[];texts=[];clock=0;wave=0;kills=0;score=0;credits=0;teamGoals=0;rivalGoals=0;goalFlash=0;resetPuck();
+ enemies=[];bullets=[];grenades=[];knives=[];particles=[];texts=[];clock=0;wave=0;kills=0;score=0;credits=0;teamGoals=0;rivalGoals=0;goalFlash=0;resetPuck();roundBreak.kind='';roundBreak.until=0;roundBreak.lastShown=-1;document.getElementById('roundBreakPanel').classList.remove('active');document.getElementById('touchShopClose').disabled=false;ui.start.disabled=false;
  shopOpen=false;shopTab='gun';shopMode='between';coverSpawnTimer=4.5;toSpawn=0;spawnTimer=0;nextWaveTimer=1.1;shake=0;
  fireHeld=false;altHeld=false;secondaryPending=false;ended=false;keys.clear();cam.x=player.x-sw/2;cam.y=player.y-sh/2;
 }
@@ -826,10 +841,61 @@ function renderShop(){
 
 
 ui.shopTabs.addEventListener('click',e=>{const button=e.target.closest('button[data-tab]');if(!button||!shopOpen)return;shopTab=button.dataset.tab;renderShop();});
+function roundBreakLeft(){return roundBreak.kind?Math.max(0,roundBreak.until-clock):0;}
+function renderRoundBreakClock(force=false){
+ const active=!!roundBreak.kind,el=document.getElementById('roundBreakPanel');
+ el.classList.toggle('active',active);
+ ui.start.disabled=active;document.getElementById('touchShopClose').disabled=active;
+ if(!active)return;
+ const remaining=Math.ceil(roundBreakLeft());
+ if(!force&&roundBreak.lastShown===remaining)return;
+ roundBreak.lastShown=remaining;
+ const goal=roundBreak.kind==='goal';
+ document.getElementById('rbHeading').textContent=goal?'GOAL! // MANDATORY ARMORY':'WAVE CLEARED // MANDATORY ARMORY';
+ document.getElementById('rbCaption').textContent=goal?'Next point starts together automatically':'Next wave begins when the timer reaches zero';
+ document.getElementById('rbSeconds').textContent=String(remaining).padStart(2,'0');
+ document.getElementById('rbProgress').style.width=(100*roundBreakLeft()/Math.max(1,roundBreak.duration)).toFixed(1)+'%';
+ ui.kicker.textContent=goal?'EBATO // POINT INTERMISSION':'EBATO // WAVE INTERMISSION';
+ ui.title.innerHTML=goal?'GOAL <span>INTERMISSION</span>':'WAVE <span>COMPLETE</span>';
+ ui.intro.textContent=goal?'30-second shopping window. All players return to the arena together.':'10-second shopping window before the next wave of enemies.';
+ ui.start.textContent='NEXT ROUND AUTOMATICALLY · '+remaining+'s';
+ document.getElementById('touchShopClose').textContent='AUTO-RESUME · '+remaining+'s';
+ ui.hint.textContent='Mandatory break · purchase or refund upgrades now · no early skip';
+}
+function startRoundBreak(kind,seconds=kind==='goal'?30:10,remote=false){
+ if(roundBreak.kind)return;
+ if(net.phase==='match'&&net.mode==='guest'&&!remote)return;
+ roundBreak.kind=kind;roundBreak.duration=seconds;roundBreak.until=clock+seconds;roundBreak.lastShown=-1;
+ // Freeze ballistics and enemy movement while the whole field is in the armory.
+ fireHeld=false;altHeld=false;secondaryPending=false;keys.clear();bullets=[];grenades=[];knives=[];
+ if(shopOpen){shopOpen=false;ui.screen.classList.add('hidden');}
+ openShop(net.phase==='match'||kind==='goal'?'field':'between');
+ paused=false; // Freeze is performed in update; the timer and networking still tick.
+ renderRoundBreakClock(true);
+ if(net.phase==='match'&&net.mode==='host'){if(kind==='wave'){const stipend=180+wave*70;credits+=stipend;netBroadcast({t:'reward',credits:stipend,points:0});}netBroadcast({t:'break',kind,seconds});}
+}
+function finishRoundBreak(confirmedByHost=false){
+ if(!roundBreak.kind)return;
+ if(net.phase==='match'&&net.mode==='guest'&&!confirmedByHost)return;
+ const kind=roundBreak.kind;roundBreak.kind='';roundBreak.until=0;roundBreak.lastShown=-1;
+ shopOpen=false;treePopupOpen=false;paused=false;ui.screen.classList.add('hidden');renderRoundBreakClock(true);keys.clear();fireHeld=false;altHeld=false;secondaryPending=false;
+ if(net.phase==='match'){
+  if(kind==='goal'){
+   netResetLocal();puck.respawn=.55;
+   if(net.mode==='host')for(const [id,r] of net.remotes){const pt=netGoalSpawn(r.team);r.x=pt.x;r.y=pt.y;r.hp=100;r.respawn=0;r.invulUntil=clock+1.5;netMsg(net.clients.get(id),{t:'health',hp:100,respawn:0,x:r.x,y:r.y});}
+  }
+  if(net.mode==='host'&&net.settings.npcs){
+   if(kind==='goal'){enemies=[];net.npcRemaining=0;wave=Math.max(1,wave);}
+   if(kind==='wave'||kind==='goal'){if(kind==='wave')wave++;net.npcRemaining=Math.min(28,5+wave*3);net.npcClock=.4;}
+  }
+  if(net.mode==='host')netBroadcast({t:'resume',kind,wave});
+ }else if(kind==='wave'){nextWave();}
+ syncUI(1);
+}
 function openShop(mode='between'){
  if(shopOpen)return;renderedStill=false;shopOpen=true;shopMode=mode;treePopupOpen=false;treeDrag=null;
  if(mode==='between'){credits+=170+wave*55;bullets=[];grenades=[];knives=[]}
- fireHeld=false;altHeld=false;secondaryPending=false;player.triggerQueue=0;player.burstShots=0;paused=net.phase==='match'?false:true;keys.clear();showScreen(mode==='field'?'fieldShop':'shop');renderShop();syncUI(1);
+ fireHeld=false;altHeld=false;secondaryPending=false;player.triggerQueue=0;player.burstShots=0;paused=net.phase==='match'?false:true;keys.clear();showScreen(mode==='field'?'fieldShop':'shop');renderShop();renderRoundBreakClock(true);syncUI(1);
 }
 
 // Wheel zooms the skill map at the cursor, not the paused game or browser page.
@@ -911,7 +977,7 @@ ui.shopGrid.addEventListener('click',e=>{
 function toggleLaser(){if(!player.modules.laser)return;player.laserOn=!player.laserOn;sound('buy');syncUI(1)}
 function selectSecondary(mode){if(mode!=='aim'&&!player.modules[mode])return;player.secondary=mode;secondaryPending=false;sound('buy');syncUI(1)}
 function closeFieldShop(){renderedStill=false;shopOpen=false;paused=false;ui.screen.classList.add('hidden');fireHeld=false;altHeld=false;secondaryPending=false;player.triggerQueue=0;player.burstShots=0;keys.clear()}
-function toggleTabShop(){if(!started||ended)return;if(shopOpen){if(shopMode==='field')closeFieldShop();return}openShop('field')}
+function toggleTabShop(){if(!started||ended||roundBreak.kind)return;if(shopOpen){if(shopMode==='field')closeFieldShop();return}openShop('field')}
 function showScreen(type){
  renderedStill=false;ui.screen.classList.remove('hidden');
  ui.puckToggle.hidden=type!=='title';ui.puckBoard.hidden=!started||!puckEnabled;
@@ -930,7 +996,7 @@ function showScreen(type){
   ui.kicker.textContent='OPERATION // MODULAR ARSENAL';ui.title.innerHTML='STRIKE <span>VECTOR</span>';ui.intro.textContent='Play survival solo, or create a live multiplayer puck arena lobby with friends. Shoot the puck, launch it with grenades, and swap teams freely. Explosions hit hardest.';ui.legend.style.display='grid';ui.start.textContent='DEPLOY OPERATIVE →';ui.hint.textContent='SOLO: Deploy operative · ONLINE: Create or join a room above · SPACE slide · E melee · T swap team';
  }
 }
-function begin(){if(net.phase==='match'&&shopOpen){closeFieldShop();return;}if(net.mode!=='solo')return;lastShiftTap=-Infinity;renderedStill=false;if(shopOpen){const cleared=shopMode==='between';closeFieldShop();if(cleared)nextWave();sound('buy');return}if(!started||ended){reset();started=true}paused=false;ui.puckBoard.hidden=!puckEnabled;ui.screen.classList.add('hidden');sound('dodge')}
+function begin(){if(roundBreak.kind)return;if(net.phase==='match'&&shopOpen){closeFieldShop();return;}if(net.mode!=='solo')return;lastShiftTap=-Infinity;renderedStill=false;if(shopOpen){const cleared=shopMode==='between';closeFieldShop();if(cleared)nextWave();sound('buy');return}if(!started||ended){reset();started=true}paused=false;ui.puckBoard.hidden=!puckEnabled;ui.screen.classList.add('hidden');sound('dodge')}
 ui.puckToggle.addEventListener('click',()=>{puckEnabled=!puckEnabled;ui.puckToggle.setAttribute('aria-pressed',String(puckEnabled));ui.puckToggle.textContent=puckEnabled?'◉ PUCK ARENA: ON · SHOOT THE PUCK INTO THE ORANGE GOAL':'○ PUCK ARENA: OFF · CLASSIC SURVIVAL ONLY';});
 document.getElementById('touchShopClose').addEventListener('click',begin);
 ui.start.addEventListener('click',begin);ui.sound.addEventListener('click',()=>{soundOn=!soundOn;ui.sound.textContent=soundOn?'♪ SOUND ON':'♪ SOUND OFF'});
@@ -1273,11 +1339,11 @@ function scorePuck(side){
  if(net.phase==='match'){
   if(playerScored)teamGoals++;else rivalGoals++;
   const winning=playerScored?'CYAN':'ORANGE',bonus=puck.lastTouch==='blast'?3250:2500;
-  score+=bonus;credits+=puck.lastTouch==='blast'?900:700;
+  score+=bonus;const reward=puck.lastTouch==='blast'?900:700;credits+=reward;netBroadcast({t:'reward',credits:reward,points:bonus});
   burst(puck.x,puck.y,55,playerScored?'#7df7ff':'#ffab52',300);
   ui.banner.innerHTML=winning+' TEAM GOAL!'+`<strong>${teamGoals} : ${rivalGoals}</strong>`;
   ui.banner.classList.add('show');bannerUntil=clock+1.8;
-  resetPuck();puck.respawn=1.5;sound('buy');syncUI(1);return;
+  resetPuck();puck.respawn=1.5;sound('buy');syncUI(1);startRoundBreak('goal',30);return;
  }
  if(playerScored){
   teamGoals++;
@@ -1290,7 +1356,7 @@ function scorePuck(side){
  ui.banner.innerHTML=(playerScored?'GOAL SCORED':'RIVAL GOAL')+`<strong>${teamGoals} : ${rivalGoals}</strong>`;
  ui.banner.classList.add('show');bannerUntil=clock+1.8;
  const p=puck;resetPuck();puck.respawn=1.5;
- sound('buy');syncUI(1);
+ sound('buy');syncUI(1);startRoundBreak('goal',30);
 }
 function updatePuck(dt){
  if(!puckEnabled||!puck)return;
@@ -1392,10 +1458,13 @@ function launchGrenade(){
  if(player.grenadeReload>0)return false;
  if(player.grenades<=0){startGrenadeReload();return false}
  player.grenades--;player.secondaryCd=grenadeInterval();if(player.grenades===0)startGrenadeReload();
- const target=aimWorld(),dx=target.x-player.x,dy=target.y-player.y,distance=Math.hypot(dx,dy),range=Math.min(distance,grenadeRange());
+ const target=aimWorld(),dx=target.x-player.x,dy=target.y-player.y,a=Math.atan2(dy,dx),distance=Math.hypot(dx,dy),range=Math.min(distance,grenadeRange());
  const dur=Math.max(.36,range/830),vx=(dx/(distance||1))*range/dur,vy=(dy/(distance||1))*range/dur,sx=player.x,sy=player.y;
  const tx=reflectCoord(sx+vx*dur,58,WORLD.w-58),ty=reflectCoord(sy+vy*dur,58,WORLD.h-58);
- grenades.push({sx,sy,x:sx,y:sy,vx,vy,tx,ty,t:0,dur,fuse:Math.max(1.3,dur+.12),r:8,trail:[],radius:grenadeRadius(),damage:grenadeDamage(),bounces:0,owner:net.mode==='guest'?'guest':'host',visualOnly:net.phase==='match'&&net.mode==='guest'});if(net.phase==='match')netSendGrenade(a,range);sound('grenade');shake=Math.max(shake,2.5);return true;
+ const grenadeId=net.phase==='match'?`${net.id||'host'}-${++netGrenadeSeq}`:'';
+ grenades.push({id:grenadeId,sx,sy,x:sx,y:sy,vx,vy,tx,ty,t:0,dur,fuse:Math.max(1.3,dur+.12),r:8,trail:[],radius:grenadeRadius(),damage:grenadeDamage(),bounces:0,owner:net.mode==='guest'?net.id:'host',visualOnly:net.phase==='match'&&net.mode==='guest'});
+ if(net.phase==='match')netSendGrenade(a,range,grenadeId);
+ sound('grenade');shake=Math.max(shake,2.5);return true;
 }
 function fireBullet(a,spread,power=false,showEffects=true){
  const spec=gunSpec(),angle=a+rand(-spread,spread),speed=spec.velocity+player.mods.barrel*75;
@@ -1461,7 +1530,7 @@ function hitSlash(){
 function throwKnife(){if(player.throwKnives<=0){sound('dry');return}player.throwKnives--;const a=mouseAim(),charge=clamp((clock-altStart)/.65,0,1);knives.push({x:player.x+Math.cos(a)*25,y:player.y+Math.sin(a)*25,vx:Math.cos(a)*(920+charge*340),vy:Math.sin(a)*(920+charge*340),angle:a,t:.8,damage:58+charge*46+0});burst(player.x,player.y,4,'#d4f6fb',160);sound('knife')}
 function hurtEnemy(e,damage,x,y){e.hp-=damage;e.flash=.10;burst(x,y,7,e.type==='rusher'?'#ffb176':'#dfc1ff',180);if(e.hp<=0){kills++;credits+=e.type==='rusher'?42:58;score+=e.type==='rusher'?125:175;burst(e.x,e.y,15,e.type==='rusher'?'#ed9871':'#bd99fa',240);floatText(e.x,e.y-26,'+'+(e.type==='rusher'?125:175));e.dead=true;sound('hit')}}
 function hurtPlayer(damage){if(player.invul>0||player.hp<=0)return;player.hp=Math.max(0,player.hp-damage);player.invul=.47;shake=Math.max(shake,7);burst(player.x,player.y,13,'#ff857d',190);sound('hit');if(player.hp<=0){if(net.phase==='match'){player.respawn=1.9;fireHeld=false;altHeld=false;secondaryPending=false;floatText(player.x,player.y-32,'RESPAWNING','#ffc187');}else{ended=true;paused=true;fireHeld=false;altHeld=false;secondaryPending=false;showScreen('gameover')}}}
-function boom(x,y,r=137,damage=100,owner='host'){if(net.phase==='match'&&net.mode==='host'){netAreaDamage(x,y,r,damage,owner);netBroadcast({t:'explosion',x,y,r});}puckBlast(x,y,r,1300+damage*3,'blast');shake=Math.max(shake,12);burst(x,y,50,'#ffa66b',440);burst(x,y,25,'#fff3c2',220);particles.push({x,y,vx:0,vy:0,life:.35,max:.35,color:'#ffaa70',r,ring:true});for(const e of enemies){let d=Math.hypot(e.x-x,e.y-y);if(d<r+e.r){hurtEnemy(e,Math.round(damage*(1-clamp(d/r,0,.8)*.45)),e.x,e.y);const a=Math.atan2(e.y-y,e.x-x);e.x+=Math.cos(a)*Math.max(0,28-d*.06);e.y+=Math.sin(a)*Math.max(0,28-d*.06)}}for(const o of [...obstacles]){const qx=clamp(x,o.x,o.x+o.w),qy=clamp(y,o.y,o.y+o.h),d=Math.hypot(x-qx,y-qy);if(d<r)damageCover(o,Math.max(30,Math.round(200*(1-d/r*.48))),qx,qy)}sound('grenade')}
+function boom(x,y,r=137,damage=100,owner='host',grenadeId=''){if(net.phase==='match'&&net.mode==='host'){netAreaDamage(x,y,r,damage,owner);netBroadcast({t:'explosion',x,y,r,id:grenadeId,by:owner});}puckBlast(x,y,r,1300+damage*3,'blast');shake=Math.max(shake,12);burst(x,y,50,'#ffa66b',440);burst(x,y,25,'#fff3c2',220);particles.push({x,y,vx:0,vy:0,life:.35,max:.35,color:'#ffaa70',r,ring:true});for(const e of enemies){let d=Math.hypot(e.x-x,e.y-y);if(d<r+e.r){hurtEnemy(e,Math.round(damage*(1-clamp(d/r,0,.8)*.45)),e.x,e.y);const a=Math.atan2(e.y-y,e.x-x);e.x+=Math.cos(a)*Math.max(0,28-d*.06);e.y+=Math.sin(a)*Math.max(0,28-d*.06)}}for(const o of [...obstacles]){const qx=clamp(x,o.x,o.x+o.w),qy=clamp(y,o.y,o.y+o.h),d=Math.hypot(x-qx,y-qy);if(d<r)damageCover(o,Math.max(30,Math.round(200*(1-d/r*.48))),qx,qy)}sound('grenade')}
 function smallExplosion(x,y,b,skip){
  if(!b.explosive)return;
  if(net.phase==='match'&&net.mode==='host')netAreaDamage(x,y,47,b.damage*.40,b.owner||'host');
@@ -1502,10 +1571,10 @@ function netApplyRules(data){
  if(!data||typeof data!=='object')return;
  const before=netRules();for(const k of ['npcs','cover','pvp'])if(typeof data[k]==='boolean')net.settings[k]=data[k];
  if(net.phase==='match'){
-  if(!net.settings.npcs)enemies=[];
+  if(!net.settings.npcs){enemies=[];net.npcRemaining=0;}
   if(!net.settings.cover)obstacles=[];
   else if(!before.cover&&net.mode==='host'){buildLevel();coverSpawnTimer=4.2;}
-  if(!before.npcs&&net.settings.npcs&&net.mode==='host')net.npcClock=0;
+  if(!before.npcs&&net.settings.npcs&&net.mode==='host'){wave=Math.max(1,wave);net.npcRemaining=Math.min(28,5+wave*3);net.npcClock=.2;}
  }
  netUpdateLobby();
 }
@@ -1539,17 +1608,23 @@ function netSendMelee(kind,a){
  else netMsg(net.conn,{t:'melee',kind,a});
 }
 function netVisualMelee(id,a,kind){const r=net.remotes.get(id);if(!r)return;r.slash=.22;r.slashDir=a;r.slashKind=kind;burst(r.x+Math.cos(a)*45,r.y+Math.sin(a)*45,5,teamColor(r.team),90);}
-function netSendGrenade(a,range){
- if(net.phase!=='match')return;
- const data={t:'grenade',a,range,radius:grenadeRadius(),damage:grenadeDamage()};
+function netSendGrenade(a,range,id){
+ if(net.phase!=='match'||!Number.isFinite(a))return;
+ const data={t:'grenade',a,range,id,radius:grenadeRadius(),damage:grenadeDamage()};
  if(net.mode==='guest')netMsg(net.conn,data);
  else netBroadcast({...data,by:'host',sx:player.x,sy:player.y});
 }
 function netVisualGrenade(msg,owner,visualOnly){
+ if(![msg.sx,msg.sy,msg.a,msg.range].every(Number.isFinite))return;
+ const id=typeof msg.id==='string'&&msg.id.length<=100?msg.id:'';
+ const already=id&&grenades.find(g=>g.id===id&&g.owner===owner);
+ // A guest predicts its own throw, then reconciles to the host's authoritative
+ // projectile message instead of creating a duplicate grenade.
+ if(already){already.visualOnly=visualOnly;return;}
  const x=clamp(msg.sx,58,WORLD.w-58),y=clamp(msg.sy,58,WORLD.h-58),a=msg.a;
  const range=clamp(msg.range,50,1300),dur=Math.max(.36,range/830),vx=Math.cos(a)*range/dur,vy=Math.sin(a)*range/dur;
  const tx=reflectCoord(x+vx*dur,58,WORLD.w-58),ty=reflectCoord(y+vy*dur,58,WORLD.h-58);
- grenades.push({sx:x,sy:y,x,y,vx,vy,tx,ty,t:0,dur,fuse:Math.max(1.3,dur+.12),r:8,trail:[],radius:clamp(msg.radius||137,90,290),damage:clamp(msg.damage||100,25,260),bounces:0,owner,visualOnly});
+ grenades.push({id,sx:x,sy:y,x,y,vx,vy,tx,ty,t:0,dur,fuse:Math.max(1.3,dur+.12),r:8,trail:[],radius:clamp(msg.radius||137,90,290),damage:clamp(msg.damage||100,25,260),bounces:0,owner,visualOnly});
 }
 function netVisualShot(msg){
  const a=msg.a||0,v=clamp(msg.velocity||1260,500,1950),x=clamp(msg.x,50,WORLD.w-50),y=clamp(msg.y,50,WORLD.h-50);
@@ -1600,7 +1675,7 @@ function netClose(notice=''){const oldMode=net.mode;
  if(oldMode==='host')netBroadcast({t:'closed'});
  for(const c of net.clients.values())try{c.close()}catch(e){}
  try{net.conn?.close()}catch(e){}try{net.peer?.destroy()}catch(e){}
- net.mode='solo';net.phase='off';net.peer=null;net.conn=null;net.clients.clear();net.remotes.clear();net.code='';net.id='';net.connected=false;net.started=false;net.settings={npcs:false,cover:false,pvp:true};
+ net.mode='solo';net.phase='off';net.peer=null;net.conn=null;net.clients.clear();net.remotes.clear();net.code='';net.id='';net.connected=false;net.started=false;net.npcRemaining=0;net.settings={npcs:false,cover:false,pvp:true};
  netShowLobby(false);$net('netDock').classList.add('hidden');$net('netLaunchError').textContent=notice;
  if(oldMode!=='solo'){started=false;ended=false;paused=true;shopOpen=false;reset();showScreen('title');}
 }
@@ -1619,7 +1694,7 @@ function netStartMatch(){
  player.modules.grenade=true;player.modules.explosive=true;player.modules.laser=true;
  player.modules.bayonet=true;player.mods.fireControl=1;player.fireMode='auto';player.explosiveOn=true;player.bayonetOn=true;player.laserOn=true;player.secondary='grenade';
  cam.x=player.x-sw*.5;cam.y=player.y-sh*.5;
- net.phase='match';net.started=true;net.sendClock=0;player.respawn=0;player.hp=100;player.invul=1.5;if(net.settings.cover&&net.mode==='host')buildLevel();
+ net.phase='match';net.started=true;net.sendClock=0;net.npcRemaining=net.settings.npcs&&net.mode==='host'?Math.min(28,5+wave*3):0;player.respawn=0;player.hp=100;player.invul=1.5;if(net.settings.cover&&net.mode==='host')buildLevel();
  $net('netLobby').classList.add('hidden');$net('netDock').classList.remove('hidden');
  ui.screen.classList.add('hidden');ui.puckBoard.hidden=false;netUpdateLobby();syncUI(1);
 }
@@ -1631,10 +1706,11 @@ function netHandleHostData(conn,msg){
   if(net.clients.size>7){netMsg(conn,{t:'error',message:'Lobby full (8 players).'});conn.close();return;}
   netJoinRoomInfo(conn.peer,{name:msg.name,team:msg.team});
   netMsg(conn,{t:'welcome',id:conn.peer,code:net.code,started:net.phase==='match',rules:netRules(),members:netRosterData().map(({id,name,team,host})=>({id,name,team,host}))});
-  netSendRoster();if(net.phase==='match')netMsg(conn,{t:'start'});
+  netSendRoster();if(net.phase==='match'){netMsg(conn,{t:'start'});if(roundBreak.kind)netMsg(conn,{t:'break',kind:roundBreak.kind,seconds:roundBreakLeft()});}
   return;
  }
  if(!r)return;
+ if(roundBreak.kind&&!['team','selfReset','state'].includes(msg.t))return;
  if(msg.t==='team'){r.team=msg.team==='orange'?'orange':'cyan';const pos=netGoalSpawn(r.team);r.x=pos.x;r.y=pos.y;r.hp=100;r.respawn=0;r.invulUntil=clock+1.5;netMsg(conn,{t:'health',hp:100,respawn:0,x:r.x,y:r.y});netSendRoster();return;}
  if(msg.t==='selfReset'&&net.phase==='match'){const pos=netGoalSpawn(r.team);r.x=pos.x;r.y=pos.y;r.hp=100;r.respawn=0;r.invulUntil=clock+1.5;netMsg(conn,{t:'health',hp:100,respawn:0,x:r.x,y:r.y});return;}
  if(msg.t==='state'){
@@ -1670,7 +1746,7 @@ function netHandleHostData(conn,msg){
  }
  if(msg.t==='grenade'&&net.phase==='match'&&Number.isFinite(msg.a)&&r.hp>0){
   if((r.grenadeAt||-10)+.48>clock)return;r.grenadeAt=clock;
-  const data={a:msg.a,range:clamp(msg.range||680,90,1250),radius:clamp(msg.radius||137,90,260),damage:clamp(msg.damage||100,25,240),sx:r.x,sy:r.y};
+  const data={id:typeof msg.id==='string'&&msg.id.length<=100?msg.id:'',a:msg.a,range:clamp(msg.range||680,90,1250),radius:clamp(msg.radius||137,90,260),damage:clamp(msg.damage||100,25,240),sx:r.x,sy:r.y};
   netVisualGrenade(data,conn.peer,false);netBroadcast({t:'grenade',by:conn.peer,...data});return;
  }
 
@@ -1703,10 +1779,14 @@ function netHandleGuestData(msg){
   netUpdateLobby();return;
  }
  if(msg.t==='rules'){netApplyRules(msg.rules);return;}
+ if(msg.t==='reward'&&net.phase==='match'){if(Number.isFinite(msg.credits))credits+=clamp(Math.floor(msg.credits),0,10000);if(Number.isFinite(msg.points))score+=clamp(Math.floor(msg.points),0,10000);syncUI(1);return;}
  if(msg.t==='health'&&net.phase==='match'){if(!Number.isFinite(msg.hp))return;player.hp=clamp(msg.hp,0,100);player.respawn=clamp(msg.respawn||0,0,5);player.invul=player.hp>0?1.1:0;if(Number.isFinite(msg.x)&&Number.isFinite(msg.y)){player.x=msg.x;player.y=msg.y;keys.clear();}return;}
  if(msg.t==='start'){netApplyRules(msg.rules||{});if(net.phase!=='match')netStartMatch();return;}
+ if(msg.t==='break'&&net.phase==='match'&&(msg.kind==='goal'||msg.kind==='wave')){if(!roundBreak.kind)startRoundBreak(msg.kind,clamp(Number(msg.seconds)||10,1,30),true);else if(roundBreak.kind===msg.kind)roundBreak.until=clock+clamp(Number(msg.seconds)||0,0,30);return;}
+ if(msg.t==='resume'&&net.phase==='match'){finishRoundBreak(true);if(Number.isFinite(msg.wave))wave=msg.wave;return;}
  if(msg.t==='snapshot'&&net.phase==='match'){
   if(!puck)return;
+  if(msg.intermission?.kind){if(!roundBreak.kind)startRoundBreak(msg.intermission.kind,clamp(msg.intermission.left||1,1,30),true);else if(roundBreak.kind===msg.intermission.kind&&Number.isFinite(msg.intermission.left))roundBreak.until=clock+clamp(msg.intermission.left,0,30);}
   if(msg.p&&[msg.p.x,msg.p.y,msg.p.vx,msg.p.vy].every(Number.isFinite)){
    puck.x=msg.p.x;puck.y=msg.p.y;puck.vx=msg.p.vx;puck.vy=msg.p.vy;puck.spin=msg.p.spin||0;puck.respawn=msg.p.respawn||0;
   }
@@ -1716,13 +1796,25 @@ function netHandleGuestData(msg){
    const r=net.remotes.get(v.id);r.x=v.x;r.y=v.y;r.a=v.a;r.weapon=v.weapon;r.team=v.team;r.name=safeName(v.name);r.laserOn=!!v.laserOn;r.hp=clamp(Number.isFinite(v.hp)?v.hp:100,0,100);r.respawn=v.respawn||0;
   }
   if(Array.isArray(msg.enemies)){enemies=msg.enemies.slice(0,25).filter(e=>[e.x,e.y,e.hp].every(Number.isFinite)).map(e=>({...e,flash:0,r:e.type==='rusher'?17:19}));}
+  if(Array.isArray(msg.activeGrenades))for(const g of msg.activeGrenades.slice(0,16)){
+   if(![g.sx,g.sy,g.a,g.range,g.x,g.y,g.t].every(Number.isFinite)||!g.id)continue;
+   netVisualGrenade(g,g.by,true);
+   const local=grenades.find(v=>v.id===g.id&&v.owner===g.by);
+   if(local){local.x+=(g.x-local.x)*.48;local.y+=(g.y-local.y)*.48;local.t=clamp(g.t,0,local.dur);}
+  }
   return;
  }
  if(msg.t==='cover'&&net.phase==='match'){netCoverRestore(msg.list);return;}
  if(msg.t==='npcShot'&&net.phase==='match'&&[msg.x,msg.y,msg.vx,msg.vy].every(Number.isFinite)){bullets.push({x:msg.x,y:msg.y,vx:msg.vx,vy:msg.vy,t:1.65,damage:0,friend:false,color:'#fc7b76',r:4,visualOnly:true});return;}
- if(msg.t==='explosion'&&net.phase==='match'&&[msg.x,msg.y,msg.r].every(Number.isFinite)){burst(msg.x,msg.y,27,'#ffbd73',200);particles.push({x:msg.x,y:msg.y,vx:0,vy:0,life:.3,max:.3,color:'#ffbf81',r:msg.r,ring:true});return;}
+ if(msg.t==='explosion'&&net.phase==='match'&&[msg.x,msg.y,msg.r].every(Number.isFinite)){
+  // The host owns explosion physics and damage. Every guest renders its
+  // authoritative blast, including the grenade's thrower.
+  if(msg.id){for(let i=grenades.length-1;i>=0;i--)if(grenades[i].id===msg.id)grenades.splice(i,1);}
+  shake=Math.max(shake,10);burst(msg.x,msg.y,48,'#ffa66b',380);burst(msg.x,msg.y,20,'#fff3c2',200);
+  particles.push({x:msg.x,y:msg.y,vx:0,vy:0,life:.35,max:.35,color:'#ffaa70',r:clamp(msg.r,35,300),ring:true});sound('grenade');return;
+ }
  if(msg.t==='melee'&&msg.by!==net.id){netVisualMelee(msg.by,msg.a,msg.kind);return;}
- if(msg.t==='grenade'&&msg.by!==net.id){netVisualGrenade(msg,msg.by,true);return;}
+ if(msg.t==='grenade'&&net.phase==='match'){netVisualGrenade(msg,msg.by,true);return;}
  if(msg.t==='shot'&&msg.by!==net.id)netVisualShot(msg);
 }
 function netShowRemoteShot(msg){netVisualShot(msg);}
@@ -1760,7 +1852,7 @@ function netTick(dt){
  }
  for(const [id,r] of net.remotes){if(r.respawn>0){r.respawn=Math.max(0,r.respawn-.083);if(r.respawn<=0){const pos=netGoalSpawn(r.team);r.x=pos.x;r.y=pos.y;r.hp=100;r.invulUntil=clock+1.6;netMsg(net.clients.get(id),{t:'health',hp:100,respawn:0,x:pos.x,y:pos.y});}}}
  const players=[{id:'host',name:net.name,team:net.team,x:player.x,y:player.y,a:player.angle,weapon:player.weapon,laserOn:player.laserOn,hp:player.hp,respawn:player.respawn||0},...Array.from(net.remotes.entries()).map(([id,r])=>({id,name:r.name,team:r.team,x:r.x,y:r.y,a:r.a,weapon:r.weapon,laserOn:r.laserOn,hp:r.hp,respawn:r.respawn||0}))];
- netBroadcast({t:'snapshot',players,p:{x:puck.x,y:puck.y,vx:puck.vx,vy:puck.vy,spin:puck.spin,respawn:puck.respawn},cyan:teamGoals,orange:rivalGoals,enemies:net.settings.npcs?enemies.slice(0,20).map(e=>({x:e.x,y:e.y,hp:e.hp,maxHp:e.maxHp,type:e.type,dead:e.dead})):[]});
+ netBroadcast({t:'snapshot',players,intermission:roundBreak.kind?{kind:roundBreak.kind,left:roundBreakLeft()}:null,p:{x:puck.x,y:puck.y,vx:puck.vx,vy:puck.vy,spin:puck.spin,respawn:puck.respawn},cyan:teamGoals,orange:rivalGoals,enemies:net.settings.npcs?enemies.slice(0,20).map(e=>({x:e.x,y:e.y,hp:e.hp,maxHp:e.maxHp,type:e.type,dead:e.dead})):[],activeGrenades:grenades.slice(0,16).map(g=>({id:g.id,by:g.owner,sx:g.sx,sy:g.sy,a:Math.atan2(g.vy,g.vx),range:g.dur*Math.hypot(g.vx,g.vy),radius:g.radius,damage:g.damage,x:g.x,y:g.y,t:g.t}))});
  net.coverClock+=.083;if(net.settings.cover&&net.coverClock>=.7){net.coverClock=0;netBroadcast({t:'cover',list:netCoverPack()});}
 
 }
@@ -1779,10 +1871,19 @@ if(invited.length===6){$net('netCodeInput').value=invited;$net('netLaunchError')
 
 function nextWave(){wave++;toSpawn=4+wave*3;spawnTimer=.15;nextWaveTimer=-1;player.hp=Math.min(100,player.hp+(wave===1?0:22));if(wave>1)refillWeapons();spawnCover(Math.min(4,2+Math.floor(wave/3)));coverSpawnTimer=rand(3.3,5.2);ui.banner.innerHTML=`INCOMING HOSTILES<strong>WAVE ${String(wave).padStart(2,'0')}</strong>`;ui.banner.classList.add('show');bannerUntil=clock+1.8}
 function update(dt){clock+=dt;
+ if(roundBreak.kind){
+  if(net.phase==='match')netTick(dt);
+  if(clock>=roundBreak.until&&(net.phase!=='match'||net.mode==='host'))finishRoundBreak();
+  renderRoundBreakClock();
+  return;
+ }
  if(net.phase==='match'){
   toSpawn=0;nextWaveTimer=-1;
   if(!net.settings.npcs)enemies.length=0;
-  if(net.mode==='host'&&net.settings.npcs){net.npcClock-=dt;if(net.npcClock<=0){if(enemies.length<8)spawnEnemy();net.npcClock=rand(1.6,2.7);}}
+  if(net.mode==='host'&&net.settings.npcs){
+   net.npcClock-=dt;
+   if(net.npcRemaining>0&&net.npcClock<=0){if(enemies.length<8){const before=enemies.length;spawnEnemy();if(enemies.length>before)net.npcRemaining--;}net.npcClock=rand(.6,1.15);}
+  }
   if(player.respawn>0){player.respawn=Math.max(0,player.respawn-dt);if(player.respawn===0&&net.mode==='host')netResetLocal();}
  }
  netTick(dt);shake=Math.max(0,shake-25*dt);if(ui.banner.classList.contains('show')&&clock>bannerUntil)ui.banner.classList.remove('show');if(nextWaveTimer>0){nextWaveTimer-=dt;if(nextWaveTimer<=0)nextWave()}if(wave>0&&(net.phase!=='match'||net.mode==='host'&&net.settings.cover)){
@@ -1880,12 +1981,13 @@ for(let i=grenades.length-1;i>=0;i--){
  const ny=rebound(g.y+g.vy*step,g.vy,58,WORLD.h-58);
  g.x=nx.position;g.y=ny.position;g.vx=nx.speed;g.vy=ny.speed;
  if(nx.bounces||ny.bounces){g.bounces+=nx.bounces+ny.bounces;burst(g.x,g.y,4,'#f8cf9d',90)}
- if(g.t>=g.dur-0.00001||g.t>=g.fuse){if(g.visualOnly){burst(g.x,g.y,12,'#ffd19b',120);}else boom(g.x,g.y,g.radius,g.damage,g.owner||'host');grenades.splice(i,1)}
+ if(g.t>=g.dur-0.00001||g.t>=g.fuse){if(!g.visualOnly)boom(g.x,g.y,g.radius,g.damage,g.owner||'host',g.id||'');grenades.splice(i,1)}
 }
 for(let i=knives.length-1;i>=0;i--){const k=knives[i];k.t-=dt;let dead=false,steps=Math.max(1,Math.ceil(Math.hypot(k.vx*dt,k.vy*dt)/14));for(let s=0;s<steps;s++){k.x+=k.vx*dt/steps;k.y+=k.vy*dt/steps;if(puckEnabled&&puck&&puck.respawn===0&&Math.hypot(k.x-puck.x,k.y-puck.y)<puck.r+6){const n=Math.hypot(k.vx,k.vy)||1;puckImpulse(puck.x,puck.y,k.vx/n*490,k.vy/n*490,'shot','player');dead=true;break;}const o=intersectsCover(k.x,k.y,5);if(k.t<=0||o||k.x<49||k.y<49||k.x>WORLD.w-49||k.y>WORLD.h-49){if(o)damageCover(o,k.damage*.45,k.x,k.y);dead=true;burst(k.x,k.y,3,'#c9f0ed',70);break}for(const e of enemies){if(e.dead)continue;if(Math.hypot(k.x-e.x,k.y-e.y)<e.r+7){hurtEnemy(e,k.damage,k.x,k.y);dead=true;break}}if(dead)break}if(dead)knives.splice(i,1)}
 updatePuck(dt);goalFlash=Math.max(0,goalFlash-dt);
 for(let i=particles.length-1;i>=0;i--){let p=particles[i];p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=Math.max(0,1-dt*3);p.vy*=Math.max(0,1-dt*3);if(p.life<=0)particles.splice(i,1)}for(let i=texts.length-1;i>=0;i--){let t=texts[i];t.t+=dt;t.y-=30*dt;if(t.t>t.max)texts.splice(i,1)}
-if(net.phase!=='match'&&toSpawn===0&&enemies.length===0&&nextWaveTimer<0&&!shopOpen)openShop()
+if(net.phase==='match'&&net.mode==='host'&&net.settings.npcs&&net.npcRemaining===0&&enemies.length===0&&!roundBreak.kind)startRoundBreak('wave',10);
+if(net.phase!=='match'&&toSpawn===0&&enemies.length===0&&nextWaveTimer<0&&!shopOpen&&!roundBreak.kind)startRoundBreak('wave',10)
 }
 function rr(x,y,w,h,r=8){ctx.beginPath();ctx.roundRect(x,y,w,h,r)}
 function bg(){ctx.fillStyle='#0a1720';ctx.fillRect(0,0,sw,sh);ctx.save();ctx.translate(-cam.x,-cam.y);ctx.fillStyle='#10222c';ctx.fillRect(0,0,WORLD.w,WORLD.h);
