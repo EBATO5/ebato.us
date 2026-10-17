@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
 <meta name="theme-color" content="#080e17" />
-<title>STRIKE VECTOR v1.5.5 — Combat Impact Knockback</title>
+<title>STRIKE VECTOR v1.5.6 — Balanced Audio & Menu Music</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{color-scheme:dark;--bg:#080e17;--panel:#101b28;--border:#263746;--mint:#74f7d4;--text:#eef6f7;--muted:#8da4b3;--orange:#ffbd75}
@@ -513,7 +513,7 @@ body.touch-ready #audioSettings{top:auto;bottom:calc(39px + env(safe-area-inset-
 <section id="audioSettings" role="dialog" aria-label="Audio settings" hidden>
  <div class="audio-head"><h2>♪ AUDIO MIXER</h2><button class="audio-close" id="audioClose" type="button" aria-label="Close audio settings">✕</button></div>
  <div class="audio-control"><label class="audio-label" for="sfxLevel"><span>GAME / SOUND EFFECTS</span><output id="sfxValue" for="sfxLevel">100%</output></label><input id="sfxLevel" type="range" min="0" max="100" step="1" value="100" aria-label="Sound effects volume"></div>
- <div class="audio-control"><label class="audio-label" for="musicLevel"><span>MUSIC</span><output id="musicValue" for="musicLevel">30%</output></label><input id="musicLevel" type="range" min="0" max="100" step="1" value="30" aria-label="Music volume"></div>
+ <div class="audio-control"><label class="audio-label" for="musicLevel"><span>MUSIC</span><output id="musicValue" for="musicLevel">12%</output></label><input id="musicLevel" type="range" min="0" max="100" step="1" value="12" aria-label="Music volume"></div>
  <div class="audio-buttons"><button id="effectsToggle" type="button" aria-pressed="true">◖ SFX ON</button><button id="musicToggle" type="button" aria-pressed="true">♫ MUSIC ON</button></div>
  <label class="track-upload" for="trackFile">＋ LOAD YOUR SONG (WAV / MP3)<input id="trackFile" type="file" accept="audio/*,.wav,.mp3,.ogg,.m4a"></label>
  <p class="audio-status" id="musicStatus" role="status" aria-live="polite">Checking Sonic The Ripstick soundtrack…</p>
@@ -566,7 +566,16 @@ let puckEnabled=true,puck=null,teamGoals=0,rivalGoals=0,goalFlash=0;
 const roundBreak={kind:'',until:0,duration:0,lastShown:-1};
 let netGrenadeSeq=0;
 const net={mode:'solo',phase:'off',peer:null,conn:null,clients:new Map(),remotes:new Map(),bots:[],botSeq:0,id:'',code:'',name:'',team:'cyan',sendClock:0,coverClock:0,npcClock:0,npcRemaining:0,connected:false,started:false,lastHostAt:0,settings:{npcs:false,cover:false,pvp:true,npcPuck:true,teamLock:false}};
-let shopTab='gun',selectedTreeNode='core',treePopupOpen=false,treePan={x:0,y:0},treeScale=1,treePanReady=false,treeDrag=null,treeSuppressUntil=0;let soundOn=true,sfxVolume=100,ac=null,activeVoices=0;const soundTimes=Object.create(null);function sound(kind){if(!soundOn||sfxVolume<=0||activeVoices>=8)return;const now=performance.now(),limit=(kind==='hit'?65:kind==='pistol'||kind==='rifle'?36:kind==='grenade'?75:22);if(now-(soundTimes[kind]||-1000)<limit)return;soundTimes[kind]=now;try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended')ac.resume();const o=ac.createOscillator(),g=ac.createGain(),n=ac.currentTime;let f=220,d=.06,ty='triangle',vol=.027;if(kind==='pistol'){f=260;d=.085;ty='triangle';vol=.030}else if(kind==='buy'){f=650;d=.13;ty='sine';vol=.025}else if(kind==='rifle'){f=155;d=.055;ty='sawtooth';vol=.025}else if(kind==='sniper'){f=74;d=.22;ty='sawtooth';vol=.055}else if(kind==='grenade'){f=82;d=.36;ty='sawtooth';vol=.065}else if(kind==='knife'){f=450;d=.08}else if(kind==='hit'){f=90;d=.10;vol=.016}else if(kind==='dodge'){f=400;d=.13;vol=.020}else if(kind==='dry'){f=350;d=.035;vol=.014}o.type=ty;o.frequency.setValueAtTime(f,n);o.frequency.exponentialRampToValueAtTime(Math.max(28,f*.35),n+d);g.gain.setValueAtTime(vol*(sfxVolume/100),n);g.gain.exponentialRampToValueAtTime(.0001,n+d);o.connect(g);g.connect(ac.destination);activeVoices++;o.addEventListener('ended',()=>{activeVoices=Math.max(0,activeVoices-1);o.disconnect();g.disconnect()},{once:true});o.start(n);o.stop(n+d+.01)}catch(e){activeVoices=Math.max(0,activeVoices-1)}}
+let shopTab='gun',selectedTreeNode='core',treePopupOpen=false,treePan={x:0,y:0},treeScale=1,treePanReady=false,treeDrag=null,treeSuppressUntil=0;let soundOn=true,sfxVolume=100,ac=null,sfxBus=null,activeVoices=0;const soundTimes=Object.create(null);function sound(kind){if(!soundOn||sfxVolume<=0||activeVoices>=8)return;const now=performance.now(),limit=(kind==='hit'?65:kind==='pistol'||kind==='rifle'?36:kind==='grenade'?75:22);if(now-(soundTimes[kind]||-1000)<limit)return;soundTimes[kind]=now;try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();
+if(ac.state==='suspended'){const resumed=ac.resume();if(resumed&&resumed.catch)resumed.catch(()=>{});}
+if(!sfxBus){
+ sfxBus=ac.createGain();sfxBus.gain.value=3.6; // Raise gameplay SFX above the mastered soundtrack.
+ const limiter=ac.createDynamicsCompressor();
+ limiter.threshold.value=-13;limiter.knee.value=10;limiter.ratio.value=10;
+ limiter.attack.value=.003;limiter.release.value=.13;
+ sfxBus.connect(limiter);limiter.connect(ac.destination);
+}
+const o=ac.createOscillator(),g=ac.createGain(),n=ac.currentTime;let f=220,d=.06,ty='triangle',vol=.027;if(kind==='pistol'){f=260;d=.085;ty='triangle';vol=.030}else if(kind==='buy'){f=650;d=.13;ty='sine';vol=.025}else if(kind==='rifle'){f=155;d=.055;ty='sawtooth';vol=.025}else if(kind==='sniper'){f=74;d=.22;ty='sawtooth';vol=.055}else if(kind==='grenade'){f=82;d=.36;ty='sawtooth';vol=.065}else if(kind==='knife'){f=450;d=.08}else if(kind==='hit'){f=90;d=.10;vol=.016}else if(kind==='dodge'){f=400;d=.13;vol=.020}else if(kind==='dry'){f=350;d=.035;vol=.014}o.type=ty;o.frequency.setValueAtTime(f,n);o.frequency.exponentialRampToValueAtTime(Math.max(28,f*.35),n+d);g.gain.setValueAtTime(vol*(sfxVolume/100),n);g.gain.exponentialRampToValueAtTime(.0001,n+d);o.connect(g);g.connect(sfxBus);activeVoices++;o.addEventListener('ended',()=>{activeVoices=Math.max(0,activeVoices-1);o.disconnect();g.disconnect()},{once:true});o.start(n);o.stop(n+d+.01)}catch(e){activeVoices=Math.max(0,activeVoices-1)}}
 
 // Local audio controls, independent from multiplayer/gameplay state.
 const audioSettings=document.getElementById('audioSettings');
@@ -576,16 +585,20 @@ const sfxLevel=document.getElementById('sfxLevel'),musicLevel=document.getElemen
 const effectsToggle=document.getElementById('effectsToggle'),musicToggle=document.getElementById('musicToggle');
 const musicStatus=document.getElementById('musicStatus');
 const AUDIO_KEY='sv-audio-v2', SONG_NAME_KEY='sv-local-song-name';
-let musicOn=true,musicVolume=30,localSongUrl=null;
+let musicOn=true,musicVolume=12,localSongUrl=null;
 try{
  const saved=JSON.parse(localStorage.getItem(AUDIO_KEY)||'{}');
  if(typeof saved.sfxOn==='boolean')soundOn=saved.sfxOn;
  if(Number.isFinite(saved.sfxVolume))sfxVolume=Math.max(0,Math.min(100,Math.round(saved.sfxVolume)));
  if(typeof saved.musicOn==='boolean')musicOn=saved.musicOn;
- if(Number.isFinite(saved.musicVolume))musicVolume=Math.max(0,Math.min(100,Math.round(saved.musicVolume)));
+ if(Number.isFinite(saved.musicVolume)){
+  // Migrate the old, overpowering 30% default; keep genuinely customized levels.
+  const prior=Math.max(0,Math.min(100,Math.round(saved.musicVolume)));
+  musicVolume=!saved.balanceVersion&&prior===30?12:prior;
+ }
 }catch(e){}
 function saveAudioPrefs(){
- try{localStorage.setItem(AUDIO_KEY,JSON.stringify({sfxOn:soundOn,sfxVolume,musicOn,musicVolume}));}catch(e){}
+ try{localStorage.setItem(AUDIO_KEY,JSON.stringify({sfxOn:soundOn,sfxVolume,musicOn,musicVolume,balanceVersion:2}));}catch(e){}
 }
 function paintAudioSettings(){
  sfxLevel.value=String(sfxVolume);musicLevel.value=String(musicVolume);
@@ -615,7 +628,20 @@ function playMusic(){
   if(ac.state==='suspended'){const resumed=ac.resume();if(resumed&&resumed.catch)resumed.catch(()=>{});}
  }
  if(!audioTrack.paused)return;
- try{const promise=audioTrack.play();if(promise&&typeof promise.catch==='function')promise.catch(()=>{});}catch(e){}
+ try{
+  const promise=audioTrack.play();
+  if(promise&&typeof promise.then==='function'){
+   promise.then(()=>{
+    if(musicOn){ui.sound.textContent='⚙ AUDIO';ui.sound.title='Audio settings';}
+   }).catch(err=>{
+    if(err&&err.name==='NotAllowedError'&&musicOn){
+     ui.sound.textContent='▶ ENABLE MUSIC';
+     ui.sound.title='Browser requires a click or tap to start soundtrack';
+     musicStatus.textContent='Browser blocked autoplay. Tap AUDIO or interact with the game to enable music.';
+    }
+   });
+  }
+ }catch(e){/* A first interaction may be required on some browsers. */}
 }
 function setMusicOn(on){
  musicOn=!!on;
@@ -683,6 +709,7 @@ audioTrack.addEventListener('error',()=>{
 });
 audioTrack.addEventListener('loadedmetadata',()=>{
  if(!localSongUrl)musicStatus.textContent='♪ Sonic The Ripstick Master — ready to loop';
+ playMusic(); // Attempt playback from the title screen, before a match begins.
 });
 sfxLevel.addEventListener('input',()=>{sfxVolume=Number(sfxLevel.value);paintAudioSettings();saveAudioPrefs();});
 musicLevel.addEventListener('input',()=>{
@@ -693,11 +720,14 @@ effectsToggle.addEventListener('click',()=>{soundOn=!soundOn;paintAudioSettings(
 musicToggle.addEventListener('click',()=>setMusicOn(!musicOn));
 ui.sound.addEventListener('click',()=>setAudioPanel(audioSettings.hidden));
 document.getElementById('audioClose').addEventListener('click',()=>setAudioPanel(false));
-document.addEventListener('pointerdown',()=>{if(started&&musicOn)playMusic();},true);
-document.addEventListener('keydown',()=>{if(started&&musicOn)playMusic();},true);
-document.addEventListener('visibilitychange',()=>{if(document.hidden)audioTrack.pause();else if(started)playMusic();});
+document.addEventListener('pointerdown',()=>{if(musicOn)playMusic();},true);
+document.addEventListener('keydown',e=>{if(e.code!=='KeyM'&&musicOn)playMusic();},true);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)audioTrack.pause();else playMusic();});
 paintAudioSettings();
-restoreCachedSong();
+// Browsers that permit autoplay begin the soundtrack immediately on page boot.
+// Others resume on the first click, tap or key, including on the title screen.
+restoreCachedSong().then(()=>playMusic(),()=>playMusic());
+playMusic();
 
 let canvasSized=false;
 function resize(){
