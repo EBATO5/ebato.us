@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
 <meta name="theme-color" content="#080e17" />
-<title>STRIKE VECTOR v1.5.2 — Combat-Smart AI Rivals</title>
+<title>STRIKE VECTOR v1.5.3 — Precision Alternate Fire</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{color-scheme:dark;--bg:#080e17;--panel:#101b28;--border:#263746;--mint:#74f7d4;--text:#eef6f7;--muted:#8da4b3;--orange:#ffbd75}
@@ -662,7 +662,8 @@ function refillWeapons(){player.reload=0;player.gun=clipSize();player.gunReserve
 function normalizeMagazine(){if(player.gun>clipSize()){player.gunReserve+=player.gun-clipSize();player.gun=clipSize()}
  if(player.grenades>grenadeClipSize()){player.grenadeReserve+=player.grenades-grenadeClipSize();player.grenades=grenadeClipSize()}}
 function upgradeCost(opt,lvl){return opt.price+opt.step*lvl}
-function selectedAltName(){return player.secondary==='grenade'?'GRENADE LAUNCHER':player.secondary==='power'?'POWER SHOT':'PRECISION AIM'}
+function selectedAltName(){return player.secondary==='grenade'?'GRENADE LAUNCHER':player.secondary==='power'?'POWER SHOT':'PRECISION SHOT'}
+function precisionShotSpread(){return barrelSpread()*.12*(isCrouching()?.38:touchState.sprint||keys.has('ShiftLeft')||keys.has('ShiftRight')?1.35:1)}
 // The blueprint illustrations are vector images generated inside the page.
 // No network requests, fonts or image files are required.
 const ICON_SHAPES={
@@ -835,7 +836,7 @@ function buildCompactSkillTree(){
   feedHub:[515,745],mag:[485,940],reloadSpeed:[650,940],
   ballisticsHub:[690,205],barrel:[535,70],projectiles:[695,70],penetration:[850,110],
   grenade:[945,465],blast:[1080,285],grenadePower:[1110,465],grenadeRange:[1110,625],grenadeMag:[980,815],grenadeReload:[810,820],grenadeCycle:[800,615],
-  attachments:[255,825],laser:[95,770],explosive:[95,960],bayonet:[245,1020],power:[380,1035],aim:[355,655],knife:[110,655],
+  attachments:[255,825],laser:[95,770],explosive:[95,960],bayonet:[245,1020],power:[380,1035],knife:[110,655],
    defenseHub:[1270,820],shieldCapacity:[1270,575],shieldRegen:[1460,690],shieldDelay:[1460,940],armor:[1270,1090],dodgeCooldown:[1100,1090]
  };
  const branches=[
@@ -844,11 +845,11 @@ function buildCompactSkillTree(){
   ['core','feedHub'],['feedHub','mag'],['feedHub','reloadSpeed'],
   ['core','ballisticsHub'],['ballisticsHub','barrel'],['ballisticsHub','projectiles'],['ballisticsHub','penetration'],
   ['core','grenade'],['grenade','blast'],['grenade','grenadePower'],['grenade','grenadeRange'],['grenade','grenadeMag'],['grenade','grenadeReload'],['grenade','grenadeCycle'],
-  ['core','attachments'],['attachments','laser'],['attachments','explosive'],['attachments','bayonet'],['attachments','power'],['attachments','aim'],['attachments','knife'],
+  ['core','attachments'],['attachments','laser'],['attachments','explosive'],['attachments','bayonet'],['attachments','power'],['attachments','knife'],
    ['core','defenseHub'],['defenseHub','shieldCapacity'],['defenseHub','shieldRegen'],['defenseHub','shieldDelay'],['defenseHub','armor'],['defenseHub','dodgeCooldown']
  ];
  const grenadeMods=new Set(['blast','grenadePower','grenadeRange','grenadeMag','grenadeReload','grenadeCycle']);
- const lockedEdge=b=>(grenadeMods.has(b)&&!player.modules.grenade)||(['grenade','laser','explosive','bayonet','power'].includes(b)&&!player.modules[b]);
+ const lockedEdge=b=>(grenadeMods.has(b)&&!player.modules.grenade)||(['laser','explosive','bayonet','power'].includes(b)&&!player.modules[b]);
  const lines=branches.map(([a,b])=>{const [x1,y1]=pos[a],[x2,y2]=pos[b];return `<line class="${a==='core'?'category-link':'branch-link'} ${lockedEdge(b)?'locked':''}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" />`;}).join('');
  const hub=(id,icon,label,theme)=>compactNode(id,icon,...pos[id],label,{hub:true,theme});
  const lvl=id=>player.mods[id]>0?String(player.mods[id]):'';
@@ -867,7 +868,7 @@ function buildCompactSkillTree(){
   compactNode('barrel','barrel',...pos.barrel,'BARREL',{levelText:lvl('barrel')}),
   compactNode('projectiles','projectiles',...pos.projectiles,'PELLETS',{levelText:lvl('projectiles')}),
   compactNode('penetration','penetration',...pos.penetration,'PEN',{levelText:lvl('penetration')}),
-  compactNode('grenade','grenade',...pos.grenade,'LAUNCHER',{locked:!player.modules.grenade,active:player.secondary==='grenade',theme:'grenade',hub:true}),
+  compactNode('grenade','grenade',...pos.grenade,'ALT FIRE',{active:player.secondary==='grenade'||player.secondary==='aim',theme:'grenade',hub:true}),
   compactNode('blast','blast',...pos.blast,'BLAST',{locked:!player.modules.grenade,levelText:lvl('blast')}),
   compactNode('grenadePower','grenadePower',...pos.grenadePower,'CHARGE',{locked:!player.modules.grenade,levelText:lvl('grenadePower')}),
   compactNode('grenadeRange','grenadeRange',...pos.grenadeRange,'RANGE',{locked:!player.modules.grenade,levelText:lvl('grenadeRange')}),
@@ -879,7 +880,6 @@ function buildCompactSkillTree(){
   compactNode('explosive','explosive',...pos.explosive,'EXPLOSIVE',{locked:!player.modules.explosive,active:player.modules.explosive&&player.explosiveOn}),
   compactNode('bayonet','bayonet',...pos.bayonet,'BAYONET',{locked:!player.modules.bayonet,active:player.modules.bayonet&&player.bayonetOn}),
   compactNode('power','power',...pos.power,'POWER SHOT',{locked:!player.modules.power,active:player.secondary==='power'}),
-  compactNode('aim','aim',...pos.aim,'AIM',{active:player.secondary==='aim'}),
   compactNode('knife','knife',...pos.knife,'MELEE',{levelText:lvl('knife')}),
    hub('defenseHub','shieldCapacity','DEFENSE','defense'),
    compactNode('shieldCapacity','shieldCapacity',...pos.shieldCapacity,'SHIELD',{levelText:lvl('shieldCapacity')}),
@@ -916,8 +916,8 @@ function renderTreeDetailPanel(){
 
  if(id==='core') return `<div class="tree-detail-top"><div class="tree-icon-large">${iconArt('gun')}</div><div><div class="tree-detail-kicker">MODULAR PLATFORM</div><div class="tree-detail-title">WEAPON CORE</div></div></div><div class="tree-detail-desc">Your entire build radiates from this weapon core. Pick any upgrade directly. Lines represent categories, not requirements—except grenade upgrades, which need the grenade module.</div><div class="tree-mini-stats">${treeStatLine('RECEIVER',gunSpec().name)}${treeStatLine('PELLETS',`${projectileCount()} / cartridge`)}${treeStatLine('FIRE MODE',fireModeLabel())}${treeStatLine('MAG / RELOAD',`${clipSize()} · ${reloadDuration().toFixed(2)}s`)}${treeStatLine('ALT ABILITY',selectedAltName())}</div><div class="tree-help"><div class="tree-chip"><b>Hover</b> or click nodes to inspect them</div><div class="tree-chip"><b>Refund</b> any tier for full value</div></div>`;
  if(id==='defenseHub') return `<div class="tree-detail-top"><div class="tree-icon-large">${iconArt('shieldCapacity')}</div><div><div class="tree-detail-kicker">DEFENSIVE SYSTEMS</div><div class="tree-detail-title">SURVIVAL TECHNOLOGY</div></div></div><div class="tree-detail-desc">A regenerating shield absorbs incoming damage first. Armor reduces health damage after the shield is depleted.</div><div class="tree-mini-stats">${treeStatLine('SHIELD',`${Math.ceil(player.shield)} / ${shieldMax()}`)}${treeStatLine('REGEN',`${shieldRate()}/s after ${shieldDelayTime().toFixed(1)}s`)}${treeStatLine('ARMOR',`${Math.round(shieldProtection()*100)}% resistance`)}</div>`;
-  if(id==='attachments') return `<div class="tree-detail-top"><div class="tree-icon-large">${iconArt('laser')}</div><div><div class="tree-detail-kicker">UTILITY BRANCH</div><div class="tree-detail-title">ATTACHMENT HUB</div></div></div><div class="tree-detail-desc">This branch handles equipment and alternate abilities. Lasers, explosive rounds, bayonet hardware, power shot, and precision aim all connect here.</div><div class="tree-mini-stats">${treeStatLine('LASER',player.modules.laser?(player.laserOn?'ON':'OWNED'):'LOCKED')}${treeStatLine('EXPLOSIVE',player.modules.explosive?(player.explosiveOn?'ON':'OWNED'):'LOCKED')}${treeStatLine('MELEE BONUS',player.modules.bayonet?'BAYONET READY':'BUTTSTOCK ONLY')}</div>`;
- if(id==='aim') return `<div class="tree-detail-top"><div class="tree-icon-large">${iconArt('aim')}</div><div><div class="tree-detail-kicker">STARTER SECONDARY</div><div class="tree-detail-title">PRECISION AIM</div></div></div><div class="tree-detail-desc">Tightens your spread while aiming. This is your default secondary mode if other secondary modules are sold or not selected.</div><div class="tree-status">${player.secondary==='aim'?'CURRENTLY SELECTED':'AVAILABLE'}</div><div class="tree-detail-actions single"><button type="button" class="shop-buy toggle ${player.secondary==='aim'?'active-mode':''}" data-secondary="aim">${player.secondary==='aim'?'✓ EQUIPPED':'EQUIP AIM'}</button></div>`;
+  if(id==='attachments') return `<div class="tree-detail-top"><div class="tree-icon-large">${iconArt('laser')}</div><div><div class="tree-detail-kicker">UTILITY BRANCH</div><div class="tree-detail-title">ATTACHMENT HUB</div></div></div><div class="tree-detail-desc">This branch handles lasers, explosive rounds, bayonet hardware, and power shot. Precision shot and grenades share the ALT FIRE node.</div><div class="tree-mini-stats">${treeStatLine('LASER',player.modules.laser?(player.laserOn?'ON':'OWNED'):'LOCKED')}${treeStatLine('EXPLOSIVE',player.modules.explosive?(player.explosiveOn?'ON':'OWNED'):'LOCKED')}${treeStatLine('MELEE BONUS',player.modules.bayonet?'BAYONET READY':'BUTTSTOCK ONLY')}</div>`;
+ if(id==='aim') return renderGrenadeHubDetail();
  if(id==='fireControl') return renderFireControlDetail();
  if(id==='grenade') return renderGrenadeHubDetail();
  const opt=OPTIONS.find(o=>o.id===id); if(opt) return renderDetailUpgrade(opt, opt.requires?'GRENADE LAB':'WEAPON MOD');
@@ -929,8 +929,16 @@ function renderFireControlDetail(){
  return `<div class="tree-detail-top"><div class="tree-icon-large">${iconArt('fireControl')}</div><div><div class="tree-detail-kicker">FIRE CONTROL</div><div class="tree-detail-title">SELECT-FIRE TRIGGER</div></div></div><div class="tree-detail-desc">One purchase unlocks SEMI, 3-round BURST, and FULL AUTO. Press F in combat to cycle through any unlocked modes.</div><div class="tree-mini-stats">${treeStatLine('SYSTEM',unlocked?'ALL MODES UNLOCKED':'SEMI ONLY')}${treeStatLine('CURRENT MODE',fireModeLabel())}</div><div class="tree-detail-actions single"><button type="button" class="shop-buy" data-mod="fireControl" ${unlocked||credits<buyCost?'disabled':''}>${unlocked?'UNLOCKED':`+ BUY SELECT-FIRE<small>$${buyCost.toLocaleString()}</small>`}</button></div><div class="tree-detail-actions">${modes}</div><div class="tree-detail-actions single"><button type="button" class="shop-buy shop-refund" data-refund="fireControl" ${unlocked?'':'disabled'}>− REFUND SELECT-FIRE<small>$${buyCost.toLocaleString()}</small></button></div>`;
 }
 function renderGrenadeHubDetail(){
- const mod=MODULES.find(m=>m.id==='grenade'); if(!player.modules.grenade) return `<div class="tree-detail-top"><div class="tree-icon-large">${iconArt('grenade')}</div><div><div class="tree-detail-kicker">ALT WEAPON</div><div class="tree-detail-title">GRENADE SYSTEM</div></div></div><div class="tree-detail-desc">Unlock the underbarrel launcher to open the full grenade branch: blast radius, explosive charge, range, capacity, reload speed, and firing cadence.</div><div class="tree-status warn">LOCKED · $${mod.price.toLocaleString()}</div><div class="tree-detail-actions single"><button type="button" class="shop-buy" data-module-buy="grenade" ${credits<mod.price?'disabled':''}>+ BUY GRENADE MODULE</button></div>`;
- return `<div class="tree-detail-top"><div class="tree-icon-large">${iconArt('grenade')}</div><div><div class="tree-detail-kicker">ALT WEAPON</div><div class="tree-detail-title">GRENADE SYSTEM</div></div></div><div class="tree-detail-desc">Lobbed grenades arc over cover, bounce off arena edges, and shred enemies plus destructible cover. Use the surrounding branch nodes to refine its performance.</div><div class="tree-mini-stats">${treeStatLine('LOADED',`${player.grenades} / ${grenadeClipSize()}`)}${treeStatLine('RESERVE',player.grenadeReserve===Infinity?'∞':String(player.grenadeReserve))}${treeStatLine('RANGE',String(grenadeRange()))}</div><div class="tree-detail-actions"><button type="button" class="shop-buy toggle" data-secondary="grenade">${player.secondary==='grenade'?'SELECTED':'SET SECONDARY'}<small>FREE</small></button><button type="button" class="shop-buy shop-refund" data-module-refund="grenade">SELL<small>$${mod.price.toLocaleString()}</small></button></div>`;
+ const mod=MODULES.find(m=>m.id==='grenade'),owned=!!player.modules.grenade;
+ const aimActive=player.secondary==='aim',grenActive=player.secondary==='grenade';
+ const precision=`<div class="tree-detail-top"><div class="tree-icon-large">${iconArt('aim')}</div><div><div class="tree-detail-kicker">ALT FIRE SELECTOR · RIGHT CLICK + LEFT CLICK</div><div class="tree-detail-title">PRECISION SHOT / GRENADE</div></div></div>
+ <div class="tree-detail-desc">Hold right-click to preview the narrow firing cone, then left-click for ONE high-velocity precision blast. Or switch to the underbarrel grenade launcher. Both occupy the same alternate-fire slot.</div>
+ <div class="tree-mini-stats">${treeStatLine('PRECISION DAMAGE',Math.round((gunSpec().damage+player.mods.damage*7)*1.9)+' / hit')}${treeStatLine('PRECISION VELOCITY',Math.round((gunSpec().velocity+player.mods.barrel*75)*1.48)+' / sec')}${treeStatLine('CONE', (precisionShotSpread()*2*180/Math.PI).toFixed(2)+'°')}</div>
+ <div class="tree-detail-actions single"><button type="button" class="shop-buy toggle ${aimActive?'active-mode':''}" data-secondary="aim">${aimActive?'✓ PRECISION SELECTED':'◎ EQUIP PRECISION SHOT'}<small>1 cartridge · semi-auto · bonus penetration</small></button></div>`;
+ const grenade=owned?
+  `<div class="tree-detail-desc">Underbarrel grenades bounce off arena edges and deal area damage.</div><div class="tree-mini-stats">${treeStatLine('LOADED',`${player.grenades} / ${grenadeClipSize()}`)}${treeStatLine('RANGE',String(grenadeRange()))}</div><div class="tree-detail-actions"><button type="button" class="shop-buy toggle ${grenActive?'active-mode':''}" data-secondary="grenade">${grenActive?'✓ GRENADE SELECTED':'◎ EQUIP GRENADE LAUNCHER'}<small>RIGHT CLICK + LEFT CLICK</small></button><button type="button" class="shop-buy shop-refund" data-module-refund="grenade">SELL LAUNCHER<small>$${mod.price.toLocaleString()}</small></button></div>`:
+  `<div class="tree-status warn">GRENADE LAUNCHER LOCKED · $${mod.price.toLocaleString()}</div><div class="tree-detail-actions single"><button type="button" class="shop-buy" data-module-buy="grenade" ${credits<mod.price?'disabled':''}>+ BUY UNDERBARREL GRENADE</button></div>`;
+ return precision+grenade;
 }
 const TREE_W=1540,TREE_H=1200,TREE_FOCUS={x:775,y:570};
 const TREE_MIN_ZOOM=.45,TREE_MAX_ZOOM=1.9;
