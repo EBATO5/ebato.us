@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
 <meta name="theme-color" content="#080e17" />
-<title>STRIKE VECTOR v1.5.1 — Puck Proximity Radar</title>
+<title>STRIKE VECTOR v1.5.2 — Combat-Smart AI Rivals</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{color-scheme:dark;--bg:#080e17;--panel:#101b28;--border:#263746;--mint:#74f7d4;--text:#eef6f7;--muted:#8da4b3;--orange:#ffbd75}
@@ -1820,9 +1820,10 @@ function netApplyRules(data){
 }
 function netSetRule(key){if(net.mode!=='host'||!['npcs','cover','pvp','npcPuck','teamLock'].includes(key))return;netApplyRules({[key]:!net.settings[key]});netBroadcast({t:'rules',rules:netRules()});}
 for(const [key,id] of [['npcs','netRuleNPC'],['cover','netRuleCover'],['pvp','netRulePVP'],['npcPuck','netRuleNpcPuck'],['teamLock','netRuleTeamLock']])$net(id).addEventListener('click',()=>netSetRule(key));
-function netBotHit(bot,amount){
- if(net.mode!=='host'||net.phase!=='match'||!net.settings.pvp||!bot||bot.hp<=0||bot.invulUntil>clock)return;
- bot.hp=Math.max(0,bot.hp-Math.max(1,Math.min(180,amount)));bot.invulUntil=clock+.4;
+function netBotHit(bot,amount,hostile=false){
+ // Hostile NPC attacks always damage bots; PVP rules still control human/bot combat.
+ if(net.mode!=='host'||net.phase!=='match'||(!net.settings.pvp&&!hostile)||!bot||bot.hp<=0||bot.invulUntil>clock)return;
+ bot.hp=Math.max(0,bot.hp-Math.max(1,Math.min(180,amount)));bot.invulUntil=clock+.4;bot.flash=.14;
  if(bot.hp<=0){bot.respawn=2;floatText(bot.x,bot.y-32,'BOT DOWN',teamColor(bot.team));}
 }
 function netPvpHit(id,amount,hostile=false){
@@ -1912,7 +1913,7 @@ function netRosterData(){
 }
 function netPlaceBot(bot){
  const slot=net.bots.indexOf(bot)+1,p=netGoalSpawn(bot.team,slot);
- bot.x=p.x;bot.y=p.y;bot.hp=100;bot.r=18;bot.a=bot.team==='cyan'?0:Math.PI;bot.shotCd=.45+Math.random()*.6;bot.respawn=0;bot.invulUntil=clock+1.5;
+ bot.x=p.x;bot.y=p.y;bot.hp=100;bot.r=18;bot.a=bot.team==='cyan'?0:Math.PI;bot.shotCd=.45+Math.random()*.6;bot.combatCd=.2+Math.random()*.4;bot.grenadeCd=2.5+Math.random()*3;bot.flash=0;bot.respawn=0;bot.invulUntil=clock+1.5;
 }
 function netAddBot(){
  if(net.mode!=='host'||net.clients.size+net.bots.length>=7)return;
@@ -2173,29 +2174,94 @@ async function netCreateOrJoin(host){
  peer.on('error',err=>{if(net.peer===peer)netClose(err.type==='unavailable-id'?'That lobby code is in use. Create another room.':'Network error: '+(err.type||err.message||'unknown'))});
  peer.on('disconnected',()=>{$net('netLobbyStatus').textContent='Signaling disconnected; reconnecting…';try{peer.reconnect()}catch(e){}});
 }
-// Host-authoritative puck athletes position behind the puck, then shoot toward the opponent goal.
+// Host decides bot combat, projectile collisions and damage for every client.
+// Bots shoot only at opposing-team players/bots and at hostile NPCs.
+function netBotCombatTarget(bot){
+ const options=[];
+ if(net.settings.pvp){
+  if(player.hp>0&&net.team!==bot.team)options.push({id:'host',x:player.x,y:player.y,r:player.r});
+  for(const [id,p] of net.remotes)if(p.hp>0&&p.team!==bot.team)options.push({id,x:p.x,y:p.y,r:18});
+  for(const rival of net.bots)if(rival!==bot&&rival.hp>0&&rival.team!==bot.team)options.push({id:rival.id,x:rival.x,y:rival.y,r:rival.r});
+ }
+ if(net.settings.npcs)for(const e of enemies)if(!e.dead&&e.hp>0)options.push({id:'npc',x:e.x,y:e.y,r:e.r,npc:true});
+ let best=null,weight=Infinity;
+ for(const candidate of options){
+  const range=Math.hypot(candidate.x-bot.x,candidate.y-bot.y);
+  if(range<1||range>710||!canSee(bot.x,bot.y,candidate.x,candidate.y))continue;
+  const priority=range*(candidate.npc?1.22:1);
+  if(priority<weight){best={...candidate,range};weight=priority;}
+ }
+ return best;
+}
+function netBotGrenadeSafe(bot,x,y){
+ const near=ally=>ally.hp>0&&Math.hypot(ally.x-x,ally.y-y)<124;
+ if(net.team===bot.team&&near(player))return false;
+ for(const r of net.remotes.values())if(r.team===bot.team&&near(r))return false;
+ for(const ally of net.bots)if(ally!==bot&&ally.team===bot.team&&near(ally))return false;
+ return true;
+}
+function netBotFire(bot,a,puckOnly=false){
+ const angle=a+rand(puckOnly?-.035:-.09,puckOnly?.035:.09),v=puckOnly?1200:1030,r=puckOnly?3.2:3.7;
+ bullets.push({x:bot.x+Math.cos(angle)*29,y:bot.y+Math.sin(angle)*29,vx:Math.cos(angle)*v,vy:Math.sin(angle)*v,t:1,damage:puckOnly?28:20,friend:true,puckOnly,color:teamColor(bot.team),r,pierce:0,owner:bot.id});
+ netBroadcast({t:'shot',by:bot.id,x:bot.x,y:bot.y,a:angle,velocity:v,r,explosive:false});
+ burst(bot.x+Math.cos(angle)*26,bot.y+Math.sin(angle)*26,3,teamColor(bot.team),80);
+}
+function netBotThrowGrenade(bot,foe){
+ if(!foe||!netBotGrenadeSafe(bot,foe.x,foe.y))return false;
+ const dx=foe.x-bot.x,dy=foe.y-bot.y,d=Math.hypot(dx,dy);
+ if(d<200||d>710)return false;
+ const a=Math.atan2(dy,dx)+rand(-.065,.065);
+ const data={id:bot.id+'-g-'+(++netGrenadeSeq),sx:bot.x,sy:bot.y,a,range:d,radius:119,damage:87};
+ netVisualGrenade(data,bot.id,false);
+ netBroadcast({t:'grenade',by:bot.id,...data});
+ burst(bot.x+Math.cos(a)*22,bot.y+Math.sin(a)*22,6,'#ffd199',105);
+ return true;
+}
 function netBotAI(dt){
  if(net.phase!=='match'||net.mode!=='host'||!puckEnabled||!puck)return;
  for(const b of net.bots){
   if(b.hp<=0){b.respawn=Math.max(0,(b.respawn||0)-dt);if(!b.respawn)netPlaceBot(b);continue;}
-  if(puck.respawn>0){b.shotCd=Math.max(0,(b.shotCd||0)-dt);continue;}
-  const goalX=b.team==='cyan'?WORLD.w-GOAL_X:GOAL_X;
-  const gx=goalX-puck.x,gy=WORLD.h*.5-puck.y,lg=Math.hypot(gx,gy)||1,nx=gx/lg,ny=gy/lg;
-  const tx=clamp(puck.x-nx*145,90,WORLD.w-90),ty=clamp(puck.y-ny*145,90,WORLD.h-90);
-  const dx=tx-b.x,dy=ty-b.y,d=Math.hypot(dx,dy);
-  if(d>12){const speed=Math.min(240,110+d*.35),oldX=b.x,oldY=b.y;moveBody(b,dx/(d||1)*speed*dt,dy/(d||1)*speed*dt);
-   if(Math.hypot(b.x-oldX,b.y-oldY)<speed*dt*.2){const side=Number(b.id.slice(-1))%2===0?1:-1;moveBody(b,-dy/(d||1)*speed*dt*side,dx/(d||1)*speed*dt*side);}
-  }
-  b.a=Math.atan2(puck.y-b.y,puck.x-b.x);
+  b.flash=Math.max(0,(b.flash||0)-dt);
   b.shotCd=Math.max(0,(b.shotCd||0)-dt);
-  const range=Math.hypot(puck.x-b.x,puck.y-b.y);
-  const alignment=((puck.x-b.x)*nx+(puck.y-b.y)*ny)/(range||1);
-  if(d<86&&range<440&&range>35&&alignment>.7&&b.shotCd<=0&&canSee(b.x,b.y,puck.x,puck.y)){
-   b.shotCd=.72+Math.random()*.33;
-   const a=b.a+rand(-.035,.035),v=1200,r=3.2;
-   bullets.push({x:b.x+Math.cos(a)*29,y:b.y+Math.sin(a)*29,vx:Math.cos(a)*v,vy:Math.sin(a)*v,t:1,damage:28,friend:true,puckOnly:true,color:teamColor(b.team),r,pierce:0,owner:b.id});
-   netBroadcast({t:'shot',by:b.id,x:b.x,y:b.y,a,velocity:v,r,explosive:false});
-   burst(b.x+Math.cos(a)*26,b.y+Math.sin(a)*26,3,teamColor(b.team),80);
+  b.combatCd=Math.max(0,(b.combatCd||0)-dt);
+  b.grenadeCd=Math.max(0,(b.grenadeCd||0)-dt);
+  const foe=netBotCombatTarget(b);
+  let tx=b.x,ty=b.y;
+  if(foe&&foe.range<550){
+   const dx=foe.x-b.x,dy=foe.y-b.y,d=foe.range||1,radial=clamp(d-300,-220,220);
+   const strafe=Math.sin(clock*.93+net.bots.indexOf(b)*2.4)*78;
+   tx=clamp(b.x+dx/d*radial-dy/d*strafe,80,WORLD.w-80);
+   ty=clamp(b.y+dy/d*radial+dx/d*strafe,80,WORLD.h-80);
+  }else if(puck.respawn<=0){
+   const gx=(b.team==='cyan'?WORLD.w-GOAL_X:GOAL_X)-puck.x,gy=WORLD.h*.5-puck.y,lg=Math.hypot(gx,gy)||1;
+   tx=clamp(puck.x-gx/lg*145,90,WORLD.w-90);
+   ty=clamp(puck.y-gy/lg*145,90,WORLD.h-90);
+  }
+  const dx=tx-b.x,dy=ty-b.y,d=Math.hypot(dx,dy);
+  if(d>12){
+   const speed=Math.min(240,110+d*.35),oldX=b.x,oldY=b.y;
+   moveBody(b,dx/(d||1)*speed*dt,dy/(d||1)*speed*dt);
+   if(Math.hypot(b.x-oldX,b.y-oldY)<speed*dt*.2){
+    const side=Number(b.id.slice(-1))%2===0?1:-1;
+    moveBody(b,-dy/(d||1)*speed*dt*side,dx/(d||1)*speed*dt*side);
+   }
+  }
+  if(foe){
+   b.a=Math.atan2(foe.y-b.y,foe.x-b.x);
+   const distance=Math.hypot(foe.x-b.x,foe.y-b.y);
+   if(b.grenadeCd<=0&&distance>=200&&distance<710){
+    b.grenadeCd=netBotThrowGrenade(b,foe)?7.5+Math.random()*3.5:1.5;
+   }
+   if(distance<710&&b.combatCd<=0&&canSee(b.x,b.y,foe.x,foe.y)){
+    netBotFire(b,b.a);b.combatCd=.48+Math.random()*.25;
+   }
+  }
+  if(puck.respawn>0)continue;
+  const gx=(b.team==='cyan'?WORLD.w-GOAL_X:GOAL_X)-puck.x,gy=WORLD.h*.5-puck.y,lg=Math.hypot(gx,gy)||1,nx=gx/lg,ny=gy/lg;
+  const px=puck.x-b.x,py=puck.y-b.y,range=Math.hypot(px,py);
+  const align=(px*nx+py*ny)/(range||1);
+  if(d<86&&range<440&&range>35&&align>.7&&b.shotCd<=0&&canSee(b.x,b.y,puck.x,puck.y)){
+   b.a=Math.atan2(py,px);b.shotCd=.72+Math.random()*.33;netBotFire(b,b.a,true);
   }
  }
 }
@@ -2207,7 +2273,7 @@ function netTick(dt){
  }
  for(const [id,r] of net.remotes){if(r.hp>0&&!roundBreak.kind)rechargeShield(r,.083);if(r.respawn>0){r.respawn=Math.max(0,r.respawn-.083);if(r.respawn<=0){const pos=netGoalSpawn(r.team);r.x=pos.x;r.y=pos.y;r.hp=100;r.shield=shieldMax(r.defense);r.shieldHitAt=-999;r.invulUntil=clock+1.6;netMsg(net.clients.get(id),{t:'health',hp:100,shield:r.shield,respawn:0,x:pos.x,y:pos.y});}}}
  const players=[{id:'host',name:net.name,team:net.team,x:player.x,y:player.y,a:player.angle,weapon:player.weapon,laserOn:player.laserOn,hp:player.hp,shield:player.shield,shieldMax:shieldMax(),respawn:player.respawn||0},...Array.from(net.remotes.entries()).map(([id,r])=>({id,name:r.name,team:r.team,x:r.x,y:r.y,a:r.a,weapon:r.weapon,laserOn:r.laserOn,hp:r.hp,shield:r.shield,shieldMax:shieldMax(r.defense),respawn:r.respawn||0}))];
- netBroadcast({t:'snapshot',players,bots:net.bots.map(b=>({id:b.id,name:b.name,team:b.team,x:b.x,y:b.y,a:b.a,hp:b.hp})),intermission:roundBreak.kind?{kind:roundBreak.kind,left:roundBreakLeft()}:null,p:{x:puck.x,y:puck.y,vx:puck.vx,vy:puck.vy,spin:puck.spin,respawn:puck.respawn},cyan:teamGoals,orange:rivalGoals,enemies:net.settings.npcs?enemies.slice(0,20).map(e=>({x:e.x,y:e.y,hp:e.hp,maxHp:e.maxHp,type:e.type,dead:e.dead})):[],activeGrenades:grenades.slice(0,16).map(g=>({id:g.id,by:g.owner,sx:g.sx,sy:g.sy,a:Math.atan2(g.vy,g.vx),range:g.dur*Math.hypot(g.vx,g.vy),radius:g.radius,damage:g.damage,x:g.x,y:g.y,t:g.t}))});
+ netBroadcast({t:'snapshot',players,bots:net.bots.map(b=>({id:b.id,name:b.name,team:b.team,x:b.x,y:b.y,a:b.a,hp:b.hp})),intermission:roundBreak.kind?{kind:roundBreak.kind,left:roundBreakLeft()}:null,p:{x:puck.x,y:puck.y,vx:puck.vx,vy:puck.vy,spin:puck.spin,respawn:puck.respawn},cyan:teamGoals,orange:rivalGoals,enemies:net.settings.npcs?enemies.slice(0,20).map(e=>({x:e.x,y:e.y,a:e.a,hp:e.hp,maxHp:e.maxHp,type:e.type,dead:e.dead})):[],activeGrenades:grenades.slice(0,16).map(g=>({id:g.id,by:g.owner,sx:g.sx,sy:g.sy,a:Math.atan2(g.vy,g.vx),range:g.dur*Math.hypot(g.vx,g.vy),radius:g.radius,damage:g.damage,x:g.x,y:g.y,t:g.t}))});
  net.coverClock+=.083;if(net.settings.cover&&net.coverClock>=.7){net.coverClock=0;netBroadcast({t:'cover',list:netCoverPack()});}
 
 }
@@ -2293,10 +2359,10 @@ if(player.hp>0&&fireHeld&&altHeld&&(player.weapon===2||(player.weapon===0&&playe
  }
 }
 if(player.slash>0)hitSlash();
-for(const e of enemies){if(e.dead||net.phase==='match'&&net.mode==='guest')continue;const prevEX=e.x,prevEY=e.y;e.flash=Math.max(0,e.flash-dt);e.hitCd=Math.max(0,e.hitCd-dt);e.fire-=dt;const targets=net.phase==='match'&&net.mode==='host'?[{id:'host',...player},...Array.from(net.remotes.entries()).filter(([id,r])=>r.hp>0).map(([id,r])=>({id,...r}))]:[{id:'host',...player}];const target=targets.reduce((best,v)=>Math.hypot(v.x-e.x,v.y-e.y)<Math.hypot(best.x-e.x,best.y-e.y)?v:best,targets[0]);const dx=target.x-e.x,dy=target.y-e.y,d=Math.hypot(dx,dy)||1,dirX=dx/d,dirY=dy/d;
+for(const e of enemies){if(e.dead||net.phase==='match'&&net.mode==='guest')continue;const prevEX=e.x,prevEY=e.y;e.flash=Math.max(0,e.flash-dt);e.hitCd=Math.max(0,e.hitCd-dt);e.fire-=dt;const targets=net.phase==='match'&&net.mode==='host'?[...(player.hp>0?[{id:'host',...player}]:[]),...Array.from(net.remotes.entries()).filter(([id,r])=>r.hp>0).map(([id,r])=>({id,...r})),...net.bots.filter(b=>b.hp>0).map(b=>({id:b.id,bot:true,...b}))]:[{id:'host',...player}];if(!targets.length)continue;const target=targets.reduce((best,v)=>Math.hypot(v.x-e.x,v.y-e.y)<Math.hypot(best.x-e.x,best.y-e.y)?v:best,targets[0]);const dx=target.x-e.x,dy=target.y-e.y,d=Math.hypot(dx,dy)||1,dirX=dx/d,dirY=dy/d;
  if((e.losTimer||0)<=0){e.visible=(d<1000)&&canSee(e.x,e.y,target.x,target.y);e.losTimer=.13+Math.random()*.07}
  else e.losTimer-=dt;
- const clear=!!e.visible;if(e.type==='rusher'){moveBody(e,dirX*e.spd*dt,dirY*e.spd*dt);if(d<e.r+player.r+6&&e.hitCd<=0){net.phase==='match'&&net.mode==='host'&&target.id!=='host'?netPvpHit(target.id,12,true):hurtPlayer(12);e.hitCd=.65}}else{let desired=d>320?1:d<215?-1:0;if(!clear)desired=1;const sid=Math.sin(clock*.8+e.sway)*.3;moveBody(e,(dirX*desired+(-dirY)*sid)*e.spd*dt,(dirY*desired+dirX*sid)*e.spd*dt);if(clear&&d<780&&e.fire<=0){e.fire=Math.max(.65,1.45-wave*.05)+rand(0,.5);let a=Math.atan2(dy,dx)+rand(-.12,.12);bullets.push({x:e.x+dirX*22,y:e.y+dirY*22,vx:Math.cos(a)*530,vy:Math.sin(a)*530,t:1.8,damage:10,friend:false,color:'#fc7b76',r:4,pierce:0,owner:'npc',sourceEnemy:e});if(net.phase==='match'&&net.mode==='host')netBroadcast({t:'npcShot',x:e.x+dirX*22,y:e.y+dirY*22,vx:Math.cos(a)*530,vy:Math.sin(a)*530})}}if((e.type==='rusher'||!clear||d>380)&&Math.hypot(e.x-prevEX,e.y-prevEY)<dt*5){e.stuck=(e.stuck||0)+dt;if(e.stuck>3.3){for(let j=0;j<30;j++){const angle=rand(0,TAU),range=rand(340,580),tx=clamp(player.x+Math.cos(angle)*range,85,WORLD.w-85),ty=clamp(player.y+Math.sin(angle)*range,85,WORLD.h-85);if(!blocked(tx,ty,e.r)&&!enemies.some(other=>other!==e&&dist(other,{x:tx,y:ty})<45)){burst(e.x,e.y,7,'#889ab1',100);e.x=tx;e.y=ty;burst(tx,ty,7,'#889ab1',90);break;}}e.stuck=0;}}else e.stuck=0;}
+ const clear=!!e.visible;e.a=Math.atan2(dy,dx);if(e.type==='rusher'){moveBody(e,dirX*e.spd*dt,dirY*e.spd*dt);if(d<e.r+(target.r||18)+6&&e.hitCd<=0){if(target.bot)netBotHit(net.bots.find(b=>b.id===target.id),12,true);else if(net.phase==='match'&&net.mode==='host'&&target.id!=='host')netPvpHit(target.id,12,true);else hurtPlayer(12);e.hitCd=.65}}else{let desired=d>320?1:d<215?-1:0;if(!clear)desired=1;const sid=Math.sin(clock*.8+e.sway)*.3;moveBody(e,(dirX*desired+(-dirY)*sid)*e.spd*dt,(dirY*desired+dirX*sid)*e.spd*dt);if(clear&&d<780&&e.fire<=0){e.fire=Math.max(.65,1.45-wave*.05)+rand(0,.5);let a=Math.atan2(dy,dx)+rand(-.12,.12);bullets.push({x:e.x+dirX*22,y:e.y+dirY*22,vx:Math.cos(a)*530,vy:Math.sin(a)*530,t:1.8,damage:10,friend:false,color:'#fc7b76',r:4,pierce:0,owner:'npc',sourceEnemy:e});if(net.phase==='match'&&net.mode==='host')netBroadcast({t:'npcShot',x:e.x+dirX*22,y:e.y+dirY*22,vx:Math.cos(a)*530,vy:Math.sin(a)*530})}}if((e.type==='rusher'||!clear||d>380)&&Math.hypot(e.x-prevEX,e.y-prevEY)<dt*5){e.stuck=(e.stuck||0)+dt;if(e.stuck>3.3){for(let j=0;j<30;j++){const angle=rand(0,TAU),range=rand(340,580),tx=clamp(player.x+Math.cos(angle)*range,85,WORLD.w-85),ty=clamp(player.y+Math.sin(angle)*range,85,WORLD.h-85);if(!blocked(tx,ty,e.r)&&!enemies.some(other=>other!==e&&dist(other,{x:tx,y:ty})<45)){burst(e.x,e.y,7,'#889ab1',100);e.x=tx;e.y=ty;burst(tx,ty,7,'#889ab1',90);break;}}e.stuck=0;}}else e.stuck=0;}
 enemies=enemies.filter(e=>!e.dead);
 for(let i=bullets.length-1;i>=0;i--){
  const b=bullets[i];b.t-=dt;
@@ -2334,7 +2400,7 @@ for(let i=bullets.length-1;i>=0;i--){
     netPvpHit(id,b.damage,!b.friend);if(b.explosive)smallExplosion(b.x,b.y,b,null);removed=true;break;
    }
    if(!removed)for(const bot of net.bots)if(bot.id!==b.owner&&bot.hp>0&&Math.hypot(bot.x-b.x,bot.y-b.y)<19+b.r){
-    netBotHit(bot,b.damage);if(b.explosive)smallExplosion(b.x,b.y,b,null);removed=true;break;
+    netBotHit(bot,b.damage,!b.friend);if(b.explosive)smallExplosion(b.x,b.y,b,null);removed=true;break;
    }
   }
   if(!removed&&!b.puckOnly&&(b.friend&&b.owner&&b.owner!=='host'||!b.friend)&&Math.hypot(player.x-b.x,player.y-b.y)<(player.roll>0&&player.rollMode==='slide'?9:player.r)+b.r){
@@ -2386,7 +2452,7 @@ for(const g of grenades){
 }
 for(const b of bullets){ctx.strokeStyle=b.color;ctx.globalAlpha=b.friend?.84:.75;ctx.lineWidth=b.trace?4:2.6;ctx.beginPath();ctx.moveTo(b.x-b.vx*.018,b.y-b.vy*.018);ctx.lineTo(b.x,b.y);ctx.stroke();ctx.globalAlpha=1;ctx.fillStyle=b.color;ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,TAU);ctx.fill()}
 for(const k of knives){ctx.save();ctx.translate(k.x,k.y);ctx.rotate(k.angle);ctx.strokeStyle='#ebf8f4';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(-10,0);ctx.lineTo(15,0);ctx.stroke();ctx.strokeStyle='#68dcbf';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-15,0);ctx.lineTo(-9,0);ctx.stroke();ctx.restore()}
-for(const e of enemies){ctx.fillStyle='#050f17aa';ctx.beginPath();ctx.ellipse(e.x+4,e.y+8,e.r+5,e.r*.75,0,0,TAU);ctx.fill();let a=Math.atan2(player.y-e.y,player.x-e.x);ctx.save();ctx.translate(e.x,e.y);ctx.rotate(a);ctx.fillStyle=e.flash>0?'#ffffff':e.type==='rusher'?'#fa996c':'#b696eb';ctx.strokeStyle=e.type==='rusher'?'#ffb17e':'#d7c3ff';ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,0,e.r,0,TAU);ctx.fill();ctx.stroke();ctx.fillStyle='#1c2732';rr(7,-5,e.type==='rusher'?12:22,10,3);ctx.fill();ctx.fillStyle='#fff4de';ctx.fillRect(12,-2,6,4);ctx.restore();if(e.hp<e.maxHp){ctx.fillStyle='#132329';ctx.fillRect(e.x-23,e.y-e.r-14,46,4);ctx.fillStyle=e.type==='rusher'?'#f6a36f':'#c6a1ff';ctx.fillRect(e.x-23,e.y-e.r-14,46*Math.max(0,e.hp/e.maxHp),4)}}
+for(const e of enemies){ctx.fillStyle='#050f17aa';ctx.beginPath();ctx.ellipse(e.x+4,e.y+8,e.r+5,e.r*.75,0,0,TAU);ctx.fill();let a=Number.isFinite(e.a)?e.a:Math.atan2(player.y-e.y,player.x-e.x);ctx.save();ctx.translate(e.x,e.y);ctx.rotate(a);ctx.fillStyle=e.flash>0?'#ffffff':e.type==='rusher'?'#fa996c':'#b696eb';ctx.strokeStyle=e.type==='rusher'?'#ffb17e':'#d7c3ff';ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,0,e.r,0,TAU);ctx.fill();ctx.stroke();ctx.fillStyle='#1c2732';rr(7,-5,e.type==='rusher'?12:22,10,3);ctx.fill();ctx.fillStyle='#fff4de';ctx.fillRect(12,-2,6,4);ctx.restore();if(e.hp<e.maxHp){ctx.fillStyle='#132329';ctx.fillRect(e.x-23,e.y-e.r-14,46,4);ctx.fillStyle=e.type==='rusher'?'#f6a36f':'#c6a1ff';ctx.fillRect(e.x-23,e.y-e.r-14,46*Math.max(0,e.hp/e.maxHp),4)}}
 if(net.phase==='match')for(const b of net.bots){
   ctx.save();ctx.globalAlpha=b.hp<=0?.28:1;ctx.translate(b.x,b.y);ctx.rotate(b.a||0);const color=teamColor(b.team);
   ctx.fillStyle=b.team==='orange'?'#623e31':'#21536b';ctx.strokeStyle=color;ctx.lineWidth=3;
