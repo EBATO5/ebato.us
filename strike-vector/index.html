@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
 <meta name="theme-color" content="#080e17" />
-<title>STRIKE VECTOR v1.4.8 — NPC Crossfire & Heavy Melee</title>
+<title>STRIKE VECTOR v1.4.9 — Damage-Based Assists & Balanced Waves</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{color-scheme:dark;--bg:#080e17;--panel:#101b28;--border:#263746;--mint:#74f7d4;--text:#eef6f7;--muted:#8da4b3;--orange:#ffbd75}
@@ -999,7 +999,7 @@ function finishRoundBreak(confirmedByHost=false){
   }
   if(net.mode==='host'&&net.settings.npcs){
    if(kind==='goal'){enemies=[];net.npcRemaining=0;wave=Math.max(1,wave);}
-   if(kind==='wave'||kind==='goal'){if(kind==='wave')wave++;net.npcRemaining=Math.min(28,5+wave*3);net.npcClock=.4;}
+   if(kind==='wave'||kind==='goal'){if(kind==='wave')wave++;net.npcRemaining=npcWavePopulation(wave,true);net.npcClock=.4;}
   }
   if(net.mode==='host')netBroadcast({t:'resume',kind,wave});
  }else if(kind==='wave'){nextWave();}
@@ -1653,29 +1653,62 @@ function hitSlash(){
  }
 }
 function throwKnife(){if(player.throwKnives<=0){sound('dry');return}player.throwKnives--;const a=mouseAim(),charge=clamp((clock-altStart)/.65,0,1);knives.push({x:player.x+Math.cos(a)*25,y:player.y+Math.sin(a)*25,vx:Math.cos(a)*(920+charge*340),vy:Math.sin(a)*(920+charge*340),angle:a,t:.8,damage:78+charge*46+player.mods.knife*18});burst(player.x,player.y,4,'#d4f6fb',160);sound('knife')}
+// Credit contribution is based on actual enemy HP removed, never projectile
+// overkill. Host owns the ledger; NPC crossfire consumes HP but earns no credits.
+function npcBountyShares(e,pool){
+ const cap=Math.max(1,Number(e.maxHp)||1),ledger=e.damageBy||{};
+ const rows=Object.entries(ledger).filter(([id,hp])=>hp>0&&(id==='host'||net.phase==='match'&&net.mode==='host'&&net.remotes.has(id))).map(([id,hp])=>{
+  const raw=pool*clamp(hp,0,cap)/cap;
+  return {id,raw,amount:Math.floor(raw)};
+ });
+ // Round the *players' collective earned share* first, then distribute the
+ // remainder to largest fractions. NPC damage and disconnected players cannot
+ // inflate the budget; total awards never exceed the original bounty.
+ const budget=Math.min(pool,Math.round(rows.reduce((sum,row)=>sum+row.raw,0)));
+ let remainder=budget-rows.reduce((sum,row)=>sum+row.amount,0);
+ rows.sort((a,b)=>(b.raw-b.amount)-(a.raw-a.amount)||a.id.localeCompare(b.id));
+ for(const row of rows){if(remainder<=0)break;row.amount++;remainder--;}
+ return new Map(rows.map(row=>[row.id,row.amount]));
+}
+function grantEnemyBounty(e,killer){
+ const creditsPool=e.type==='rusher'?42:58,pointsPool=e.type==='rusher'?125:175;
+ const creditShares=npcBountyShares(e,creditsPool),pointShares=npcBountyShares(e,pointsPool);
+ for(const [id,payout] of creditShares){
+  const pointPayout=pointShares.get(id)||0,gotKill=id===killer?1:0;
+  if(!payout&&!pointPayout&&!gotKill)continue;
+  if(net.phase==='match'&&net.mode==='host'&&id!=='host'){
+   netMsg(net.clients.get(id),{t:'reward',credits:payout,points:pointPayout,kills:gotKill,npcBounty:true,assist:!gotKill});
+  }else if(id==='host'){
+   credits+=payout;score+=pointPayout;kills+=gotKill;
+   if(payout)floatText(player.x,player.y-40,(gotKill?'ELIM':'ASSIST')+' +$'+payout,gotKill?'#bfffe5':'#f8cd86');
+  }
+ }
+}
 function hurtEnemy(e,damage,x,y,source='player'){
- if(e.dead)return;
+ if(e.dead||!Number.isFinite(damage)||damage<=0)return;
+ const originalHp=Math.max(0,e.hp),dealt=Math.min(originalHp,damage);
+ const owner=source==='player'?'host':source;
+ if(dealt>0&&owner!=='npc'&&(owner==='host'||net.phase==='match'&&net.mode==='host'&&net.remotes.has(owner))){
+  if(!e.damageBy)e.damageBy=Object.create(null);
+  e.damageBy[owner]=(e.damageBy[owner]||0)+dealt;
+ }
  e.hp-=damage;e.flash=.10;burst(x,y,7,e.type==='rusher'?'#ffb176':'#dfc1ff',180);
  if(e.hp<=0){
-  e.dead=true;const earned=e.type==='rusher'?42:58,points=e.type==='rusher'?125:175;
-  // Hostile crossfire doesn't grant player rewards for NPCs' own mistakes.
-  if(source!=='npc'){
-   kills++;credits+=earned;score+=points;
-   if(net.phase==='match'&&net.mode==='host')netBroadcast({t:'reward',credits:earned,points,kills:1});
-  }
+  e.dead=true;
+  grantEnemyBounty(e,owner);
   burst(e.x,e.y,15,e.type==='rusher'?'#ed9871':'#bd99fa',240);
-  floatText(e.x,e.y-26,source==='npc'?'CROSS FIRE':'+'+points,source==='npc'?'#ffa77f':'#f8cf8c');sound('hit');
+  floatText(e.x,e.y-26,owner==='npc'?'CROSS FIRE':'ENEMY DOWN',owner==='npc'?'#ffa77f':'#f8cf8c');sound('hit');
  }
 }
 function hurtPlayer(damage){if(player.invul>0||player.hp<=0)return;const hit=absorbDamage(player,damage);player.hp=Math.max(0,player.hp-hit.hpDamage);player.invul=.47;shake=Math.max(shake,hit.absorbed>0?4:7);burst(player.x,player.y,hit.absorbed>0?9:13,hit.absorbed>0?'#70eaff':'#ff857d',190);sound('hit');if(player.hp<=0){if(net.phase==='match'){player.respawn=1.9;fireHeld=false;altHeld=false;secondaryPending=false;floatText(player.x,player.y-32,'RESPAWNING','#ffc187');}else{ended=true;paused=true;fireHeld=false;altHeld=false;secondaryPending=false;showScreen('gameover')}}}
-function boom(x,y,r=137,damage=100,owner='host',grenadeId=''){if(net.phase==='match'&&net.mode==='host'){netAreaDamage(x,y,r,damage,owner);netBroadcast({t:'explosion',x,y,r,id:grenadeId,by:owner});}puckBlast(x,y,r,1300+damage*3,'blast');shake=Math.max(shake,12);burst(x,y,50,'#ffa66b',440);burst(x,y,25,'#fff3c2',220);particles.push({x,y,vx:0,vy:0,life:.35,max:.35,color:'#ffaa70',r,ring:true});for(const e of enemies){let d=Math.hypot(e.x-x,e.y-y);if(d<r+e.r){hurtEnemy(e,Math.round(damage*(1-clamp(d/r,0,.8)*.45)),e.x,e.y);const a=Math.atan2(e.y-y,e.x-x);e.x+=Math.cos(a)*Math.max(0,28-d*.06);e.y+=Math.sin(a)*Math.max(0,28-d*.06)}}for(const o of [...obstacles]){const qx=clamp(x,o.x,o.x+o.w),qy=clamp(y,o.y,o.y+o.h),d=Math.hypot(x-qx,y-qy);if(d<r)damageCover(o,Math.max(30,Math.round(200*(1-d/r*.48))),qx,qy)}sound('grenade')}
+function boom(x,y,r=137,damage=100,owner='host',grenadeId=''){if(net.phase==='match'&&net.mode==='host'){netAreaDamage(x,y,r,damage,owner);netBroadcast({t:'explosion',x,y,r,id:grenadeId,by:owner});}puckBlast(x,y,r,1300+damage*3,'blast');shake=Math.max(shake,12);burst(x,y,50,'#ffa66b',440);burst(x,y,25,'#fff3c2',220);particles.push({x,y,vx:0,vy:0,life:.35,max:.35,color:'#ffaa70',r,ring:true});for(const e of enemies){let d=Math.hypot(e.x-x,e.y-y);if(d<r+e.r){hurtEnemy(e,Math.round(damage*(1-clamp(d/r,0,.8)*.45)),e.x,e.y,owner);const a=Math.atan2(e.y-y,e.x-x);e.x+=Math.cos(a)*Math.max(0,28-d*.06);e.y+=Math.sin(a)*Math.max(0,28-d*.06)}}for(const o of [...obstacles]){const qx=clamp(x,o.x,o.x+o.w),qy=clamp(y,o.y,o.y+o.h),d=Math.hypot(x-qx,y-qy);if(d<r)damageCover(o,Math.max(30,Math.round(200*(1-d/r*.48))),qx,qy)}sound('grenade')}
 function smallExplosion(x,y,b,skip){
  if(!b.explosive)return;
  if(net.phase==='match'&&net.mode==='host')netAreaDamage(x,y,47,b.damage*.40,b.owner||'host');
  puckBlast(x,y,110,810,'blast');
  burst(x,y,11,'#ffb57e',125);
  const radius=46;
- for(const e of enemies){if(e.dead||e===skip)continue;const d=Math.hypot(e.x-x,e.y-y);if(d<radius+e.r)hurtEnemy(e,Math.round(b.damage*.35*(1-Math.min(.7,d/(radius+e.r)))),e.x,e.y)}
+ for(const e of enemies){if(e.dead||e===skip)continue;const d=Math.hypot(e.x-x,e.y-y);if(d<radius+e.r)hurtEnemy(e,Math.round(b.damage*.35*(1-Math.min(.7,d/(radius+e.r)))),e.x,e.y,b.owner||'host')}
  for(const o of obstacles){const qx=clamp(x,o.x,o.x+o.w),qy=clamp(y,o.y,o.y+o.h);if(Math.hypot(x-qx,y-qy)<radius)damageCover(o,Math.max(14,b.damage*.5),qx,qy)}
 }
 function spawnEnemy(){let x,y,tries=0;do{const a=rand(0,TAU),r=rand(Math.max(sw,sh)*.66,Math.max(sw,sh)*.84+180);x=clamp(player.x+Math.cos(a)*r,75,WORLD.w-75);y=clamp(player.y+Math.sin(a)*r,75,WORLD.h-75);tries++}while((blocked(x,y,23)||Math.hypot(x-player.x,y-player.y)<420)&&tries<75);if(blocked(x,y,23))return;const rusher=Math.random()<clamp(.47+wave*.017,.47,.70);enemies.push({x,y,r:rusher?17:19,type:rusher?'rusher':'gunner',hp:rusher?65+wave*5:88+wave*6,maxHp:rusher?65+wave*5:88+wave*6,spd:rusher?rand(140,160)+wave*3:rand(90,109)+wave*2,fire:rand(.3,1.7),flash:0,hitCd:0,sway:rand(0,TAU),dead:false})}
@@ -1712,7 +1745,7 @@ function netApplyRules(data){
   if(!net.settings.npcs){enemies=[];net.npcRemaining=0;}
   if(!net.settings.cover)obstacles=[];
   else if(!before.cover&&net.mode==='host'){buildLevel();coverSpawnTimer=4.2;}
-  if(!before.npcs&&net.settings.npcs&&net.mode==='host'){wave=Math.max(1,wave);net.npcRemaining=Math.min(28,5+wave*3);net.npcClock=.2;}
+  if(!before.npcs&&net.settings.npcs&&net.mode==='host'){wave=Math.max(1,wave);net.npcRemaining=npcWavePopulation(wave,true);net.npcClock=.2;}
  }
  netUpdateLobby();
 }
@@ -1747,7 +1780,7 @@ function netHostMelee(id,kind,angle){
  if(id!=='host'&&hits(player))netPvpHit('host',damage);
  for(const [other,v] of net.remotes)if(other!==id&&hits(v))netPvpHit(other,damage);
  for(const bot of net.bots)if(bot.id!==id&&hits(bot))netBotHit(bot,damage);
- if(id!=='host'){for(const e of enemies)if(!e.dead&&hits(e))hurtEnemy(e,damage,e.x,e.y);if(puck&&puck.respawn<=0&&hits(puck))puckImpulse(puck.x,puck.y,Math.cos(angle)*520,Math.sin(angle)*520,'melee',p.team);}
+ if(id!=='host'){for(const e of enemies)if(!e.dead&&hits(e))hurtEnemy(e,damage,e.x,e.y,id);if(puck&&puck.respawn<=0&&hits(puck))puckImpulse(puck.x,puck.y,Math.cos(angle)*520,Math.sin(angle)*520,'melee',p.team);}
 }
 function netSendMelee(kind,a){
  if(net.phase!=='match')return;
@@ -1905,7 +1938,7 @@ function netStartMatch(){
  // Start all operatives with the regular 9mm and an underbarrel grenade launcher.
  player.modules.grenade=true;player.secondary='grenade';
  cam.x=player.x-sw*.5;cam.y=player.y-sh*.5;
- net.phase='match';net.started=true;net.sendClock=0;net.npcRemaining=net.settings.npcs&&net.mode==='host'?Math.min(28,5+wave*3):0;player.respawn=0;player.hp=100;player.invul=1.5;if(net.settings.cover&&net.mode==='host')buildLevel();
+ net.phase='match';net.started=true;net.sendClock=0;net.npcRemaining=net.settings.npcs&&net.mode==='host'?npcWavePopulation(wave,true):0;player.respawn=0;player.hp=100;player.invul=1.5;if(net.settings.cover&&net.mode==='host')buildLevel();
  $net('netLobby').classList.add('hidden');$net('netDock').classList.remove('hidden');
  ui.screen.classList.add('hidden');ui.puckBoard.hidden=false;netUpdateLobby();syncUI(1);
 }
@@ -2002,7 +2035,7 @@ function netHandleGuestData(msg){
   netUpdateLobby();return;
  }
  if(msg.t==='rules'){netApplyRules(msg.rules);return;}
- if(msg.t==='reward'&&net.phase==='match'){if(Number.isFinite(msg.credits))credits+=clamp(Math.floor(msg.credits),0,10000);if(Number.isFinite(msg.points))score+=clamp(Math.floor(msg.points),0,10000);if(Number.isFinite(msg.kills))kills+=clamp(Math.floor(msg.kills),0,20);syncUI(1);return;}
+ if(msg.t==='reward'&&net.phase==='match'){if(Number.isFinite(msg.credits))credits+=clamp(Math.floor(msg.credits),0,10000);if(Number.isFinite(msg.points))score+=clamp(Math.floor(msg.points),0,10000);if(Number.isFinite(msg.kills))kills+=clamp(Math.floor(msg.kills),0,20);if(msg.npcBounty&&msg.credits>0)floatText(player.x,player.y-38,(msg.assist?'ASSIST':'ELIM')+' +$'+Math.floor(msg.credits),msg.assist?'#f8cd86':'#bfffe5');syncUI(1);return;}
  if(msg.t==='health'&&net.phase==='match'){if(!Number.isFinite(msg.hp))return;player.hp=clamp(msg.hp,0,100);if(Number.isFinite(msg.shield)){if(msg.shield<player.shield)player.shieldHitAt=clock;player.shield=clamp(msg.shield,0,shieldMax());}player.respawn=clamp(msg.respawn||0,0,5);player.invul=player.hp>0?1.1:0;if(Number.isFinite(msg.x)&&Number.isFinite(msg.y)){player.x=msg.x;player.y=msg.y;keys.clear();}return;}
  if(msg.t==='start'){netApplyRules(msg.rules||{});if(net.phase!=='match')netStartMatch();return;}
  if(msg.t==='break'&&net.phase==='match'&&(msg.kind==='goal'||msg.kind==='wave')){if(!roundBreak.kind)startRoundBreak(msg.kind,clamp(Number(msg.seconds)||10,1,30),true);else if(roundBreak.kind===msg.kind)roundBreak.until=clock+clamp(Number(msg.seconds)||0,0,30);return;}
@@ -2122,7 +2155,9 @@ $net('netCopyInvite').addEventListener('click',async()=>{const url=new URL(locat
 const invited=safeCode(new URLSearchParams(location.search).get('room'));
 if(invited.length===6){$net('netCodeInput').value=invited;$net('netLaunchError').textContent='Invite detected — enter a callsign and click JOIN LOBBY.';}
 
-function nextWave(){wave++;toSpawn=4+wave*3;spawnTimer=.15;nextWaveTimer=-1;player.hp=Math.min(100,player.hp+(wave===1?0:22));if(wave>1)refillWeapons();spawnCover(Math.min(4,2+Math.floor(wave/3)));coverSpawnTimer=rand(3.3,5.2);ui.banner.innerHTML=`INCOMING HOSTILES<strong>WAVE ${String(wave).padStart(2,'0')}</strong>`;ui.banner.classList.add('show');bannerUntil=clock+1.8}
+// Slower growth: +2 per wave instead of +3. Multiplayer also caps at 24 total.
+function npcWavePopulation(w,online=false){const n=5+Math.ceil(Math.max(1,w)*2);return online?Math.min(24,n):n;}
+function nextWave(){wave++;toSpawn=npcWavePopulation(wave);spawnTimer=.15;nextWaveTimer=-1;player.hp=Math.min(100,player.hp+(wave===1?0:22));if(wave>1)refillWeapons();spawnCover(Math.min(4,2+Math.floor(wave/3)));coverSpawnTimer=rand(3.3,5.2);ui.banner.innerHTML=`INCOMING HOSTILES<strong>WAVE ${String(wave).padStart(2,'0')}</strong>`;ui.banner.classList.add('show');bannerUntil=clock+1.8}
 function update(dt){clock+=dt;
  if(roundBreak.kind){
   if(net.phase==='match')netTick(dt);
@@ -2219,7 +2254,7 @@ for(let i=bullets.length-1;i>=0;i--){
    for(const e of enemies){
     if(e.dead||b.hitEnemies.has(e)||Math.hypot(e.x-b.x,e.y-b.y)>e.r+b.r)continue;
     b.hitEnemies.add(e);
-    hurtEnemy(e,b.damage,b.x,b.y);
+    hurtEnemy(e,b.damage,b.x,b.y,b.owner||'host');
     if(b.explosive)smallExplosion(b.x,b.y,b,e);
     if(b.pierce>0){b.pierce--;}else{removed=true;}
     break;
