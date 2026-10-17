@@ -1168,6 +1168,15 @@ window.addEventListener('keydown',e=>{const c=e.code;
  if(net.phase==='match'&&c==='KeyP'&&!e.repeat){netShowLobby($net('netLobby').classList.contains('hidden'));return}
  if(net.phase==='match'&&!$net('netLobby').classList.contains('hidden')){if(c==='Escape'){netShowLobby(false);return;}return;}
 
+ // Close node details first; only a second Tab/Escape reaches armory controls.
+ // Keep intermission shops open when a node popup is dismissed.
+ if((c==='Tab'||c==='Escape')&&shopOpen&&treePopupOpen){
+  e.preventDefault();
+  if(!e.repeat){treePopupOpen=false;updateTreeDetailPanel();
+   if(document.activeElement?.closest?.('#treePopup'))document.activeElement.blur();
+  }
+  return;
+ }
  if(c==='Tab'&&started&&!ended&&$net('netLobby').classList.contains('hidden')){e.preventDefault();if(!e.repeat)toggleTabShop();return}
  if(started&&!ended&&!(e.altKey&&c==='F4')){
   const combo=((e.ctrlKey||e.metaKey)&&!['ControlLeft','ControlRight','MetaLeft','MetaRight'].includes(c))||(e.altKey&&!['AltLeft','AltRight'].includes(c))||['F1','F2','F3','F5','F6','F7','F8','F9','F10','F11','F12'].includes(c);
