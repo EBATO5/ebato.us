@@ -2480,7 +2480,7 @@ function drawPuckTracker(){
  ctx.fill();ctx.shadowBlur=0;ctx.stroke();
  ctx.restore();
  // Compact readout is opposite the brightest part of the game HUD.
- const label='PUCK '+Math.round(radar.distance)+'m';
+ const label='PUCK '+Math.round(radar.distance)+'m · '+radar.band;
  ctx.font='800 11px Oxanium,system-ui';ctx.textAlign='center';ctx.textBaseline='middle';
  const width=Math.max(89,ctx.measureText(label).width+20),y=radius+31;
  ctx.fillStyle='rgba(5,21,31,.88)';ctx.strokeStyle=radar.color;ctx.lineWidth=1;
