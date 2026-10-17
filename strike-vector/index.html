@@ -148,8 +148,8 @@
 .tree-map-viewport{position:relative;width:100%;height:min(565px,58vh);min-height:375px;overflow:hidden;cursor:grab;touch-action:none;user-select:none;background:
  radial-gradient(ellipse at 50% 50%,rgba(23,59,72,.35),transparent 80%),#08131b}
 .tree-map-viewport.panning{cursor:grabbing}
-.tree-map-stage{position:absolute;left:0;top:0;width:1240px;height:1170px;transform:translate3d(0,0,0);will-change:transform;pointer-events:auto}
-.tree-map-stage .tree-map-svg{width:1240px;height:1170px}
+.tree-map-stage{position:absolute;left:0;top:0;width:1540px;height:1200px;transform:translate3d(0,0,0);will-change:transform;pointer-events:auto}
+.tree-map-stage .tree-map-svg{width:1540px;height:1200px}
 .tree-compact-node{touch-action:none}
 .tree-map-viewport.panning .tree-compact-node{cursor:grabbing}
 .tree-map-hint{position:absolute;left:14px;top:14px;z-index:3;pointer-events:none;font-size:10px;letter-spacing:.1em;font-weight:900;color:#9cc2c6;background:#0d202be8;border:1px solid #325464;border-radius:999px;padding:9px 13px}
@@ -600,6 +600,10 @@ const ICON_SHAPES={
  grenadeMag:`<rect x="19" y="22" width="20" height="35" rx="9"/><rect x="50" y="22" width="20" height="35" rx="9"/><rect x="81" y="22" width="20" height="35" rx="9"/><path d="M24 18h10M55 18h10M86 18h10M29 29v21M60 29v21M91 29v21"/>`,
  grenadeReload:`<path d="M42 22h32v33q-16 15-32 0zM52 22v-9h12v9M50 33h17"/><path d="M16 45a42 42 0 0 0 21 23M31 59l7 10-12 2M104 33a42 42 0 0 0-20-22M90 9l-8 1 4 11"/>`,
  grenadeCycle:`<path d="M21 30h44v18H21zM65 39h15M78 29l11 10-11 10"/><circle cx="96" cy="38" r="13"/><path d="M96 30v9l7 4"/>`,
+ shieldCapacity:`<path d="M60 9l34 14v24q-6 20-34 28Q32 67 26 47V23zM60 22v37M41 41h38"/>`,
+ shieldRegen:`<path d="M60 12l29 12v23q-6 17-29 24-23-7-29-24V24zM35 14a36 36 0 0 1 48 2M79 9l4 7-8 1"/><path d="M43 43h34M60 28v30"/>`,
+ shieldDelay:`<path d="M60 10l30 14v23q-8 20-30 27-22-7-30-27V24z"/><circle cx="60" cy="43" r="17"/><path d="M60 30v14l9 6M45 14l-7-8M75 14l7-8"/>`,
+ armor:`<path d="M27 25l20-14h26l20 14-8 39-25 13-25-13zM48 12v52M72 12v52M35 50h50M27 25h66"/>`,
  knife:`<path d="M19 51l53-35 15 10-45 44zM35 52l8 10M23 56l-6 7M14 52l7 8"/><path d="M65 22l11 7"/>`,
  grenade:`<path d="M56 13h15v9M50 22h28l4 26Q78 68 64 68T46 48zM50 35h28M57 45h14"/><path d="M75 16l15-5"/>`,
  power:`<path d="M14 38h43M49 28l27 10-27 10M80 21l25 17-25 17M88 29l10 9-10 9"/>`,
@@ -676,7 +680,7 @@ function treeNodeShell(id,title,kicker,iconId,body,x,y,classes=''){
  return `<article class="tree-node ${classes}" data-node="${id}" style="left:${x}px;top:${y}px"><div class="tree-head"><div class="tree-icon">${iconArt(iconId||id,levelForIcon)}</div><div class="tree-titlewrap"><div class="tree-kicker">${kicker}</div><h3>${title}</h3></div></div>${body}</article>`;
 }
 function treeStatLine(label,value){return `<div class="tree-statline"><span>${label}</span><b>${value}</b></div>`}
-function optionIcon(id){return id==='receiver'?'receiver':id==='damage'?'damage':id==='trigger'?'trigger':id==='fireControl'?'fireControl':id==='projectiles'?'projectiles':id==='reloadSpeed'?'reloadSpeed':id==='mag'?'mag':id==='barrel'?'barrel':id==='penetration'?'penetration':id==='blast'?'blast':id==='grenadePower'?'grenadePower':id==='grenadeRange'?'grenadeRange':id==='grenadeMag'?'grenadeMag':id==='grenadeReload'?'grenadeReload':id==='grenadeCycle'?'grenadeCycle':id==='knife'?'knife':'gun'}
+function optionIcon(id){return id==='receiver'?'receiver':id==='damage'?'damage':id==='trigger'?'trigger':id==='fireControl'?'fireControl':id==='projectiles'?'projectiles':id==='reloadSpeed'?'reloadSpeed':id==='mag'?'mag':id==='barrel'?'barrel':id==='penetration'?'penetration':id==='blast'?'blast':id==='grenadePower'?'grenadePower':id==='grenadeRange'?'grenadeRange':id==='grenadeMag'?'grenadeMag':id==='grenadeReload'?'grenadeReload':id==='grenadeCycle'?'grenadeCycle':id==='knife'?'knife':['shieldCapacity','shieldRegen','shieldDelay','armor'].includes(id)?id:'gun'}
 function buildTreeUpgradeNode(o,x,y,kicker='WEAPON MOD'){
  const lvl=player.mods[o.id],needs=o.requires&&!player.modules[o.requires],maxed=o.max!==undefined&&lvl>=o.max;
  const cost=upgradeCost(o,lvl),refund=lvl?upgradeCost(o,lvl-1):0,st=statText(o,lvl);
@@ -748,7 +752,8 @@ function buildCompactSkillTree(){
   feedHub:[515,745],mag:[485,940],reloadSpeed:[650,940],
   ballisticsHub:[690,205],barrel:[535,70],projectiles:[695,70],penetration:[850,110],
   grenade:[945,465],blast:[1080,285],grenadePower:[1110,465],grenadeRange:[1110,625],grenadeMag:[980,815],grenadeReload:[810,820],grenadeCycle:[800,615],
-  attachments:[255,825],laser:[95,770],explosive:[95,960],bayonet:[245,1020],power:[380,1035],aim:[355,655],knife:[110,655]
+  attachments:[255,825],laser:[95,770],explosive:[95,960],bayonet:[245,1020],power:[380,1035],aim:[355,655],knife:[110,655],
+   defenseHub:[1270,820],shieldCapacity:[1270,575],shieldRegen:[1460,690],shieldDelay:[1460,940],armor:[1270,1090]
  };
  const branches=[
   ['core','receiverHub'],['receiverHub','receiver'],['receiverHub','damage'],
@@ -756,7 +761,8 @@ function buildCompactSkillTree(){
   ['core','feedHub'],['feedHub','mag'],['feedHub','reloadSpeed'],
   ['core','ballisticsHub'],['ballisticsHub','barrel'],['ballisticsHub','projectiles'],['ballisticsHub','penetration'],
   ['core','grenade'],['grenade','blast'],['grenade','grenadePower'],['grenade','grenadeRange'],['grenade','grenadeMag'],['grenade','grenadeReload'],['grenade','grenadeCycle'],
-  ['core','attachments'],['attachments','laser'],['attachments','explosive'],['attachments','bayonet'],['attachments','power'],['attachments','aim'],['attachments','knife']
+  ['core','attachments'],['attachments','laser'],['attachments','explosive'],['attachments','bayonet'],['attachments','power'],['attachments','aim'],['attachments','knife'],
+   ['core','defenseHub'],['defenseHub','shieldCapacity'],['defenseHub','shieldRegen'],['defenseHub','shieldDelay'],['defenseHub','armor']
  ];
  const grenadeMods=new Set(['blast','grenadePower','grenadeRange','grenadeMag','grenadeReload','grenadeCycle']);
  const lockedEdge=b=>(grenadeMods.has(b)&&!player.modules.grenade)||(['grenade','laser','explosive','bayonet','power'].includes(b)&&!player.modules[b]);
@@ -791,9 +797,14 @@ function buildCompactSkillTree(){
   compactNode('bayonet','bayonet',...pos.bayonet,'BAYONET',{locked:!player.modules.bayonet,active:player.modules.bayonet&&player.bayonetOn}),
   compactNode('power','power',...pos.power,'POWER SHOT',{locked:!player.modules.power,active:player.secondary==='power'}),
   compactNode('aim','aim',...pos.aim,'AIM',{active:player.secondary==='aim'}),
-  compactNode('knife','knife',...pos.knife,'MELEE',{levelText:lvl('knife')})
+  compactNode('knife','knife',...pos.knife,'MELEE',{levelText:lvl('knife')}),
+   hub('defenseHub','shieldCapacity','DEFENSE','defense'),
+   compactNode('shieldCapacity','shieldCapacity',...pos.shieldCapacity,'SHIELD',{levelText:lvl('shieldCapacity')}),
+   compactNode('shieldRegen','shieldRegen',...pos.shieldRegen,'REGEN',{levelText:lvl('shieldRegen')}),
+   compactNode('shieldDelay','shieldDelay',...pos.shieldDelay,'RECOVERY',{levelText:lvl('shieldDelay')}),
+   compactNode('armor','armor',...pos.armor,'ARMOR',{levelText:lvl('armor')})
  ].join('');
- return `<div class="tree-map-viewport" id="treeViewport" aria-label="Draggable, forked weapon upgrade map"><div class="tree-map-stage" id="treeStage"><svg class="tree-map-svg" viewBox="0 0 1200 1120" preserveAspectRatio="none" aria-hidden="true">${lines}</svg>${nodes}</div><div class="tree-map-hint">DRAG TO PAN · SCROLL TO ZOOM · CLICK TO INSPECT</div><div class="tree-zoom-controls" aria-label="Skill tree zoom controls"><button type="button" data-tree-zoom="in" aria-label="Zoom in">+</button><output id="treeZoomLabel" aria-live="off">100%</output><button type="button" data-tree-zoom="out" aria-label="Zoom out">−</button><button type="button" data-tree-reset title="Center map and reset zoom">⌖ RESET VIEW</button></div><aside class="tree-popup" id="treePopup" hidden><button type="button" class="tree-popup-close" data-tree-close aria-label="Close upgrade details">×</button><div class="tree-popup-body" id="treePopupBody"></div></aside></div>`;
+ return `<div class="tree-map-viewport" id="treeViewport" aria-label="Draggable, forked weapon upgrade map"><div class="tree-map-stage" id="treeStage"><svg class="tree-map-svg" viewBox="0 0 1540 1200" preserveAspectRatio="none" aria-hidden="true">${lines}</svg>${nodes}</div><div class="tree-map-hint">DRAG TO PAN · SCROLL TO ZOOM · CLICK TO INSPECT</div><div class="tree-zoom-controls" aria-label="Skill tree zoom controls"><button type="button" data-tree-zoom="in" aria-label="Zoom in">+</button><output id="treeZoomLabel" aria-live="off">100%</output><button type="button" data-tree-zoom="out" aria-label="Zoom out">−</button><button type="button" data-tree-reset title="Center map and reset zoom">⌖ RESET VIEW</button></div><aside class="tree-popup" id="treePopup" hidden><button type="button" class="tree-popup-close" data-tree-close aria-label="Close upgrade details">×</button><div class="tree-popup-body" id="treePopupBody"></div></aside></div>`;
 }
 function renderDetailUpgrade(o,kicker='WEAPON MOD'){
  const lvl=player.mods[o.id],needs=o.requires&&!player.modules[o.requires],maxed=o.max!==undefined&&lvl>=o.max,cost=upgradeCost(o,lvl),refund=lvl?upgradeCost(o,lvl-1):0,st=statText(o,lvl);
@@ -814,7 +825,8 @@ function renderTreeDetailPanel(){
   receiverHub:['RECEIVER & POWER','Caliber and damage are separate upgrades. Increasing caliber does not unlock damage, and vice versa.','receiver'],
   fireHub:['FIRE CONTROL','Trigger reset and select-fire are independent. Buy either one directly.','fireControl'],
   feedHub:['AMMUNITION & HANDLING','Magazine capacity and reload speed fork from the same hub. Neither requires upgrading the other. Reserve ammunition is unlimited; magazine reloads still matter.','mag'],
-  ballisticsHub:['BALLISTICS','Barrel velocity, shotgun-style pellets, and penetration can be upgraded independently.','barrel']
+  ballisticsHub:['BALLISTICS','Barrel velocity, shotgun-style pellets, and penetration can be upgraded independently.','barrel'],
+  defenseHub:['PERSONAL DEFENSE','Shield capacity, recharge, recovery delay, and armor are independent upgrades.','shieldCapacity']
  };
  if(hubInfo[id]){const [title,description,art]=hubInfo[id];return `<div class="tree-detail-top"><div class="tree-icon-large">${iconArt(art)}</div><div><div class="tree-detail-kicker">INDEPENDENT BRANCH</div><div class="tree-detail-title">${title}</div></div></div><div class="tree-detail-desc">${description}</div><div class="tree-empty-note">Pick any connected symbol to open its purchase and refund controls. Connection lines show categories, not purchase prerequisites.</div>`;}
 
@@ -835,7 +847,7 @@ function renderGrenadeHubDetail(){
  const mod=MODULES.find(m=>m.id==='grenade'); if(!player.modules.grenade) return `<div class="tree-detail-top"><div class="tree-icon-large">${iconArt('grenade')}</div><div><div class="tree-detail-kicker">ALT WEAPON</div><div class="tree-detail-title">GRENADE SYSTEM</div></div></div><div class="tree-detail-desc">Unlock the underbarrel launcher to open the full grenade branch: blast radius, explosive charge, range, capacity, reload speed, and firing cadence.</div><div class="tree-status warn">LOCKED · $${mod.price.toLocaleString()}</div><div class="tree-detail-actions single"><button type="button" class="shop-buy" data-module-buy="grenade" ${credits<mod.price?'disabled':''}>+ BUY GRENADE MODULE</button></div>`;
  return `<div class="tree-detail-top"><div class="tree-icon-large">${iconArt('grenade')}</div><div><div class="tree-detail-kicker">ALT WEAPON</div><div class="tree-detail-title">GRENADE SYSTEM</div></div></div><div class="tree-detail-desc">Lobbed grenades arc over cover, bounce off arena edges, and shred enemies plus destructible cover. Use the surrounding branch nodes to refine its performance.</div><div class="tree-mini-stats">${treeStatLine('LOADED',`${player.grenades} / ${grenadeClipSize()}`)}${treeStatLine('RESERVE',player.grenadeReserve===Infinity?'∞':String(player.grenadeReserve))}${treeStatLine('RANGE',String(grenadeRange()))}</div><div class="tree-detail-actions"><button type="button" class="shop-buy toggle" data-secondary="grenade">${player.secondary==='grenade'?'SELECTED':'SET SECONDARY'}<small>FREE</small></button><button type="button" class="shop-buy shop-refund" data-module-refund="grenade">SELL<small>$${mod.price.toLocaleString()}</small></button></div>`;
 }
-const TREE_W=1200,TREE_H=1120,TREE_FOCUS={x:600,y:475};
+const TREE_W=1540,TREE_H=1200,TREE_FOCUS={x:600,y:475};
 const TREE_MIN_ZOOM=.45,TREE_MAX_ZOOM=1.9;
 function defaultTreeZoom(){
  const vp=ui.shopGrid.querySelector('#treeViewport');
