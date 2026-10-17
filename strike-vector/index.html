@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
 <meta name="theme-color" content="#080e17" />
-<title>STRIKE VECTOR v1.5.4 — Audio Mixer & Soundtrack</title>
+<title>STRIKE VECTOR v1.5.5 — Combat Impact Knockback</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{color-scheme:dark;--bg:#080e17;--panel:#101b28;--border:#263746;--mint:#74f7d4;--text:#eef6f7;--muted:#8da4b3;--orange:#ffbd75}
@@ -1920,8 +1920,7 @@ function hitSlash(){
   if(e.hp<=0||player.slashHits.has(e))continue;
   const dx=e.x-player.x,dy=e.y-player.y,d=Math.hypot(dx,dy),raw=Math.atan2(dy,dx)-player.slashDir,da=Math.atan2(Math.sin(raw),Math.cos(raw));
   if(d<reach&&Math.abs(da)<(bayonet?.7:1.05)){
-   player.slashHits.add(e);hurtEnemy(e,damage,e.x,e.y);
-   e.x+=Math.cos(player.slashDir)*14;e.y+=Math.sin(player.slashDir)*14;
+   player.slashHits.add(e);hurtEnemy(e,damage,e.x,e.y,'player',Math.cos(player.slashDir),Math.sin(player.slashDir),700);
   }
  }
  // A buttstock or bayonet can also chip a bit of destructible cover.
@@ -1965,7 +1964,13 @@ function grantEnemyBounty(e,killer){
   }
  }
 }
-function hurtEnemy(e,damage,x,y,source='player'){
+function pushCombatBody(body,dx,dy,force){
+ if(!body||body.hp<=0||!Number.isFinite(dx)||!Number.isFinite(dy)||!Number.isFinite(force)||force<=0)return;
+ const length=Math.hypot(dx,dy)||1,impulse=clamp(force,0,1150);
+ body.kvx=clamp((body.kvx||0)+dx/length*impulse,-1350,1350);
+ body.kvy=clamp((body.kvy||0)+dy/length*impulse,-1350,1350);
+}
+function hurtEnemy(e,damage,x,y,source='player',vx=0,vy=0,force=0){
  if(e.dead||!Number.isFinite(damage)||damage<=0)return;
  const originalHp=Math.max(0,e.hp),dealt=Math.min(originalHp,damage);
  const owner=source==='player'?'host':source;
@@ -1973,6 +1978,7 @@ function hurtEnemy(e,damage,x,y,source='player'){
   if(!e.damageBy)e.damageBy=Object.create(null);
   e.damageBy[owner]=(e.damageBy[owner]||0)+dealt;
  }
+ if(force>0)pushCombatBody(e,vx,vy,force);
  e.hp-=damage;e.flash=.10;burst(x,y,7,e.type==='rusher'?'#ffb176':'#dfc1ff',180);
  if(e.hp<=0){
   e.dead=true;
@@ -1981,15 +1987,15 @@ function hurtEnemy(e,damage,x,y,source='player'){
   floatText(e.x,e.y-26,owner==='npc'?'CROSS FIRE':'ENEMY DOWN',owner==='npc'?'#ffa77f':'#f8cf8c');sound('hit');
  }
 }
-function hurtPlayer(damage){if(player.invul>0||player.hp<=0)return;const hit=absorbDamage(player,damage);player.hp=Math.max(0,player.hp-hit.hpDamage);player.invul=.47;shake=Math.max(shake,hit.absorbed>0?4:7);burst(player.x,player.y,hit.absorbed>0?9:13,hit.absorbed>0?'#70eaff':'#ff857d',190);sound('hit');if(player.hp<=0){if(net.phase==='match'){player.respawn=1.9;fireHeld=false;altHeld=false;secondaryPending=false;floatText(player.x,player.y-32,'RESPAWNING','#ffc187');}else{ended=true;paused=true;fireHeld=false;altHeld=false;secondaryPending=false;showScreen('gameover')}}}
-function boom(x,y,r=137,damage=100,owner='host',grenadeId=''){if(net.phase==='match'&&net.mode==='host'){netAreaDamage(x,y,r,damage,owner);netBroadcast({t:'explosion',x,y,r,id:grenadeId,by:owner});}puckBlast(x,y,r,1300+damage*3,'blast');shake=Math.max(shake,12);burst(x,y,50,'#ffa66b',440);burst(x,y,25,'#fff3c2',220);particles.push({x,y,vx:0,vy:0,life:.35,max:.35,color:'#ffaa70',r,ring:true});for(const e of enemies){let d=Math.hypot(e.x-x,e.y-y);if(d<r+e.r){hurtEnemy(e,Math.round(damage*(1-clamp(d/r,0,.8)*.45)),e.x,e.y,owner);const a=Math.atan2(e.y-y,e.x-x);e.x+=Math.cos(a)*Math.max(0,28-d*.06);e.y+=Math.sin(a)*Math.max(0,28-d*.06)}}for(const o of [...obstacles]){const qx=clamp(x,o.x,o.x+o.w),qy=clamp(y,o.y,o.y+o.h),d=Math.hypot(x-qx,y-qy);if(d<r)damageCover(o,Math.max(30,Math.round(200*(1-d/r*.48))),qx,qy)}sound('grenade')}
+function hurtPlayer(damage,dx=0,dy=0,force=0){if(player.invul>0||player.hp<=0)return;if(force)pushCombatBody(player,dx,dy,force);const hit=absorbDamage(player,damage);player.hp=Math.max(0,player.hp-hit.hpDamage);player.invul=.47;shake=Math.max(shake,hit.absorbed>0?4:7);burst(player.x,player.y,hit.absorbed>0?9:13,hit.absorbed>0?'#70eaff':'#ff857d',190);sound('hit');if(player.hp<=0){if(net.phase==='match'){player.respawn=1.9;fireHeld=false;altHeld=false;secondaryPending=false;floatText(player.x,player.y-32,'RESPAWNING','#ffc187');}else{ended=true;paused=true;fireHeld=false;altHeld=false;secondaryPending=false;showScreen('gameover')}}}
+function boom(x,y,r=137,damage=100,owner='host',grenadeId=''){if(net.phase==='match'&&net.mode==='host'){netAreaDamage(x,y,r,damage,owner);netBroadcast({t:'explosion',x,y,r,id:grenadeId,by:owner});}puckBlast(x,y,r,1300+damage*3,'blast');shake=Math.max(shake,12);burst(x,y,50,'#ffa66b',440);burst(x,y,25,'#fff3c2',220);particles.push({x,y,vx:0,vy:0,life:.35,max:.35,color:'#ffaa70',r,ring:true});for(const e of enemies){let d=Math.hypot(e.x-x,e.y-y);if(d<r+e.r){hurtEnemy(e,Math.round(damage*(1-clamp(d/r,0,.8)*.45)),e.x,e.y,owner,e.x-x,e.y-y,clamp((r-d+100)*3,180,900))}}for(const o of [...obstacles]){const qx=clamp(x,o.x,o.x+o.w),qy=clamp(y,o.y,o.y+o.h),d=Math.hypot(x-qx,y-qy);if(d<r)damageCover(o,Math.max(30,Math.round(200*(1-d/r*.48))),qx,qy)}sound('grenade')}
 function smallExplosion(x,y,b,skip){
  if(!b.explosive)return;
  if(net.phase==='match'&&net.mode==='host')netAreaDamage(x,y,47,b.damage*.40,b.owner||'host');
  puckBlast(x,y,110,810,'blast');
  burst(x,y,11,'#ffb57e',125);
  const radius=46;
- for(const e of enemies){if(e.dead||e===skip)continue;const d=Math.hypot(e.x-x,e.y-y);if(d<radius+e.r)hurtEnemy(e,Math.round(b.damage*.35*(1-Math.min(.7,d/(radius+e.r)))),e.x,e.y,b.owner||'host')}
+ for(const e of enemies){if(e.dead||e===skip)continue;const d=Math.hypot(e.x-x,e.y-y);if(d<radius+e.r)hurtEnemy(e,Math.round(b.damage*.35*(1-Math.min(.7,d/(radius+e.r)))),e.x,e.y,b.owner||'host',e.x-x,e.y-y,clamp(340-d*3,85,340))}
  for(const o of obstacles){const qx=clamp(x,o.x,o.x+o.w),qy=clamp(y,o.y,o.y+o.h);if(Math.hypot(x-qx,y-qy)<radius)damageCover(o,Math.max(14,b.damage*.5),qx,qy)}
 }
 function spawnEnemy(){let x,y,tries=0;do{const a=rand(0,TAU),r=rand(Math.max(sw,sh)*.66,Math.max(sw,sh)*.84+180);x=clamp(player.x+Math.cos(a)*r,75,WORLD.w-75);y=clamp(player.y+Math.sin(a)*r,75,WORLD.h-75);tries++}while((blocked(x,y,23)||Math.hypot(x-player.x,y-player.y)<420)&&tries<75);if(blocked(x,y,23))return;const rusher=Math.random()<clamp(.47+wave*.017,.47,.70);enemies.push({x,y,r:rusher?17:19,type:rusher?'rusher':'gunner',hp:rusher?65+wave*5:88+wave*6,maxHp:rusher?65+wave*5:88+wave*6,spd:rusher?rand(140,160)+wave*3:rand(90,109)+wave*2,fire:rand(.3,1.7),flash:0,hitCd:0,sway:rand(0,TAU),dead:false})}
@@ -2074,7 +2080,7 @@ function netCombatImpact(owner,id,damage,dx,dy,power,hostile=false){
  if(id===owner)return;
  const attackTeam=combatTeam(owner),defenseTeam=combatTeam(id);
  const allied=!hostile&&attackTeam&&defenseTeam&&attackTeam===defenseTeam;
- if(allied||net.settings.pvp&&!hostile)netPushBody(id,dx,dy,allied?power:power*.55);
+ if(allied||hostile||net.settings.pvp)netPushBody(id,dx,dy,allied?power:hostile?power*.42:power*.55);
  if(allied)return;
  if(id==='host'||net.remotes.has(id))netPvpHit(id,damage,hostile);
  else netBotHit(net.bots.find(b=>b.id===id),damage,hostile);
@@ -2102,7 +2108,7 @@ function netHostMelee(id,kind,angle){
  if(id!=='host'&&hits(player))netCombatImpact(id,'host',damage,Math.cos(angle),Math.sin(angle),1120);
  for(const [other,v] of net.remotes)if(other!==id&&hits(v))netCombatImpact(id,other,damage,Math.cos(angle),Math.sin(angle),1120);
  for(const bot of net.bots)if(bot.id!==id&&hits(bot))netCombatImpact(id,bot.id,damage,Math.cos(angle),Math.sin(angle),1120);
- if(id!=='host'){for(const e of enemies)if(!e.dead&&hits(e))hurtEnemy(e,damage,e.x,e.y,id);if(puck&&puck.respawn<=0&&hits(puck))puckImpulse(puck.x,puck.y,Math.cos(angle)*520,Math.sin(angle)*520,'melee',p.team);}
+ if(id!=='host'){for(const e of enemies)if(!e.dead&&hits(e))hurtEnemy(e,damage,e.x,e.y,id,Math.cos(angle),Math.sin(angle),700);if(puck&&puck.respawn<=0&&hits(puck))puckImpulse(puck.x,puck.y,Math.cos(angle)*520,Math.sin(angle)*520,'melee',p.team);}
 }
 function netSendMelee(kind,a){
  if(net.phase!=='match')return;
@@ -2471,10 +2477,8 @@ function netBotFire(bot,a,puckOnly=false){
 }
 function netBotMelee(bot,foe){
  const power=85;
- if(foe.npc){if(foe.enemy&&!foe.enemy.dead)hurtEnemy(foe.enemy,power,foe.enemy.x,foe.enemy.y,bot.id);}
- else if(foe.id==='host')netPvpHit('host',power);
- else if(net.remotes.has(foe.id))netPvpHit(foe.id,power);
- else netBotHit(net.bots.find(v=>v.id===foe.id),power);
+ if(foe.npc){if(foe.enemy&&!foe.enemy.dead)hurtEnemy(foe.enemy,power,foe.enemy.x,foe.enemy.y,bot.id,Math.cos(bot.a),Math.sin(bot.a),490);}
+ else netCombatImpact(bot.id,foe.id,power,Math.cos(bot.a),Math.sin(bot.a),780);
  bot.slash=.22;bot.slashDir=bot.a;
  netBroadcast({t:'melee',by:bot.id,a:bot.a,kind:'quick'});
  burst(bot.x+Math.cos(bot.a)*40,bot.y+Math.sin(bot.a)*40,6,teamColor(bot.team),110);
@@ -2636,10 +2640,10 @@ if(player.hp>0&&fireHeld&&altHeld){
  }
 }
 if(player.slash>0)hitSlash();
-for(const e of enemies){if(e.dead||net.phase==='match'&&net.mode==='guest')continue;const prevEX=e.x,prevEY=e.y;e.flash=Math.max(0,e.flash-dt);e.hitCd=Math.max(0,e.hitCd-dt);e.fire-=dt;const targets=net.phase==='match'&&net.mode==='host'?[...(player.hp>0?[{id:'host',...player}]:[]),...Array.from(net.remotes.entries()).filter(([id,r])=>r.hp>0).map(([id,r])=>({id,...r})),...net.bots.filter(b=>b.hp>0).map(b=>({id:b.id,bot:true,...b}))]:[{id:'host',...player}];if(!targets.length)continue;const target=targets.reduce((best,v)=>Math.hypot(v.x-e.x,v.y-e.y)*(v.bot?.9:1)<Math.hypot(best.x-e.x,best.y-e.y)*(best.bot?.9:1)?v:best,targets[0]);const dx=target.x-e.x,dy=target.y-e.y,d=Math.hypot(dx,dy)||1,dirX=dx/d,dirY=dy/d;
+for(const e of enemies){if(e.dead||net.phase==='match'&&net.mode==='guest')continue;const prevEX=e.x,prevEY=e.y;e.flash=Math.max(0,e.flash-dt);e.hitCd=Math.max(0,e.hitCd-dt);e.fire-=dt;applyKnockbackMotion(e,dt);const targets=net.phase==='match'&&net.mode==='host'?[...(player.hp>0?[{id:'host',...player}]:[]),...Array.from(net.remotes.entries()).filter(([id,r])=>r.hp>0).map(([id,r])=>({id,...r})),...net.bots.filter(b=>b.hp>0).map(b=>({id:b.id,bot:true,...b}))]:[{id:'host',...player}];if(!targets.length)continue;const target=targets.reduce((best,v)=>Math.hypot(v.x-e.x,v.y-e.y)*(v.bot?.9:1)<Math.hypot(best.x-e.x,best.y-e.y)*(best.bot?.9:1)?v:best,targets[0]);const dx=target.x-e.x,dy=target.y-e.y,d=Math.hypot(dx,dy)||1,dirX=dx/d,dirY=dy/d;
  if((e.losTimer||0)<=0){e.visible=(d<1000)&&canSee(e.x,e.y,target.x,target.y);e.losTimer=.13+Math.random()*.07}
  else e.losTimer-=dt;
- const clear=!!e.visible;e.a=Math.atan2(dy,dx);if(e.type==='rusher'){moveBody(e,dirX*e.spd*dt,dirY*e.spd*dt);if(d<e.r+(target.r||18)+6&&e.hitCd<=0){if(target.bot)netBotHit(net.bots.find(b=>b.id===target.id),12,true);else if(net.phase==='match'&&net.mode==='host'&&target.id!=='host')netPvpHit(target.id,12,true);else hurtPlayer(12);e.hitCd=.65}}else{let desired=d>320?1:d<215?-1:0;if(!clear)desired=1;const sid=Math.sin(clock*.8+e.sway)*.3;moveBody(e,(dirX*desired+(-dirY)*sid)*e.spd*dt,(dirY*desired+dirX*sid)*e.spd*dt);if(clear&&d<780&&e.fire<=0){e.fire=Math.max(.65,1.45-wave*.05)+rand(0,.5);let a=Math.atan2(dy,dx)+rand(-.12,.12);bullets.push({x:e.x+dirX*22,y:e.y+dirY*22,vx:Math.cos(a)*530,vy:Math.sin(a)*530,t:1.8,damage:10,friend:false,color:'#fc7b76',r:4,pierce:0,owner:'npc',sourceEnemy:e});if(net.phase==='match'&&net.mode==='host')netBroadcast({t:'npcShot',x:e.x+dirX*22,y:e.y+dirY*22,vx:Math.cos(a)*530,vy:Math.sin(a)*530})}}if((e.type==='rusher'||!clear||d>380)&&Math.hypot(e.x-prevEX,e.y-prevEY)<dt*5){e.stuck=(e.stuck||0)+dt;if(e.stuck>3.3){for(let j=0;j<30;j++){const angle=rand(0,TAU),range=rand(340,580),tx=clamp(player.x+Math.cos(angle)*range,85,WORLD.w-85),ty=clamp(player.y+Math.sin(angle)*range,85,WORLD.h-85);if(!blocked(tx,ty,e.r)&&!enemies.some(other=>other!==e&&dist(other,{x:tx,y:ty})<45)){burst(e.x,e.y,7,'#889ab1',100);e.x=tx;e.y=ty;burst(tx,ty,7,'#889ab1',90);break;}}e.stuck=0;}}else e.stuck=0;}
+ const clear=!!e.visible;e.a=Math.atan2(dy,dx);if(e.type==='rusher'){moveBody(e,dirX*e.spd*dt,dirY*e.spd*dt);if(d<e.r+(target.r||18)+6&&e.hitCd<=0){if(net.phase==='match'&&net.mode==='host')netCombatImpact('npc',target.id,12,dirX,dirY,280,true);else hurtPlayer(12,dirX,dirY,280);e.hitCd=.65}}else{let desired=d>320?1:d<215?-1:0;if(!clear)desired=1;const sid=Math.sin(clock*.8+e.sway)*.3;moveBody(e,(dirX*desired+(-dirY)*sid)*e.spd*dt,(dirY*desired+dirX*sid)*e.spd*dt);if(clear&&d<780&&e.fire<=0){e.fire=Math.max(.65,1.45-wave*.05)+rand(0,.5);let a=Math.atan2(dy,dx)+rand(-.12,.12);bullets.push({x:e.x+dirX*22,y:e.y+dirY*22,vx:Math.cos(a)*530,vy:Math.sin(a)*530,t:1.8,damage:10,friend:false,color:'#fc7b76',r:4,pierce:0,owner:'npc',sourceEnemy:e});if(net.phase==='match'&&net.mode==='host')netBroadcast({t:'npcShot',x:e.x+dirX*22,y:e.y+dirY*22,vx:Math.cos(a)*530,vy:Math.sin(a)*530})}}if((e.type==='rusher'||!clear||d>380)&&Math.hypot(e.x-prevEX,e.y-prevEY)<dt*5){e.stuck=(e.stuck||0)+dt;if(e.stuck>3.3){for(let j=0;j<30;j++){const angle=rand(0,TAU),range=rand(340,580),tx=clamp(player.x+Math.cos(angle)*range,85,WORLD.w-85),ty=clamp(player.y+Math.sin(angle)*range,85,WORLD.h-85);if(!blocked(tx,ty,e.r)&&!enemies.some(other=>other!==e&&dist(other,{x:tx,y:ty})<45)){burst(e.x,e.y,7,'#889ab1',100);e.x=tx;e.y=ty;burst(tx,ty,7,'#889ab1',90);break;}}e.stuck=0;}}else e.stuck=0;}
 enemies=enemies.filter(e=>!e.dead);
 for(let i=bullets.length-1;i>=0;i--){
  const b=bullets[i];b.t-=dt;
@@ -2655,7 +2659,7 @@ for(let i=bullets.length-1;i>=0;i--){
   if(!removed&&!b.friend&&b.owner==='npc'&&net.mode!=='guest'){
    for(const e of enemies){
     if(e.dead||e===b.sourceEnemy||Math.hypot(e.x-b.x,e.y-b.y)>e.r+b.r)continue;
-    hurtEnemy(e,b.damage,b.x,b.y,'npc');
+    hurtEnemy(e,b.damage,b.x,b.y,'npc',b.vx,b.vy,125);
     removed=true;break;
    }
   }
@@ -2666,7 +2670,7 @@ for(let i=bullets.length-1;i>=0;i--){
    for(const e of enemies){
     if(e.dead||b.hitEnemies.has(e)||Math.hypot(e.x-b.x,e.y-b.y)>e.r+b.r)continue;
     b.hitEnemies.add(e);
-    hurtEnemy(e,b.damage,b.x,b.y,b.owner||'host');
+    hurtEnemy(e,b.damage,b.x,b.y,b.owner||'host',b.vx,b.vy,clamp(105+b.damage*3.2+(b.precision?210:0),110,620));
     if(b.explosive)smallExplosion(b.x,b.y,b,e);
     if(b.pierce>0){b.pierce--;}else{removed=true;}
     break;
@@ -2674,15 +2678,16 @@ for(let i=bullets.length-1;i>=0;i--){
   }
   if(net.phase==='match'&&net.mode==='host'&&!removed&&!b.puckOnly){
    for(const [id,r] of net.remotes)if(id!==b.owner&&r.hp>0&&Math.hypot(r.x-b.x,r.y-b.y)<19+b.r){
-    b.friend?netCombatImpact(b.owner,id,b.damage,b.vx,b.vy,b.precision?750:440):netPvpHit(id,b.damage,true);if(b.explosive)smallExplosion(b.x,b.y,b,null);removed=true;break;
+    b.friend?netCombatImpact(b.owner,id,b.damage,b.vx,b.vy,b.precision?750:440):netCombatImpact('npc',id,b.damage,b.vx,b.vy,260,true);if(b.explosive)smallExplosion(b.x,b.y,b,null);removed=true;break;
    }
    if(!removed)for(const bot of net.bots)if(bot.id!==b.owner&&bot.hp>0&&Math.hypot(bot.x-b.x,bot.y-b.y)<19+b.r){
-    b.friend?netCombatImpact(b.owner,bot.id,b.damage,b.vx,b.vy,b.precision?750:440):netBotHit(bot,b.damage,true);if(b.explosive)smallExplosion(b.x,b.y,b,null);removed=true;break;
+    b.friend?netCombatImpact(b.owner,bot.id,b.damage,b.vx,b.vy,b.precision?750:440):netCombatImpact('npc',bot.id,b.damage,b.vx,b.vy,260,true);if(b.explosive)smallExplosion(b.x,b.y,b,null);removed=true;break;
    }
   }
   if(!removed&&!b.puckOnly&&(b.friend&&b.owner&&b.owner!=='host'||!b.friend)&&Math.hypot(player.x-b.x,player.y-b.y)<(player.roll>0&&player.rollMode==='slide'?9:player.r)+b.r){
    if(net.phase==='match'&&net.mode==='host'&&b.owner!=='host'&&b.friend)netCombatImpact(b.owner,'host',b.damage,b.vx,b.vy,b.precision?750:440);
-    else if(net.phase!=='match'||net.mode==='host'&&b.owner!=='host')hurtPlayer(b.damage);
+    else if(net.phase==='match'&&net.mode==='host'&&b.owner!=='host'&&!b.friend)netCombatImpact('npc','host',b.damage,b.vx,b.vy,260,true);
+     else if(net.phase!=='match'||net.mode==='host'&&b.owner!=='host')hurtPlayer(b.damage,b.vx,b.vy,260);
     removed=true;
   }
   if(removed)break;
@@ -2698,7 +2703,7 @@ for(let i=grenades.length-1;i>=0;i--){
  if(nx.bounces||ny.bounces){g.bounces+=nx.bounces+ny.bounces;burst(g.x,g.y,4,'#f8cf9d',90)}
  if(g.t>=g.dur-0.00001||g.t>=g.fuse){if(!g.visualOnly)boom(g.x,g.y,g.radius,g.damage,g.owner||'host',g.id||'');grenades.splice(i,1)}
 }
-for(let i=knives.length-1;i>=0;i--){const k=knives[i];k.t-=dt;let dead=false,steps=Math.max(1,Math.ceil(Math.hypot(k.vx*dt,k.vy*dt)/14));for(let s=0;s<steps;s++){k.x+=k.vx*dt/steps;k.y+=k.vy*dt/steps;if(puckEnabled&&puck&&puck.respawn===0&&Math.hypot(k.x-puck.x,k.y-puck.y)<puck.r+6){const n=Math.hypot(k.vx,k.vy)||1;puckImpulse(puck.x,puck.y,k.vx/n*490,k.vy/n*490,'shot','player');dead=true;break;}const o=intersectsCover(k.x,k.y,5);if(k.t<=0||o||k.x<49||k.y<49||k.x>WORLD.w-49||k.y>WORLD.h-49){if(o)damageCover(o,k.damage*.45,k.x,k.y);dead=true;burst(k.x,k.y,3,'#c9f0ed',70);break}for(const e of enemies){if(e.dead)continue;if(Math.hypot(k.x-e.x,k.y-e.y)<e.r+7){hurtEnemy(e,k.damage,k.x,k.y);dead=true;break}}if(dead)break}if(dead)knives.splice(i,1)}
+for(let i=knives.length-1;i>=0;i--){const k=knives[i];k.t-=dt;let dead=false,steps=Math.max(1,Math.ceil(Math.hypot(k.vx*dt,k.vy*dt)/14));for(let s=0;s<steps;s++){k.x+=k.vx*dt/steps;k.y+=k.vy*dt/steps;if(puckEnabled&&puck&&puck.respawn===0&&Math.hypot(k.x-puck.x,k.y-puck.y)<puck.r+6){const n=Math.hypot(k.vx,k.vy)||1;puckImpulse(puck.x,puck.y,k.vx/n*490,k.vy/n*490,'shot','player');dead=true;break;}const o=intersectsCover(k.x,k.y,5);if(k.t<=0||o||k.x<49||k.y<49||k.x>WORLD.w-49||k.y>WORLD.h-49){if(o)damageCover(o,k.damage*.45,k.x,k.y);dead=true;burst(k.x,k.y,3,'#c9f0ed',70);break}for(const e of enemies){if(e.dead)continue;if(Math.hypot(k.x-e.x,k.y-e.y)<e.r+7){hurtEnemy(e,k.damage,k.x,k.y,'player',k.vx,k.vy,380);dead=true;break}}if(dead)break}if(dead)knives.splice(i,1)}
 updatePuck(dt);goalFlash=Math.max(0,goalFlash-dt);
 for(let i=particles.length-1;i>=0;i--){let p=particles[i];p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=Math.max(0,1-dt*3);p.vy*=Math.max(0,1-dt*3);if(p.life<=0)particles.splice(i,1)}for(let i=texts.length-1;i>=0;i--){let t=texts[i];t.t+=dt;t.y-=30*dt;if(t.t>t.max)texts.splice(i,1)}
 if(net.phase==='match'&&net.mode==='host'&&net.settings.npcs&&net.npcRemaining===0&&enemies.length===0&&!roundBreak.kind)startRoundBreak('wave',10);
