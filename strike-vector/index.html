@@ -4,12 +4,12 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
 <meta name="theme-color" content="#080e17" />
-<title>STRIKE VECTOR v1.4.9 — Damage-Based Assists & Balanced Waves</title>
+<title>STRIKE VECTOR v1.5.0 — iPhone Viewport & Touch Control Fixes</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{color-scheme:dark;--bg:#080e17;--panel:#101b28;--border:#263746;--mint:#74f7d4;--text:#eef6f7;--muted:#8da4b3;--orange:#ffbd75}
-*{box-sizing:border-box}html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text)}
-#game{display:block;width:100vw;height:100vh;touch-action:none;cursor:none}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;overscroll-behavior:none;background:var(--bg);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text)}
+#game{display:block;position:fixed;inset:0;width:100%;height:100%;height:100dvh;touch-action:none;cursor:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 #vignette{position:fixed;pointer-events:none;inset:0;background:radial-gradient(ellipse at 50% 40%,transparent 40%,rgba(0,0,0,.25) 100%)}
 #hud{position:fixed;pointer-events:none;inset:0;display:flex;flex-direction:column;justify-content:space-between;padding:23px 27px 25px;transition:opacity .2s}
 .topbar,.bottom{display:flex;align-items:flex-start;justify-content:space-between;gap:20px}
@@ -292,6 +292,10 @@ body{font-family:Oxanium,Inter,ui-sans-serif,system-ui,sans-serif}
 /* v1.4.2 // mobile twin-stick combat and responsive EBATO hologram menus */
 #touchControls{display:none;position:fixed;inset:0;z-index:8;pointer-events:none;user-select:none;-webkit-user-select:none;touch-action:none}
 body.touch-ready #touchControls.active{display:block}
+/* Protect active combat from iOS text magnifier, callouts and selection handles. */
+body.touch-playing,body.touch-playing *:not(input):not(textarea){-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important;-webkit-tap-highlight-color:transparent}
+body.touch-playing{touch-action:none;overscroll-behavior:none}
+body.touch-playing #hud,body.touch-playing #touchControls{touch-action:none}
 .touch-stick{position:absolute;bottom:calc(15px + env(safe-area-inset-bottom,0px));width:clamp(104px,24vw,130px);height:clamp(104px,24vw,130px);border-radius:50%;border:2px solid rgba(125,247,255,.65);background:radial-gradient(circle,rgba(16,84,96,.4),rgba(5,23,39,.65));box-shadow:0 0 24px rgba(125,247,255,.1),inset 0 0 25px rgba(125,247,255,.08);pointer-events:auto;touch-action:none;display:flex;align-items:center;justify-content:center}
 #touchMove{left:calc(16px + env(safe-area-inset-left,0px))}
 #touchAim{right:calc(16px + env(safe-area-inset-right,0px));border-color:rgba(255,171,82,.7);background:radial-gradient(circle,rgba(110,60,23,.38),rgba(5,23,39,.72))}
@@ -419,6 +423,38 @@ body.touch-ready .net-btn{padding:8px 5px;font-size:10px}
 .net-bot-tools span{font-size:10px;color:#ffcf96;font-weight:750}
 .net-bot-note{font-size:10px;color:#a6cacf;margin:3px 0}
 @media(max-width:460px){.net-team-board{gap:5px}.net-team-lane{padding:5px}.net-team-member{padding:5px;flex-wrap:wrap}.net-team-member button{padding:6px}.net-team-lane h3{font-size:9px}}
+
+/* v1.5.0 // iPhone portrait/landscape layouts; no stretched drawing buffer */
+@media (pointer:coarse){
+ .touch-stick,.touch-actions button,.touch-bar button{overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+ .touch-stick{width:clamp(112px,28vw,146px);height:clamp(112px,28vw,146px)}
+ .touch-actions button{min-height:44px}
+}
+@media (pointer:coarse) and (orientation:portrait){
+ body.touch-ready #hud .topbar{display:block;min-width:0}
+ body.touch-ready #hud .brand{font-size:12px;letter-spacing:.1em;line-height:1}
+ body.touch-ready #hud .subbrand{display:none}
+ body.touch-ready .topstats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:3px;width:100%;margin-top:6px;text-align:center}
+ body.touch-ready .topstats>div{min-width:0}
+ body.touch-ready .statnum{font-size:14px;line-height:1.1}
+ body.touch-ready .statlabel{font-size:8px;letter-spacing:.04em}
+ body.touch-ready .bottom{top:calc(72px + env(safe-area-inset-top,0px));gap:6px}
+ body.touch-ready .leftpanel,body.touch-ready .rightpanel{padding:5px 7px}
+ body.touch-ready #puckScoreboard{top:calc(154px + env(safe-area-inset-top,0px))}
+ .touch-bar{top:calc(202px + env(safe-area-inset-top,0px));max-width:94vw}
+ .touch-bar button{padding:7px 8px}
+ .touch-actions{bottom:calc(169px + env(safe-area-inset-bottom,0px));grid-template-columns:repeat(3,minmax(44px,51px))}
+ .touch-note{display:none}
+}
+@media (pointer:coarse) and (orientation:landscape) and (max-height:500px){
+ body.touch-ready #hud .brand,body.touch-ready #hud .subbrand{display:none}
+ body.touch-ready .topstats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));width:100%;gap:5px;text-align:center}
+ body.touch-ready .topstats>div{min-width:0}
+ .touch-stick{width:clamp(88px,24vh,112px);height:clamp(88px,24vh,112px)}
+ .touch-actions{bottom:calc(103px + env(safe-area-inset-bottom,0px))}
+ .touch-actions button{min-height:31px}
+ .touch-bar{top:calc(2px + env(safe-area-inset-top,0px))}
+}
 </style>
 </head>
 <body>
@@ -494,13 +530,21 @@ let netGrenadeSeq=0;
 const net={mode:'solo',phase:'off',peer:null,conn:null,clients:new Map(),remotes:new Map(),bots:[],botSeq:0,id:'',code:'',name:'',team:'cyan',sendClock:0,coverClock:0,npcClock:0,npcRemaining:0,connected:false,started:false,lastHostAt:0,settings:{npcs:false,cover:false,pvp:true,npcPuck:true,teamLock:false}};
 let shopTab='gun',selectedTreeNode='core',treePopupOpen=false,treePan={x:0,y:0},treeScale=1,treePanReady=false,treeDrag=null,treeSuppressUntil=0;let soundOn=true,ac=null,activeVoices=0;const soundTimes=Object.create(null);function sound(kind){if(!soundOn||activeVoices>=8)return;const now=performance.now(),limit=(kind==='hit'?65:kind==='pistol'||kind==='rifle'?36:kind==='grenade'?75:22);if(now-(soundTimes[kind]||-1000)<limit)return;soundTimes[kind]=now;try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended')ac.resume();const o=ac.createOscillator(),g=ac.createGain(),n=ac.currentTime;let f=220,d=.06,ty='triangle',vol=.027;if(kind==='pistol'){f=260;d=.085;ty='triangle';vol=.030}else if(kind==='buy'){f=650;d=.13;ty='sine';vol=.025}else if(kind==='rifle'){f=155;d=.055;ty='sawtooth';vol=.025}else if(kind==='sniper'){f=74;d=.22;ty='sawtooth';vol=.055}else if(kind==='grenade'){f=82;d=.36;ty='sawtooth';vol=.065}else if(kind==='knife'){f=450;d=.08}else if(kind==='hit'){f=90;d=.10;vol=.016}else if(kind==='dodge'){f=400;d=.13;vol=.020}else if(kind==='dry'){f=350;d=.035;vol=.014}o.type=ty;o.frequency.setValueAtTime(f,n);o.frequency.exponentialRampToValueAtTime(Math.max(28,f*.35),n+d);g.gain.setValueAtTime(vol,n);g.gain.exponentialRampToValueAtTime(.0001,n+d);o.connect(g);g.connect(ac.destination);activeVoices++;o.addEventListener('ended',()=>{activeVoices=Math.max(0,activeVoices-1);o.disconnect();g.disconnect()},{once:true});o.start(n);o.stop(n+d+.01)}catch(e){activeVoices=Math.max(0,activeVoices-1)}}
 function resize(){
- sw=innerWidth;sh=innerHeight;
- // A 4K/high-DPI framebuffer was the biggest avoidable fill-rate cost.
- // Keep the actual game world in CSS coordinates and cap backing pixels.
- dpr=Math.max(.7,Math.min(devicePixelRatio||1,1.2,Math.sqrt(1450000/Math.max(1,sw*sh))));
+ // iOS Chrome uses WebKit's changing visual viewport. Measure the actual
+ // CSS canvas instead of mixing 100vh with innerHeight and stretching pixels.
+ const rect=canvas.getBoundingClientRect(),width=Math.max(1,Math.round(rect.width)),height=Math.max(1,Math.round(rect.height));
+ if(width===sw&&height===sh&&canvas.width&&canvas.height)return;
+ sw=width;sh=height;
+ // Retina clarity within a bounded fill-rate budget.
+ dpr=Math.max(.7,Math.min(devicePixelRatio||1,touchSupported?1.8:1.2,Math.sqrt(1450000/Math.max(1,sw*sh))));
  canvas.width=Math.round(sw*dpr);canvas.height=Math.round(sh*dpr);
  ctx.setTransform(dpr,0,0,dpr,0,0);renderedStill=false;
-}window.addEventListener('resize',resize);resize();
+}
+window.addEventListener('resize',resize);
+window.addEventListener('orientationchange',()=>requestAnimationFrame(resize));
+if(window.visualViewport)window.visualViewport.addEventListener('resize',()=>requestAnimationFrame(resize));
+if(window.ResizeObserver)new ResizeObserver(resize).observe(canvas);
+resize();
 // Cover lives at permanent, mirrored coordinates. Each side has the same
 // shapes/approach routes, with two neutral structures away from center ice.
 const COVER_LEFT=[
@@ -1194,7 +1238,7 @@ function handleMouseUp(e){
   secondaryPending=false;
 }
 // Capture at the window so releases outside the canvas don't strand a button.
-window.addEventListener('mousedown',handleMouseDown,true);
+window.addEventListener('mousedown',e=>{if(touchSupported&&performance.now()-lastMobileTouchAt<850)return;handleMouseDown(e)},true);
 window.addEventListener('mouseup',handleMouseUp,true);
 window.addEventListener('mousemove',updateMousePosition);
 window.addEventListener('contextmenu',e=>{
@@ -1213,11 +1257,22 @@ canvas.addEventListener('wheel',e=>{e.preventDefault();if(paused||ended)return;s
 
 // Mobile: two independent pointer captures permit walking, aiming and firing simultaneously.
 const touchUI=document.getElementById('touchControls');
+let lastMobileTouchAt=-Infinity;
+if(touchSupported){
+ // Prevent text highlighting, long-press loupe and rubber-band gestures while
+ // the sticks are active. In armory and lobby, scrolling/input still works.
+ for(const node of [canvas,touchUI])for(const eventName of ['touchstart','touchmove'])
+  node.addEventListener(eventName,e=>{if(touchPlayable()){lastMobileTouchAt=performance.now();e.preventDefault()}},{passive:false});
+ document.addEventListener('selectstart',e=>{if(touchPlayable())e.preventDefault()},true);
+ document.addEventListener('dragstart',e=>{if(touchPlayable())e.preventDefault()},true);
+ document.addEventListener('contextmenu',e=>{if(touchPlayable())e.preventDefault()},true);
+ document.addEventListener('gesturestart',e=>{if(touchPlayable())e.preventDefault()},{passive:false});
+}
 const touchPlayable=()=>started&&!paused&&!ended&&!shopOpen&&!roundBreak.kind&&ui.screen.classList.contains('hidden')&&document.getElementById('netLobby').classList.contains('hidden');
 function refreshTouchUI(){
  if(!touchSupported)return;
  const available=touchPlayable();
- if(touchState.shown!==available){touchState.shown=available;touchUI.classList.toggle('active',available);if(!available)releaseTouchControls();}
+ if(touchState.shown!==available){touchState.shown=available;touchUI.classList.toggle('active',available);document.body.classList.toggle('touch-playing',available);if(!available)releaseTouchControls();}
  document.body.classList.toggle('touch-in-mp',net.phase==='match');
 }
 function releaseTouchControls(){
@@ -1258,9 +1313,12 @@ function installTouchStick(id,kind){
    touchState.lastShot=clock;
   }
  });
- element.addEventListener('pointermove',e=>{if(touchState[name]!==e.pointerId)return;e.preventDefault();update(e)});
- const end=e=>{if(touchState[name]!==e.pointerId)return;e.preventDefault();touchState[name]=null;thumb.style.transform='translate(0px,0px)';if(kind==='move'){touchState.move.x=touchState.move.y=0;}else{touchState.activeAim=false;touchState.activeFire=false;fireHeld=false;secondaryPending=false;}};
+ // Window listener continues control even when iOS drops pointer capture
+ // during a slide outside the joystick ring.
+ window.addEventListener('pointermove',e=>{if(touchState[name]!==e.pointerId)return;if(e.cancelable)e.preventDefault();update(e)},{passive:false});
+ const end=e=>{if(touchState[name]!==e.pointerId)return;if(e.cancelable)e.preventDefault();touchState[name]=null;thumb.style.transform='translate(0px,0px)';if(kind==='move'){touchState.move.x=touchState.move.y=0;}else{touchState.activeAim=false;touchState.activeFire=false;fireHeld=false;secondaryPending=false;}};
  element.addEventListener('pointerup',end);element.addEventListener('pointercancel',end);element.addEventListener('lostpointercapture',end);
+ window.addEventListener('pointerup',end);window.addEventListener('pointercancel',end);
 }
 installTouchStick('touchMove','move');installTouchStick('touchAim','aim');
 // Each mobile button maps to exactly the same native in-game action as its keyboard equivalent.
@@ -1268,6 +1326,7 @@ for(const button of touchUI.querySelectorAll('button[data-touch]')){
  const action=button.dataset.touch;
  button.addEventListener('pointerdown',e=>{
   e.preventDefault();e.stopPropagation();
+  try{button.setPointerCapture(e.pointerId)}catch(_){}
   if(!touchPlayable())return;
   if(action==='sprint'){touchState.sprint=true;button.classList.add('is-active')}
   else if(action==='crouch'){touchState.crouch=!touchState.crouch;button.classList.toggle('is-active',touchState.crouch)}
