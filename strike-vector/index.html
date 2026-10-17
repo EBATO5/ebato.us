@@ -491,7 +491,7 @@ let player,enemies=[],bullets=[],grenades=[],knives=[],particles=[],texts=[],wav
 let puckEnabled=true,puck=null,teamGoals=0,rivalGoals=0,goalFlash=0;
 const roundBreak={kind:'',until:0,duration:0,lastShown:-1};
 let netGrenadeSeq=0;
-const net={mode:'solo',phase:'off',peer:null,conn:null,clients:new Map(),remotes:new Map(),id:'',code:'',name:'',team:'cyan',sendClock:0,coverClock:0,npcClock:0,npcRemaining:0,connected:false,started:false,lastHostAt:0,settings:{npcs:false,cover:false,pvp:true}};
+const net={mode:'solo',phase:'off',peer:null,conn:null,clients:new Map(),remotes:new Map(),bots:[],botSeq:0,id:'',code:'',name:'',team:'cyan',sendClock:0,coverClock:0,npcClock:0,npcRemaining:0,connected:false,started:false,lastHostAt:0,settings:{npcs:false,cover:false,pvp:true,npcPuck:true,teamLock:false}};
 let shopTab='gun',selectedTreeNode='core',treePopupOpen=false,treePan={x:0,y:0},treeScale=1,treePanReady=false,treeDrag=null,treeSuppressUntil=0;let soundOn=true,ac=null,activeVoices=0;const soundTimes=Object.create(null);function sound(kind){if(!soundOn||activeVoices>=8)return;const now=performance.now(),limit=(kind==='hit'?65:kind==='pistol'||kind==='rifle'?36:kind==='grenade'?75:22);if(now-(soundTimes[kind]||-1000)<limit)return;soundTimes[kind]=now;try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended')ac.resume();const o=ac.createOscillator(),g=ac.createGain(),n=ac.currentTime;let f=220,d=.06,ty='triangle',vol=.027;if(kind==='pistol'){f=260;d=.085;ty='triangle';vol=.030}else if(kind==='buy'){f=650;d=.13;ty='sine';vol=.025}else if(kind==='rifle'){f=155;d=.055;ty='sawtooth';vol=.025}else if(kind==='sniper'){f=74;d=.22;ty='sawtooth';vol=.055}else if(kind==='grenade'){f=82;d=.36;ty='sawtooth';vol=.065}else if(kind==='knife'){f=450;d=.08}else if(kind==='hit'){f=90;d=.10;vol=.016}else if(kind==='dodge'){f=400;d=.13;vol=.020}else if(kind==='dry'){f=350;d=.035;vol=.014}o.type=ty;o.frequency.setValueAtTime(f,n);o.frequency.exponentialRampToValueAtTime(Math.max(28,f*.35),n+d);g.gain.setValueAtTime(vol,n);g.gain.exponentialRampToValueAtTime(.0001,n+d);o.connect(g);g.connect(ac.destination);activeVoices++;o.addEventListener('ended',()=>{activeVoices=Math.max(0,activeVoices-1);o.disconnect();g.disconnect()},{once:true});o.start(n);o.stop(n+d+.01)}catch(e){activeVoices=Math.max(0,activeVoices-1)}}
 function resize(){
  sw=innerWidth;sh=innerHeight;
@@ -1432,7 +1432,7 @@ function puckImpulse(x,y,vx,vy,kind='shot',team='player'){
  if(net.mode==='guest'&&net.phase==='match'){
   netMsg(net.conn,{t:'impact',x:puck.x,y:puck.y,vx,vy,kind});return true;
  }
- if(net.mode==='host'&&net.phase==='match')team=net.team;
+ if(net.mode==='host'&&net.phase==='match'&&team==='player')team=net.team;
  puck.vx+=vx;puck.vy+=vy;
  const speed=Math.hypot(puck.vx,puck.vy);
  if(speed>1600){puck.vx*=1600/speed;puck.vy*=1600/speed;}
@@ -1695,10 +1695,10 @@ function loadPeerJS(){
 
 const netGoalSpawn=(team,i=0)=>({x:team==='orange'?WORLD.w-204:204,y:clamp(WORLD.h*.5+((i%5)-2)*57,280,WORLD.h-280)});
 function netResetLocal(){const p=netGoalSpawn(net.team);player.x=p.x;player.y=p.y;player.hp=100;player.shield=shieldMax();player.shieldHitAt=-999;player.respawn=0;player.invul=1.5;player.roll=0;player.gun=clipSize();keys.clear();fireHeld=false;}
-function netRules(){return {npcs:!!net.settings.npcs,cover:!!net.settings.cover,pvp:!!net.settings.pvp}}
+function netRules(){return {npcs:!!net.settings.npcs,cover:!!net.settings.cover,pvp:!!net.settings.pvp,npcPuck:!!net.settings.npcPuck,teamLock:!!net.settings.teamLock}}
 function netApplyRules(data){
  if(!data||typeof data!=='object')return;
- const before=netRules();for(const k of ['npcs','cover','pvp'])if(typeof data[k]==='boolean')net.settings[k]=data[k];
+ const before=netRules();for(const k of ['npcs','cover','pvp','npcPuck','teamLock'])if(typeof data[k]==='boolean')net.settings[k]=data[k];
  if(net.phase==='match'){
   if(!net.settings.npcs){enemies=[];net.npcRemaining=0;}
   if(!net.settings.cover)obstacles=[];
@@ -1707,8 +1707,8 @@ function netApplyRules(data){
  }
  netUpdateLobby();
 }
-function netSetRule(key){if(net.mode!=='host'||!['npcs','cover','pvp'].includes(key))return;netApplyRules({[key]:!net.settings[key]});netBroadcast({t:'rules',rules:netRules()});}
-for(const [key,id] of [['npcs','netRuleNPC'],['cover','netRuleCover'],['pvp','netRulePVP']])$net(id).addEventListener('click',()=>netSetRule(key));
+function netSetRule(key){if(net.mode!=='host'||!['npcs','cover','pvp','npcPuck','teamLock'].includes(key))return;netApplyRules({[key]:!net.settings[key]});netBroadcast({t:'rules',rules:netRules()});}
+for(const [key,id] of [['npcs','netRuleNPC'],['cover','netRuleCover'],['pvp','netRulePVP'],['npcPuck','netRuleNpcPuck'],['teamLock','netRuleTeamLock']])$net(id).addEventListener('click',()=>netSetRule(key));
 function netPvpHit(id,amount,hostile=false){
  if(net.mode!=='host'||net.phase!=='match'||(!net.settings.pvp&&!hostile))return;
  if(id==='host'){hurtPlayer(amount);return}
@@ -1790,7 +1790,7 @@ function netRosterData(){
 }
 function netUpdateLobby(){
  $net('netLobbyCode').textContent=net.code||'------';
- for(const [key,id] of [['npcs','netRuleNPC'],['cover','netRuleCover'],['pvp','netRulePVP']]){const b=$net(id);b.classList.toggle('selected',net.settings[key]);b.setAttribute('aria-pressed',String(!!net.settings[key]));b.disabled=net.mode!=='host';b.firstChild.textContent=(net.settings[key]?'◉':'◯')+' '+(key==='npcs'?'HOSTILE NPCS':key==='cover'?'DESTRUCTIBLE COVER':'PLAYER DAMAGE');}
+ for(const [key,id] of [['npcs','netRuleNPC'],['cover','netRuleCover'],['pvp','netRulePVP'],['npcPuck','netRuleNpcPuck'],['teamLock','netRuleTeamLock']]){const b=$net(id);b.classList.toggle('selected',net.settings[key]);b.setAttribute('aria-pressed',String(!!net.settings[key]));b.disabled=net.mode!=='host';b.firstChild.textContent=(net.settings[key]?'◉':'◯')+' '+(key==='npcs'?'HOSTILE NPCS':key==='cover'?'DESTRUCTIBLE COVER':key==='pvp'?'PLAYER DAMAGE':key==='npcPuck'?'NPC SHOTS MOVE PUCK':'HOST-LOCKED TEAMS');}
  $net('netRulesHelp').textContent=net.mode==='host'?'You are the host: changes take effect immediately. PvP includes teammate damage.': 'The host controls arena rules. Team switching is always free.';
  $net('netBegin').hidden=net.mode!=='host'||net.phase!=='lobby';
  $net('netLobbyClose').hidden=net.phase!=='match';
@@ -1812,7 +1812,7 @@ function netClose(notice=''){const oldMode=net.mode;
  if(oldMode==='host')netBroadcast({t:'closed'});
  for(const c of net.clients.values())try{c.close()}catch(e){}
  try{net.conn?.close()}catch(e){}try{net.peer?.destroy()}catch(e){}
- net.mode='solo';net.phase='off';net.peer=null;net.conn=null;net.clients.clear();net.remotes.clear();net.code='';net.id='';net.connected=false;net.started=false;net.npcRemaining=0;net.settings={npcs:false,cover:false,pvp:true};
+ net.mode='solo';net.phase='off';net.peer=null;net.conn=null;net.clients.clear();net.remotes.clear();net.bots=[];net.botSeq=0;net.code='';net.id='';net.connected=false;net.started=false;net.npcRemaining=0;net.settings={npcs:false,cover:false,pvp:true,npcPuck:true,teamLock:false};
  netShowLobby(false);$net('netDock').classList.add('hidden');$net('netLaunchError').textContent=notice;
  if(oldMode!=='solo'){started=false;ended=false;paused=true;shopOpen=false;reset();showScreen('title');}
 }
@@ -1839,7 +1839,7 @@ function netHandleHostData(conn,msg){
  const r=net.remotes.get(conn.peer);
  if(msg.t==='hello'){
   if(r)return;
-  if(net.clients.size>7){netMsg(conn,{t:'error',message:'Lobby full (8 players).'});conn.close();return;}
+  if(net.clients.size+net.bots.length>7){netMsg(conn,{t:'error',message:'Lobby full (8 total human and AI players).'});conn.close();return;}
   netJoinRoomInfo(conn.peer,{name:msg.name,team:msg.team});
   netMsg(conn,{t:'welcome',id:conn.peer,code:net.code,started:net.phase==='match',rules:netRules(),members:netRosterData().map(({id,name,team,host})=>({id,name,team,host}))});
   netSendRoster();if(net.phase==='match'){netMsg(conn,{t:'start'});if(roundBreak.kind)netMsg(conn,{t:'break',kind:roundBreak.kind,seconds:roundBreakLeft()});}
@@ -1965,7 +1965,7 @@ async function netCreateOrJoin(host){
  const code=host?Array.from(crypto.getRandomValues(new Uint8Array(6)),b=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b%32]).join(''):safeCode($net('netCodeInput').value);
  if(!host&&code.length!==6){netNotify('Enter a six-character lobby code.');return}
  if(net.mode!=='solo')netClose();
- net.mode=host?'host':'guest';net.phase='lobby';net.team='cyan';net.code=code;net.settings={npcs:false,cover:false,pvp:true};
+ net.mode=host?'host':'guest';net.phase='lobby';net.team='cyan';net.code=code;net.settings={npcs:false,cover:false,pvp:true,npcPuck:true,teamLock:false};
  net.name=safeName($net('netNickname').value);net.id=host?'host':'';net.connected=false;
  netShowLobby(true);$net('netLobbyStatus').textContent='Connecting to PeerServer Cloud…';
  try{await loadPeerJS()}catch(e){netClose(e.message);return;}
@@ -2090,7 +2090,7 @@ for(let i=bullets.length-1;i>=0;i--){
  let removed=false;
  for(let s=0;s<steps;s++){
   b.x+=b.vx*dt/steps;b.y+=b.vy*dt/steps;
-  if(puckEnabled&&puck&&puck.respawn===0&&Math.hypot(b.x-puck.x,b.y-puck.y)<puck.r+b.r){const speed=Math.hypot(b.vx,b.vy)||1;const force=b.friend?Math.min(620,260+b.damage*3.5):165;puckImpulse(puck.x,puck.y,b.vx/speed*force,b.vy/speed*force,b.friend?'shot':'enemy',b.friend?'player':'rival');if(b.friend&&b.explosive)smallExplosion(b.x,b.y,b,null);removed=true;break;}
+  if(puckEnabled&&puck&&puck.respawn===0&&(b.friend||net.phase!=='match'||net.settings.npcPuck)&&Math.hypot(b.x-puck.x,b.y-puck.y)<puck.r+b.r){const speed=Math.hypot(b.vx,b.vy)||1;const force=b.friend?Math.min(620,260+b.damage*3.5):165;puckImpulse(puck.x,puck.y,b.vx/speed*force,b.vy/speed*force,b.friend?'shot':'enemy',b.friend?(b.owner==='host'?'player':net.bots.find(v=>v.id===b.owner)?.team||net.remotes.get(b.owner)?.team||net.team):'rival');if(b.friend&&b.explosive)smallExplosion(b.x,b.y,b,null);removed=true;break;}
   const impact=intersectsCover(b.x,b.y,b.r);if(b.t<=0||impact||b.x<b.r+44||b.y<b.r+44||b.x>WORLD.w-b.r-44||b.y>WORLD.h-b.r-44){if(impact)damageCover(impact,b.friend?b.damage*(b.trace?1.25:1):b.damage*.8,b.x,b.y);if(b.friend&&b.explosive)smallExplosion(b.x,b.y,b,null);burst(b.x,b.y,3,b.color,75);removed=true;break}
   if(b.friend){
    // Remember each enemy a projectile has already hit, preventing repeated
