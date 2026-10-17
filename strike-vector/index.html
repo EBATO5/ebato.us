@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
 <meta name="theme-color" content="#080e17" />
-<title>STRIKE VECTOR v1.5.0 — iPhone Viewport & Touch Control Fixes</title>
+<title>STRIKE VECTOR v1.5.1 — Puck Proximity Radar</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{color-scheme:dark;--bg:#080e17;--panel:#101b28;--border:#263746;--mint:#74f7d4;--text:#eef6f7;--muted:#8da4b3;--orange:#ffbd75}
@@ -2446,6 +2446,48 @@ if(altHeld&&player.weapon===2){let charge=clamp((clock-altStart)/.65,0,1);ctx.st
 for(const r of net.remotes.values())if(r.slash>0)r.slash=Math.max(0,r.slash-1/60);
 for(const p of particles){if(p.x<cam.x-100||p.x>cam.x+sw+100||p.y<cam.y-100||p.y>cam.y+sh+100)continue;ctx.globalAlpha=clamp(p.life/p.max,0,1);if(p.ring){ctx.strokeStyle=p.color;ctx.lineWidth=5*(p.life/p.max);ctx.beginPath();ctx.arc(p.x,p.y,p.r*(1-p.life/p.max),0,TAU);ctx.stroke()}else{ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.r*(.5+p.life/p.max*.5),0,TAU);ctx.fill()}}ctx.globalAlpha=1;
 for(const t of texts){ctx.globalAlpha=1-t.t/t.max;ctx.fillStyle=t.color;ctx.font='bold 15px system-ui';ctx.textAlign='center';ctx.fillText(t.text,t.x,t.y)}ctx.globalAlpha=1;ctx.restore()}
+// Proximity radar is local to each operative: the ring fills as the puck
+// approaches, while its arrow always tracks the puck's *current* world position.
+// Screen rendering runs after the puck so both solo and guest-host snapshots work.
+function puckRadarState(px,py,tx,ty){
+ const dx=tx-px,dy=ty-py,distance=Math.hypot(dx,dy);
+ const proximity=clamp(1-distance/1700,0,1);
+ const band=distance<180?'CLOSE':distance<600?'NEAR':distance<1250?'MID':'FAR';
+ const color=distance<180?'#ffd284':distance<600?'#b9ffe0':distance<1250?'#7de6ef':'#7fb9ef';
+ return {distance,angle:Math.atan2(dy,dx),proximity,band,color,lit:Math.max(1,Math.round(proximity*12))};
+}
+function drawPuckTracker(){
+ if(!started||!player||player.hp<=0||!puckEnabled||!puck||puck.respawn>0)return;
+ const radar=puckRadarState(player.x,player.y,puck.x,puck.y);
+ const radius=touchSupported?43:48;
+ ctx.save();
+ ctx.translate(player.x-cam.x,player.y-cam.y);
+ // Fine gauge ticks run clockwise; the number illuminated indicates proximity.
+ ctx.lineCap='round';
+ for(let i=0;i<12;i++){
+  const start=-Math.PI/2+i*TAU/12+.075,end=-Math.PI/2+(i+1)*TAU/12-.075;
+  ctx.beginPath();ctx.arc(0,0,radius+13,start,end);
+  ctx.strokeStyle=i<radar.lit?radar.color:'rgba(119,182,191,.19)';
+  ctx.lineWidth=i<radar.lit?3.4:2.3;ctx.stroke();
+ }
+ // Direction remains world-accurate even when the player turns or slides.
+ ctx.beginPath();ctx.arc(0,0,radius-.5,0,TAU);
+ ctx.strokeStyle='rgba(116,221,224,.18)';ctx.lineWidth=1.5;ctx.stroke();
+ ctx.save();ctx.rotate(radar.angle);
+ ctx.shadowColor=radar.color;ctx.shadowBlur=radar.band==='CLOSE'?13:7;
+ ctx.fillStyle=radar.color;ctx.strokeStyle='#082632';ctx.lineWidth=1.6;
+ ctx.beginPath();ctx.moveTo(radius+8,0);ctx.lineTo(radius-7,-7.5);ctx.lineTo(radius-7,7.5);ctx.closePath();
+ ctx.fill();ctx.shadowBlur=0;ctx.stroke();
+ ctx.restore();
+ // Compact readout is opposite the brightest part of the game HUD.
+ const label='PUCK '+Math.round(radar.distance)+'m · '+radar.band;
+ ctx.font='800 11px Oxanium,system-ui';ctx.textAlign='center';ctx.textBaseline='middle';
+ const width=Math.max(89,ctx.measureText(label).width+20),y=radius+31;
+ ctx.fillStyle='rgba(5,21,31,.88)';ctx.strokeStyle=radar.color;ctx.lineWidth=1;
+ ctx.beginPath();ctx.roundRect(-width/2,y-12,width,23,7);ctx.fill();ctx.stroke();
+ ctx.fillStyle=radar.color;ctx.fillText(label,0,y);
+ ctx.restore();
+}
 function reticle(){
  if(!mouse.active)return;const x=mouse.x,y=mouse.y,crouch=isCrouching(),running=keys.has('ShiftLeft')||keys.has('ShiftRight');
  const r=player.weapon===2?13:(altHeld&&player.secondary==='aim'?7:crouch?10:running?21:15)+Math.max(0,projectileCount()-1)*1.25;
@@ -2463,7 +2505,7 @@ let uiTimer=0;function syncUI(dt){
  (altHeld?'RMB + LMB · POWER SHOT (3 ROUNDS)':'RMB + LMB · POWER SHOT');
  ui.alt.textContent=sec+laser+explosive+' · SPACE STRIKE'+(player.bayonetOn?' (BAYONET)':'');
 }
-function draw(){const sx=shake?rand(-shake,shake):0,sy=shake?rand(-shake,shake):0;ctx.save();ctx.translate(sx,sy);bg();drawEntities();drawPuck();ctx.restore();if(started)reticle()}
+function draw(){const sx=shake?rand(-shake,shake):0,sy=shake?rand(-shake,shake):0;ctx.save();ctx.translate(sx,sy);bg();drawEntities();drawPuck();ctx.restore();drawPuckTracker();if(started)reticle()}
 let frameErrors=0;
 function loop(t){
  try{
