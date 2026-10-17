@@ -1051,8 +1051,8 @@ ui.shopGrid.addEventListener('click',e=>{
 });
 function toggleLaser(){if(!player.modules.laser)return;player.laserOn=!player.laserOn;sound('buy');syncUI(1)}
 function selectSecondary(mode){if(mode!=='aim'&&!player.modules[mode])return;player.secondary=mode;secondaryPending=false;sound('buy');syncUI(1)}
-function closeFieldShop(){renderedStill=false;shopOpen=false;paused=false;ui.screen.classList.add('hidden');fireHeld=false;altHeld=false;secondaryPending=false;player.triggerQueue=0;player.burstShots=0;keys.clear()}
-function toggleTabShop(){if(!started||ended||roundBreak.kind)return;if(shopOpen){if(shopMode==='field')closeFieldShop();return}openShop('field')}
+function closeFieldShop(){renderedStill=false;shopOpen=false;paused=false;ui.screen.classList.add('hidden');fireHeld=false;altHeld=false;secondaryPending=false;player.triggerQueue=0;player.burstShots=0;keys.clear();renderRoundBreakClock(true)}
+function toggleTabShop(){if(!started||ended)return;if(shopOpen){if(shopMode==='field'||roundBreak.kind)closeFieldShop();return}if(roundBreak.kind)openShop(shopMode,false);else openShop('field')}
 function showScreen(type){
  renderedStill=false;ui.screen.classList.remove('hidden');
  ui.puckToggle.hidden=type!=='title';ui.puckBoard.hidden=!started||!puckEnabled;
@@ -1073,7 +1073,8 @@ function showScreen(type){
 }
 function begin(){if(roundBreak.kind)return;if(net.phase==='match'&&shopOpen){closeFieldShop();return;}if(net.mode!=='solo')return;lastShiftTap=-Infinity;renderedStill=false;if(shopOpen){const cleared=shopMode==='between';closeFieldShop();if(cleared)nextWave();sound('buy');return}if(!started||ended){reset();started=true}paused=false;ui.puckBoard.hidden=!puckEnabled;ui.screen.classList.add('hidden');sound('dodge')}
 ui.puckToggle.addEventListener('click',()=>{puckEnabled=!puckEnabled;ui.puckToggle.setAttribute('aria-pressed',String(puckEnabled));ui.puckToggle.textContent=puckEnabled?'◉ PUCK ARENA: ON · SHOOT THE PUCK INTO THE ORANGE GOAL':'○ PUCK ARENA: OFF · CLASSIC SURVIVAL ONLY';});
-document.getElementById('touchShopClose').addEventListener('click',begin);
+document.getElementById('touchShopClose').addEventListener('click',()=>{if(roundBreak.kind&&shopOpen)closeFieldShop();else begin()});
+document.getElementById('reopenArmory').addEventListener('click',()=>{if(roundBreak.kind&&!shopOpen)openShop(shopMode,false)});
 ui.start.addEventListener('click',begin);ui.sound.addEventListener('click',()=>{soundOn=!soundOn;ui.sound.textContent=soundOn?'♪ SOUND ON':'♪ SOUND OFF'});
 function switchWeapon(n){if(!started||paused||ended||(n!==0&&n!==2))return;if(player.weapon===n)return;player.weapon=n;player.fireCd=Math.min(player.fireCd,.10);player.slash=0;player.triggerQueue=0;player.burstShots=0;secondaryPending=false;sound('dry')}
 window.addEventListener('keydown',e=>{const c=e.code;
@@ -1089,6 +1090,7 @@ window.addEventListener('keydown',e=>{const c=e.code;
  }
  if(['Space','AltLeft','AltRight','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyR'].includes(c)&&started&&!ended)e.preventDefault();
  if(c==='Escape'){
+  if(roundBreak.kind){if(shopOpen)closeFieldShop();else openShop(shopMode,false);return;}
   if(net.phase==='match'&&!shopOpen){netShowLobby(true);return;}
   if(!started||ended)return;
   if(shopOpen){if(shopMode==='field')closeFieldShop();return}
@@ -1097,7 +1099,7 @@ window.addEventListener('keydown',e=>{const c=e.code;
  if(c==='Enter'&&(!started||ended||paused)){begin();return}
  if((e.ctrlKey||e.metaKey)&&c!=='AltRight')return;
  // Shift is sprint only. Space begins the combat slide/dodge.
- keys.add(c);if(paused||ended)return;
+ if(paused||ended||shopOpen||roundBreak.kind)return;keys.add(c);
  if(c==='Digit1')switchWeapon(2);else if(c==='Digit2')switchWeapon(0);
  else if(c==='Digit3')selectSecondary('aim');else if(c==='Digit4')selectSecondary('grenade');else if(c==='Digit5')selectSecondary('power');
  else if(c==='KeyF'&&!e.repeat)cycleFireMode();else if(c==='KeyR')reload();else if(c==='KeyL'&&!e.repeat)toggleLaser();else if(c==='KeyX'&&!e.repeat&&player.modules.explosive){player.explosiveOn=!player.explosiveOn;sound('buy');syncUI(1)}else if(c==='Space'&&!e.repeat)startSlide();else if(c==='KeyE'&&!e.repeat)quickMelee();
@@ -1171,7 +1173,7 @@ canvas.addEventListener('wheel',e=>{e.preventDefault();if(paused||ended)return;s
 
 // Mobile: two independent pointer captures permit walking, aiming and firing simultaneously.
 const touchUI=document.getElementById('touchControls');
-const touchPlayable=()=>started&&!paused&&!ended&&!shopOpen&&ui.screen.classList.contains('hidden')&&document.getElementById('netLobby').classList.contains('hidden');
+const touchPlayable=()=>started&&!paused&&!ended&&!shopOpen&&!roundBreak.kind&&ui.screen.classList.contains('hidden')&&document.getElementById('netLobby').classList.contains('hidden');
 function refreshTouchUI(){
  if(!touchSupported)return;
  const available=touchPlayable();
