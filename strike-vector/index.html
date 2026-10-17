@@ -577,7 +577,7 @@ function buildLevel(){
 
 function reset(){
  buildLevel();player={x:1250,y:810,r:18,hp:100,maxHp:100,vx:0,vy:0,angle:0,weapon:0,
-  mods:{receiver:0,barrel:0,damage:0,trigger:0,fireControl:0,mag:0,projectiles:0,penetration:0,reloadSpeed:0,blast:0,knife:0,grenadePower:0,grenadeRange:0,grenadeMag:0,grenadeReload:0,grenadeCycle:0,shieldCapacity:0,shieldRegen:0,shieldDelay:0,armor:0,dodgeCooldown:0},
+  mods:{receiver:0,barrel:0,damage:0,trigger:0,fireControl:0,mag:0,projectiles:0,penetration:0,reloadSpeed:0,blast:0,knife:0,grenadePower:0,grenadeRange:0,grenadeMag:0,grenadeReload:0,grenadeCycle:0,shieldCapacity:0,shieldRegen:0,shieldDelay:0,armor:0,maxHealth:0,dodgeCooldown:0},
   modules:{laser:false,grenade:false,power:false,explosive:false,bayonet:false},laserOn:false,explosiveOn:false,bayonetOn:false,secondary:'aim',
   shield:0,shieldHitAt:-999,roll:0,rollMax:.78,rollMode:'slide',rollDx:0,rollDy:0,rollCd:0,invul:0,slideTurn:0,fireCd:0,secondaryCd:0,slash:0,slashDir:0,slashHits:new Set(),
   reload:0,gun:14,gunReserve:Infinity,grenades:5,grenadeReserve:Infinity,grenadeReload:0,throwKnives:Infinity,step:0,meleeCd:0,slashKind:'knife',triggerQueue:0,triggerExpiry:0,fireMode:'semi',burstShots:0};
@@ -607,6 +607,7 @@ const OPTIONS=[
  {id:'grenadeReload',name:'GRENADE LOADING SPEED',price:245,step:135,detail:'15% faster grenade reload per tier',requires:'grenade'},
  {id:'grenadeCycle',name:'GRENADE FIRING MECHANISM',price:275,step:150,detail:'15% faster follow-up grenade shots per tier',requires:'grenade'},
  {id:'knife',name:'MELEE EDGE',price:190,step:105,detail:'+26 knife slash, +20 buttstock, +24 bayonet, and +18 thrown-knife damage per tier. Fully refundable.'},
+ {id:'maxHealth',name:'VITALITY TRAINING',price:350,step:210,max:5,detail:'+25 maximum health per tier (100 → 225 HP). Buying restores +25 HP; fully refundable.'},
  {id:'shieldCapacity',name:'ENERGY SHIELD ARRAY',price:340,step:190,max:5,detail:'+35 regenerating shield points per tier. New capacity immediately charges.'},
  {id:'shieldRegen',name:'SHIELD RECHARGE',price:290,step:170,max:5,detail:'+6 shield per second per tier, once shield capacity is installed.'},
  {id:'shieldDelay',name:'SHIELD RECOVERY TIMER',price:265,step:160,max:5,detail:'Each tier shortens the delay after damage by 0.5 seconds (minimum 1 second).'},
@@ -624,6 +625,7 @@ const BASE_GRENADE_CLIP=5,BASE_GRENADE_RANGE=680;
 function gunSpec(){return RECEIVERS[player.mods.receiver]}
 function clipSize(){return gunSpec().clip+player.mods.mag*4}
 function projectileCount(){return 1+player.mods.projectiles}
+function maxHealth(mods=player.mods){return 100+25*clamp(Math.floor(Number(mods.maxHealth)||0),0,5)}
 function shieldMax(mods=player.mods){return Math.max(0,35*(mods.shieldCapacity||0))}
 function shieldRate(mods=player.mods){return shieldMax(mods)>0?10+6*(mods.shieldRegen||0):0}
 function shieldDelayTime(mods=player.mods){return Math.max(1,3.5-.5*(mods.shieldDelay||0))}
@@ -682,6 +684,7 @@ const ICON_SHAPES={
  grenadeMag:`<rect x="19" y="22" width="20" height="35" rx="9"/><rect x="50" y="22" width="20" height="35" rx="9"/><rect x="81" y="22" width="20" height="35" rx="9"/><path d="M24 18h10M55 18h10M86 18h10M29 29v21M60 29v21M91 29v21"/>`,
  grenadeReload:`<path d="M42 22h32v33q-16 15-32 0zM52 22v-9h12v9M50 33h17"/><path d="M16 45a42 42 0 0 0 21 23M31 59l7 10-12 2M104 33a42 42 0 0 0-20-22M90 9l-8 1 4 11"/>`,
  grenadeCycle:`<path d="M21 30h44v18H21zM65 39h15M78 29l11 10-11 10"/><circle cx="96" cy="38" r="13"/><path d="M96 30v9l7 4"/>`,
+ maxHealth:`<path d="M60 14l11 18h19v15H71L60 68 49 47H30V32h19z"/><path d="M60 22v38M40 40h40"/>`,
  shieldCapacity:`<path d="M60 9l34 14v24q-6 20-34 28Q32 67 26 47V23zM60 22v37M41 41h38"/>`,
  shieldRegen:`<path d="M60 12l29 12v23q-6 17-29 24-23-7-29-24V24zM35 14a36 36 0 0 1 48 2M79 9l4 7-8 1"/><path d="M43 43h34M60 28v30"/>`,
  shieldDelay:`<path d="M60 10l30 14v23q-8 20-30 27-22-7-30-27V24z"/><circle cx="60" cy="43" r="17"/><path d="M60 30v14l9 6M45 14l-7-8M75 14l7-8"/>`,
@@ -728,7 +731,8 @@ function statText(o,lvl){
   case 'grenadeReload':return {now:`${grenadeReloadDuration().toFixed(2)}s reload`,next:`${Math.max(.38,1.6*Math.pow(.85,next)).toFixed(2)}s reload`};
   case 'grenadeCycle':return {now:`${grenadeInterval().toFixed(2)}s launcher cycle`,next:`${Math.max(.15,.76*Math.pow(.85,next)).toFixed(2)}s cycle`};
   case 'knife':return {now:`${meleeDamage('knife',curr)} slash / ${meleeDamage('quick',curr)} buttstock`,next:`${meleeDamage('knife',next)} slash / ${meleeDamage('quick',next)} buttstock`,hint:`Bayonet: ${meleeDamage('quick',curr,true)} → ${meleeDamage('quick',next,true)} · Throwing knife: ${78+curr*18} → ${78+next*18} base damage`};
-   case 'shieldCapacity':return {now:`${shieldMax()} shield max`,next:`${shieldMax()+35} shield max`,hint:`Currently charged: ${Math.ceil(player.shield)}`};
+   case 'maxHealth':return {now:`${maxHealth()} maximum HP`,next:`${Math.min(225,maxHealth()+25)} maximum HP`,hint:`Current HP: ${Math.ceil(player.hp)} · Full tier-price refunds`};
+    case 'shieldCapacity':return {now:`${shieldMax()} shield max`,next:`${shieldMax()+35} shield max`,hint:`Currently charged: ${Math.ceil(player.shield)}`};
    case 'shieldRegen':return {now:`${shieldRate()} shield / sec`,next:`${shieldMax()>0?shieldRate()+6:0} shield / sec`};
    case 'shieldDelay':return {now:`${shieldDelayTime().toFixed(1)}s delay`,next:`${Math.max(1,shieldDelayTime()-.5).toFixed(1)}s delay`};
    case 'armor':return {now:`${Math.round(shieldProtection()*100)}% health resistance`,next:`${Math.round(Math.min(.35,.07*next)*100)}% resistance`};
@@ -764,7 +768,7 @@ function treeNodeShell(id,title,kicker,iconId,body,x,y,classes=''){
  return `<article class="tree-node ${classes}" data-node="${id}" style="left:${x}px;top:${y}px"><div class="tree-head"><div class="tree-icon">${iconArt(iconId||id,levelForIcon)}</div><div class="tree-titlewrap"><div class="tree-kicker">${kicker}</div><h3>${title}</h3></div></div>${body}</article>`;
 }
 function treeStatLine(label,value){return `<div class="tree-statline"><span>${label}</span><b>${value}</b></div>`}
-function optionIcon(id){return id==='receiver'?'receiver':id==='damage'?'damage':id==='trigger'?'trigger':id==='fireControl'?'fireControl':id==='projectiles'?'projectiles':id==='reloadSpeed'?'reloadSpeed':id==='mag'?'mag':id==='barrel'?'barrel':id==='penetration'?'penetration':id==='blast'?'blast':id==='grenadePower'?'grenadePower':id==='grenadeRange'?'grenadeRange':id==='grenadeMag'?'grenadeMag':id==='grenadeReload'?'grenadeReload':id==='grenadeCycle'?'grenadeCycle':id==='knife'?'knife':['shieldCapacity','shieldRegen','shieldDelay','armor','dodgeCooldown'].includes(id)?id:'gun'}
+function optionIcon(id){return id==='receiver'?'receiver':id==='damage'?'damage':id==='trigger'?'trigger':id==='fireControl'?'fireControl':id==='projectiles'?'projectiles':id==='reloadSpeed'?'reloadSpeed':id==='mag'?'mag':id==='barrel'?'barrel':id==='penetration'?'penetration':id==='blast'?'blast':id==='grenadePower'?'grenadePower':id==='grenadeRange'?'grenadeRange':id==='grenadeMag'?'grenadeMag':id==='grenadeReload'?'grenadeReload':id==='grenadeCycle'?'grenadeCycle':id==='knife'?'knife':['shieldCapacity','shieldRegen','shieldDelay','armor','maxHealth','dodgeCooldown'].includes(id)?id:'gun'}
 function buildTreeUpgradeNode(o,x,y,kicker='WEAPON MOD'){
  const lvl=player.mods[o.id],needs=o.requires&&!player.modules[o.requires],maxed=o.max!==undefined&&lvl>=o.max;
  const cost=upgradeCost(o,lvl),refund=lvl?upgradeCost(o,lvl-1):0,st=statText(o,lvl);
@@ -837,7 +841,7 @@ function buildCompactSkillTree(){
   ballisticsHub:[690,205],barrel:[535,70],projectiles:[695,70],penetration:[850,110],
   grenade:[945,465],blast:[1080,285],grenadePower:[1110,465],grenadeRange:[1110,625],grenadeMag:[980,815],grenadeReload:[810,820],grenadeCycle:[800,615],
   attachments:[255,825],laser:[95,770],explosive:[95,960],bayonet:[245,1020],power:[380,1035],knife:[110,655],
-   defenseHub:[1270,820],shieldCapacity:[1270,575],shieldRegen:[1460,690],shieldDelay:[1460,940],armor:[1270,1090],dodgeCooldown:[1100,1090]
+   defenseHub:[1270,820],maxHealth:[1100,950],shieldCapacity:[1270,575],shieldRegen:[1460,690],shieldDelay:[1460,940],armor:[1270,1090],dodgeCooldown:[1100,1090]
  };
  const branches=[
   ['core','receiverHub'],['receiverHub','receiver'],['receiverHub','damage'],
@@ -846,7 +850,7 @@ function buildCompactSkillTree(){
   ['core','ballisticsHub'],['ballisticsHub','barrel'],['ballisticsHub','projectiles'],['ballisticsHub','penetration'],
   ['core','grenade'],['grenade','blast'],['grenade','grenadePower'],['grenade','grenadeRange'],['grenade','grenadeMag'],['grenade','grenadeReload'],['grenade','grenadeCycle'],
   ['core','attachments'],['attachments','laser'],['attachments','explosive'],['attachments','bayonet'],['attachments','power'],['attachments','knife'],
-   ['core','defenseHub'],['defenseHub','shieldCapacity'],['defenseHub','shieldRegen'],['defenseHub','shieldDelay'],['defenseHub','armor'],['defenseHub','dodgeCooldown']
+   ['core','defenseHub'],['defenseHub','maxHealth'],['defenseHub','shieldCapacity'],['defenseHub','shieldRegen'],['defenseHub','shieldDelay'],['defenseHub','armor'],['defenseHub','dodgeCooldown']
  ];
  const grenadeMods=new Set(['blast','grenadePower','grenadeRange','grenadeMag','grenadeReload','grenadeCycle']);
  const lockedEdge=b=>(grenadeMods.has(b)&&!player.modules.grenade)||(['laser','explosive','bayonet','power'].includes(b)&&!player.modules[b]);
@@ -882,6 +886,7 @@ function buildCompactSkillTree(){
   compactNode('power','power',...pos.power,'POWER SHOT',{locked:!player.modules.power,active:player.secondary==='power'}),
   compactNode('knife','knife',...pos.knife,'MELEE',{levelText:lvl('knife')}),
    hub('defenseHub','shieldCapacity','DEFENSE','defense'),
+   compactNode('maxHealth','maxHealth',...pos.maxHealth,'MAX HP',{levelText:lvl('maxHealth')}),
    compactNode('shieldCapacity','shieldCapacity',...pos.shieldCapacity,'SHIELD',{levelText:lvl('shieldCapacity')}),
    compactNode('shieldRegen','shieldRegen',...pos.shieldRegen,'REGEN',{levelText:lvl('shieldRegen')}),
    compactNode('shieldDelay','shieldDelay',...pos.shieldDelay,'RECOVERY',{levelText:lvl('shieldDelay')}),
@@ -910,12 +915,12 @@ function renderTreeDetailPanel(){
   fireHub:['FIRE CONTROL','Trigger reset and select-fire are independent. Buy either one directly.','fireControl'],
   feedHub:['AMMUNITION & HANDLING','Magazine capacity and reload speed fork from the same hub. Neither requires upgrading the other. Reserve ammunition is unlimited; magazine reloads still matter.','mag'],
   ballisticsHub:['BALLISTICS','Barrel velocity, shotgun-style pellets, and penetration can be upgraded independently.','barrel'],
-  defenseHub:['PERSONAL DEFENSE','Shield capacity, recharge, recovery delay, and armor are independent upgrades.','shieldCapacity']
+  defenseHub:['PERSONAL DEFENSE','Max health, shield capacity, recharge, recovery delay, and armor are independent upgrades.','shieldCapacity']
  };
  if(hubInfo[id]){const [title,description,art]=hubInfo[id];return `<div class="tree-detail-top"><div class="tree-icon-large">${iconArt(art)}</div><div><div class="tree-detail-kicker">INDEPENDENT BRANCH</div><div class="tree-detail-title">${title}</div></div></div><div class="tree-detail-desc">${description}</div><div class="tree-empty-note">Pick any connected symbol to open its purchase and refund controls. Connection lines show categories, not purchase prerequisites.</div>`;}
 
  if(id==='core') return `<div class="tree-detail-top"><div class="tree-icon-large">${iconArt('gun')}</div><div><div class="tree-detail-kicker">MODULAR PLATFORM</div><div class="tree-detail-title">WEAPON CORE</div></div></div><div class="tree-detail-desc">Your entire build radiates from this weapon core. Pick any upgrade directly. Lines represent categories, not requirements—except grenade upgrades, which need the grenade module.</div><div class="tree-mini-stats">${treeStatLine('RECEIVER',gunSpec().name)}${treeStatLine('PELLETS',`${projectileCount()} / cartridge`)}${treeStatLine('FIRE MODE',fireModeLabel())}${treeStatLine('MAG / RELOAD',`${clipSize()} · ${reloadDuration().toFixed(2)}s`)}${treeStatLine('ALT ABILITY',selectedAltName())}</div><div class="tree-help"><div class="tree-chip"><b>Hover</b> or click nodes to inspect them</div><div class="tree-chip"><b>Refund</b> any tier for full value</div></div>`;
- if(id==='defenseHub') return `<div class="tree-detail-top"><div class="tree-icon-large">${iconArt('shieldCapacity')}</div><div><div class="tree-detail-kicker">DEFENSIVE SYSTEMS</div><div class="tree-detail-title">SURVIVAL TECHNOLOGY</div></div></div><div class="tree-detail-desc">A regenerating shield absorbs incoming damage first. Armor reduces health damage after the shield is depleted.</div><div class="tree-mini-stats">${treeStatLine('SHIELD',`${Math.ceil(player.shield)} / ${shieldMax()}`)}${treeStatLine('REGEN',`${shieldRate()}/s after ${shieldDelayTime().toFixed(1)}s`)}${treeStatLine('ARMOR',`${Math.round(shieldProtection()*100)}% resistance`)}</div>`;
+ if(id==='defenseHub') return `<div class="tree-detail-top"><div class="tree-icon-large">${iconArt('shieldCapacity')}</div><div><div class="tree-detail-kicker">DEFENSIVE SYSTEMS</div><div class="tree-detail-title">SURVIVAL TECHNOLOGY</div></div></div><div class="tree-detail-desc">Raise your maximum health, regenerate shields, and reduce incoming damage with armor.</div><div class="tree-mini-stats">${treeStatLine('SHIELD',`${Math.ceil(player.shield)} / ${shieldMax()}`)}${treeStatLine('REGEN',`${shieldRate()}/s after ${shieldDelayTime().toFixed(1)}s`)}${treeStatLine('ARMOR',`${Math.round(shieldProtection()*100)}% resistance`)}${treeStatLine('MAX HEALTH',`${maxHealth()} HP`)}</div>`;
   if(id==='attachments') return `<div class="tree-detail-top"><div class="tree-icon-large">${iconArt('laser')}</div><div><div class="tree-detail-kicker">UTILITY BRANCH</div><div class="tree-detail-title">ATTACHMENT HUB</div></div></div><div class="tree-detail-desc">This branch handles lasers, explosive rounds, bayonet hardware, and power shot. Precision shot and grenades share the ALT FIRE node.</div><div class="tree-mini-stats">${treeStatLine('LASER',player.modules.laser?(player.laserOn?'ON':'OWNED'):'LOCKED')}${treeStatLine('EXPLOSIVE',player.modules.explosive?(player.explosiveOn?'ON':'OWNED'):'LOCKED')}${treeStatLine('MELEE BONUS',player.modules.bayonet?'BAYONET READY':'BUTTSTOCK ONLY')}</div>`;
  if(id==='aim') return renderGrenadeHubDetail();
  if(id==='fireControl') return renderFireControlDetail();
@@ -995,7 +1000,7 @@ function renderShop(){
  ui.shopBank.innerHTML=`$${credits.toLocaleString()} <small>AVAILABLE CREDITS</small>`;
  ui.shopMessage.textContent='INDEPENDENT UPGRADE BRANCHES · INFINITE RESERVE AMMO';
  ui.shopNote.textContent='SHIELDS RECHARGE AFTER DAMAGE · ARMOR REDUCES HEALTH DAMAGE · ALL BRANCHES CAN BE REFUNDED';
- ui.shopStats.innerHTML=`<div><small>RECEIVER</small><b>${gunSpec().name}</b></div><div><small>DAMAGE / PELLET</small><b>${gunSpec().damage+player.mods.damage*7}</b></div><div><small>PELLETS / SHOT</small><b>${projectileCount()}</b></div><div><small>FIRE RATE LIMIT</small><b>${Math.round(60/gunInterval())} RPM</b></div><div><small>MAG / RELOAD</small><b>${clipSize()} · ${reloadDuration().toFixed(2)}s</b></div><div><small>PENETRATION</small><b>${1+player.mods.penetration} target${player.mods.penetration?'s':''}</b></div><div><small>FIRE / SECONDARY</small><b>${fireModeLabel()} · ${selectedAltName()}</b></div><div><small>SHIELD / RECHARGE</small><b>${Math.ceil(player.shield)} / ${shieldMax()} · ${shieldRate()}/s</b></div><div><small>ARMOR</small><b>${Math.round(shieldProtection()*100)}% RESIST</b></div>`;
+ ui.shopStats.innerHTML=`<div><small>RECEIVER</small><b>${gunSpec().name}</b></div><div><small>DAMAGE / PELLET</small><b>${gunSpec().damage+player.mods.damage*7}</b></div><div><small>PELLETS / SHOT</small><b>${projectileCount()}</b></div><div><small>FIRE RATE LIMIT</small><b>${Math.round(60/gunInterval())} RPM</b></div><div><small>MAG / RELOAD</small><b>${clipSize()} · ${reloadDuration().toFixed(2)}s</b></div><div><small>PENETRATION</small><b>${1+player.mods.penetration} target${player.mods.penetration?'s':''}</b></div><div><small>FIRE / SECONDARY</small><b>${fireModeLabel()} · ${selectedAltName()}</b></div><div><small>SHIELD / RECHARGE</small><b>${Math.ceil(player.shield)} / ${shieldMax()} · ${shieldRate()}/s</b></div><div><small>ARMOR</small><b>${Math.round(shieldProtection()*100)}% RESIST</b></div><div><small>MAX HEALTH</small><b>${maxHealth()} HP</b></div>`;
  ui.shopTabs.innerHTML='';ui.shopTabs.style.display='none';
  ui.shopGrid.className='shop-grid tree-map compact';
  ui.shopGrid.innerHTML=buildCompactSkillTree();
@@ -1048,7 +1053,7 @@ function finishRoundBreak(confirmedByHost=false){
  if(net.phase==='match'){
   if(kind==='goal'){
    netResetLocal();puck.respawn=.55;if(net.mode==='host')for(const b of net.bots)netPlaceBot(b);
-   if(net.mode==='host')for(const [id,r] of net.remotes){const pt=netGoalSpawn(r.team);r.x=pt.x;r.y=pt.y;r.hp=100;r.shield=shieldMax(r.defense);r.shieldHitAt=-999;r.respawn=0;r.invulUntil=clock+1.5;netMsg(net.clients.get(id),{t:'health',hp:100,shield:r.shield,respawn:0,x:r.x,y:r.y});}
+   if(net.mode==='host')for(const [id,r] of net.remotes){const pt=netGoalSpawn(r.team);r.x=pt.x;r.y=pt.y;r.hp=maxHealth(r.defense);r.shield=shieldMax(r.defense);r.shieldHitAt=-999;r.respawn=0;r.invulUntil=clock+1.5;netMsg(net.clients.get(id),{t:'health',hp:r.hp,maxHp:maxHealth(r.defense),shield:r.shield,respawn:0,x:r.x,y:r.y});}
   }
   if(net.mode==='host'&&net.settings.npcs){
    if(kind==='goal'){enemies=[];net.npcRemaining=0;wave=Math.max(1,wave);}
@@ -1116,6 +1121,7 @@ ui.shopGrid.addEventListener('click',e=>{
   else{if(o.max!==undefined&&lvl>=o.max)return;const cost=upgradeCost(o,lvl);if(credits<cost)return;credits-=cost;player.mods[o.id]++}
   if(o.id==='fireControl'){if(!player.mods.fireControl)player.fireMode='semi';player.burstShots=0;player.triggerQueue=0;}
    if(o.id==='dodgeCooldown')player.rollCd=clamp(player.rollCd*dodgeCooldown()/dodgeCooldown(lvl),0,dodgeCooldown());
+   if(o.id==='maxHealth'){player.maxHp=maxHealth();player.hp=b.dataset.refund?Math.min(player.hp,player.maxHp):Math.min(player.maxHp,player.hp+25);}
    if(o.id==='shieldCapacity'){const previousMax=35*lvl,newMax=shieldMax();player.shield=clamp(player.shield+Math.max(0,newMax-previousMax),0,newMax);}
   normalizeMagazine();
  }else if(b.dataset.moduleBuy){
@@ -1819,7 +1825,7 @@ function loadPeerJS(){
 }
 
 const netGoalSpawn=(team,i=0)=>({x:team==='orange'?WORLD.w-204:204,y:clamp(WORLD.h*.5+((i%5)-2)*57,280,WORLD.h-280)});
-function netResetLocal(){const p=netGoalSpawn(net.team);player.x=p.x;player.y=p.y;player.hp=100;player.shield=shieldMax();player.shieldHitAt=-999;player.respawn=0;player.invul=1.5;player.roll=0;player.gun=clipSize();keys.clear();fireHeld=false;}
+function netResetLocal(){const p=netGoalSpawn(net.team);player.x=p.x;player.y=p.y;player.maxHp=maxHealth();player.hp=maxHealth();player.shield=shieldMax();player.shieldHitAt=-999;player.respawn=0;player.invul=1.5;player.roll=0;player.gun=clipSize();keys.clear();fireHeld=false;}
 function netRules(){return {npcs:!!net.settings.npcs,cover:!!net.settings.cover,pvp:!!net.settings.pvp,npcPuck:!!net.settings.npcPuck,teamLock:!!net.settings.teamLock}}
 function netApplyRules(data){
  if(!data||typeof data!=='object')return;
@@ -1944,7 +1950,7 @@ function netAssignTeam(id,team){
  if(bot){if(bot.team===team)return;bot.team=team;netPlaceBot(bot);netSendRoster();return;}
  const r=net.remotes.get(id);if(!r||r.team===team)return;
  r.team=team;
- if(net.phase==='match'){const p=netGoalSpawn(team);r.x=p.x;r.y=p.y;r.hp=100;r.shield=shieldMax(r.defense);r.shieldHitAt=-999;r.respawn=0;r.invulUntil=clock+1.5;}
+ if(net.phase==='match'){const p=netGoalSpawn(team);r.x=p.x;r.y=p.y;r.hp=maxHealth(r.defense);r.shield=shieldMax(r.defense);r.shieldHitAt=-999;r.respawn=0;r.invulUntil=clock+1.5;}
  netMsg(net.clients.get(id),{t:'assignment',team});
  if(net.phase==='match')netMsg(net.clients.get(id),{t:'health',hp:r.hp,shield:r.shield,respawn:0,x:r.x,y:r.y});
  netSendRoster();
@@ -2022,7 +2028,7 @@ function netStartMatch(){
  // Start all operatives with the regular 9mm and an underbarrel grenade launcher.
  player.modules.grenade=true;player.secondary='grenade';
  cam.x=player.x-sw*.5;cam.y=player.y-sh*.5;
- net.phase='match';net.started=true;net.sendClock=0;net.npcRemaining=net.settings.npcs&&net.mode==='host'?npcWavePopulation(wave,true):0;player.respawn=0;player.hp=100;player.invul=1.5;if(net.settings.cover&&net.mode==='host')buildLevel();
+ net.phase='match';net.started=true;net.sendClock=0;net.npcRemaining=net.settings.npcs&&net.mode==='host'?npcWavePopulation(wave,true):0;player.respawn=0;player.maxHp=maxHealth();player.hp=maxHealth();player.invul=1.5;if(net.settings.cover&&net.mode==='host')buildLevel();
  $net('netLobby').classList.add('hidden');$net('netDock').classList.remove('hidden');
  ui.screen.classList.add('hidden');ui.puckBoard.hidden=false;netUpdateLobby();syncUI(1);
 }
@@ -2039,8 +2045,8 @@ function netHandleHostData(conn,msg){
  }
  if(!r)return;
  if(roundBreak.kind&&!['team','selfReset','state'].includes(msg.t))return;
- if(msg.t==='team'){if(net.settings.teamLock)return;r.team=msg.team==='orange'?'orange':'cyan';const pos=netGoalSpawn(r.team);r.x=pos.x;r.y=pos.y;r.hp=100;r.shield=shieldMax(r.defense);r.shieldHitAt=-999;r.respawn=0;r.invulUntil=clock+1.5;netMsg(conn,{t:'health',hp:100,shield:r.shield,respawn:0,x:r.x,y:r.y});netSendRoster();return;}
- if(msg.t==='selfReset'&&net.phase==='match'&&!net.settings.teamLock){const pos=netGoalSpawn(r.team);r.x=pos.x;r.y=pos.y;r.hp=100;r.shield=shieldMax(r.defense);r.shieldHitAt=-999;r.respawn=0;r.invulUntil=clock+1.5;netMsg(conn,{t:'health',hp:100,shield:r.shield,respawn:0,x:r.x,y:r.y});return;}
+ if(msg.t==='team'){if(net.settings.teamLock)return;r.team=msg.team==='orange'?'orange':'cyan';const pos=netGoalSpawn(r.team);r.x=pos.x;r.y=pos.y;r.hp=maxHealth(r.defense);r.shield=shieldMax(r.defense);r.shieldHitAt=-999;r.respawn=0;r.invulUntil=clock+1.5;netMsg(conn,{t:'health',hp:r.hp,maxHp:maxHealth(r.defense),shield:r.shield,respawn:0,x:r.x,y:r.y});netSendRoster();return;}
+ if(msg.t==='selfReset'&&net.phase==='match'&&!net.settings.teamLock){const pos=netGoalSpawn(r.team);r.x=pos.x;r.y=pos.y;r.hp=maxHealth(r.defense);r.shield=shieldMax(r.defense);r.shieldHitAt=-999;r.respawn=0;r.invulUntil=clock+1.5;netMsg(conn,{t:'health',hp:r.hp,maxHp:maxHealth(r.defense),shield:r.shield,respawn:0,x:r.x,y:r.y});return;}
  if(msg.t==='state'){
   if(net.phase!=='match')return;
   if(![msg.x,msg.y,msg.a].every(Number.isFinite))return;
@@ -2297,7 +2303,7 @@ function netTick(dt){
  if(net.mode==='guest'){
   netMsg(net.conn,{t:'state',x:player.x,y:player.y,a:player.angle,weapon:player.weapon,laserOn:player.laserOn,bayonetOn:player.bayonetOn,meleeTier:player.mods.knife,team:net.team,defense:{shieldCapacity:player.mods.shieldCapacity,shieldRegen:player.mods.shieldRegen,shieldDelay:player.mods.shieldDelay,armor:player.mods.armor}});return;
  }
- for(const [id,r] of net.remotes){if(r.hp>0&&!roundBreak.kind)rechargeShield(r,.083);if(r.respawn>0){r.respawn=Math.max(0,r.respawn-.083);if(r.respawn<=0){const pos=netGoalSpawn(r.team);r.x=pos.x;r.y=pos.y;r.hp=100;r.shield=shieldMax(r.defense);r.shieldHitAt=-999;r.invulUntil=clock+1.6;netMsg(net.clients.get(id),{t:'health',hp:100,shield:r.shield,respawn:0,x:pos.x,y:pos.y});}}}
+ for(const [id,r] of net.remotes){if(r.hp>0&&!roundBreak.kind)rechargeShield(r,.083);if(r.respawn>0){r.respawn=Math.max(0,r.respawn-.083);if(r.respawn<=0){const pos=netGoalSpawn(r.team);r.x=pos.x;r.y=pos.y;r.hp=maxHealth(r.defense);r.shield=shieldMax(r.defense);r.shieldHitAt=-999;r.invulUntil=clock+1.6;netMsg(net.clients.get(id),{t:'health',hp:r.hp,maxHp:maxHealth(r.defense),shield:r.shield,respawn:0,x:pos.x,y:pos.y});}}}
  const players=[{id:'host',name:net.name,team:net.team,x:player.x,y:player.y,a:player.angle,weapon:player.weapon,laserOn:player.laserOn,hp:player.hp,shield:player.shield,shieldMax:shieldMax(),respawn:player.respawn||0},...Array.from(net.remotes.entries()).map(([id,r])=>({id,name:r.name,team:r.team,x:r.x,y:r.y,a:r.a,weapon:r.weapon,laserOn:r.laserOn,hp:r.hp,shield:r.shield,shieldMax:shieldMax(r.defense),respawn:r.respawn||0}))];
  netBroadcast({t:'snapshot',players,bots:net.bots.map(b=>({id:b.id,name:b.name,team:b.team,x:b.x,y:b.y,a:b.a,hp:b.hp,flash:b.flash||0})),intermission:roundBreak.kind?{kind:roundBreak.kind,left:roundBreakLeft()}:null,p:{x:puck.x,y:puck.y,vx:puck.vx,vy:puck.vy,spin:puck.spin,respawn:puck.respawn},cyan:teamGoals,orange:rivalGoals,enemies:net.settings.npcs?enemies.slice(0,20).map(e=>({x:e.x,y:e.y,a:e.a,hp:e.hp,maxHp:e.maxHp,type:e.type,dead:e.dead})):[],activeGrenades:grenades.slice(0,16).map(g=>({id:g.id,by:g.owner,sx:g.sx,sy:g.sy,a:Math.atan2(g.vy,g.vx),range:g.dur*Math.hypot(g.vx,g.vy),radius:g.radius,damage:g.damage,x:g.x,y:g.y,t:g.t}))});
  net.coverClock+=.083;if(net.settings.cover&&net.coverClock>=.7){net.coverClock=0;netBroadcast({t:'cover',list:netCoverPack()});}
@@ -2318,7 +2324,7 @@ if(invited.length===6){$net('netCodeInput').value=invited;$net('netLaunchError')
 
 // Slower growth: +2 per wave instead of +3. Multiplayer also caps at 24 total.
 function npcWavePopulation(w,online=false){const n=5+Math.ceil(Math.max(1,w)*2);return online?Math.min(24,n):n;}
-function nextWave(){wave++;toSpawn=npcWavePopulation(wave);spawnTimer=.15;nextWaveTimer=-1;player.hp=Math.min(100,player.hp+(wave===1?0:22));if(wave>1)refillWeapons();spawnCover(Math.min(4,2+Math.floor(wave/3)));coverSpawnTimer=rand(3.3,5.2);ui.banner.innerHTML=`INCOMING HOSTILES<strong>WAVE ${String(wave).padStart(2,'0')}</strong>`;ui.banner.classList.add('show');bannerUntil=clock+1.8}
+function nextWave(){wave++;toSpawn=npcWavePopulation(wave);spawnTimer=.15;nextWaveTimer=-1;player.hp=Math.min(maxHealth(),player.hp+(wave===1?0:22));if(wave>1)refillWeapons();spawnCover(Math.min(4,2+Math.floor(wave/3)));coverSpawnTimer=rand(3.3,5.2);ui.banner.innerHTML=`INCOMING HOSTILES<strong>WAVE ${String(wave).padStart(2,'0')}</strong>`;ui.banner.classList.add('show');bannerUntil=clock+1.8}
 function update(dt){clock+=dt;
  if(roundBreak.kind){
   if(net.phase==='match')netTick(dt);
