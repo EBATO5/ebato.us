@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
 <meta name="theme-color" content="#080e17" />
-<title>STRIKE VECTOR v1.5.6 — Balanced Audio & Menu Music</title>
+<title>STRIKE VECTOR v1.5.7 — Live Field Roster & Ready-Up Goals</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{color-scheme:dark;--bg:#080e17;--panel:#101b28;--border:#263746;--mint:#74f7d4;--text:#eef6f7;--muted:#8da4b3;--orange:#ffbd75}
@@ -483,6 +483,31 @@ body.touch-ready #sound{opacity:.95;font-size:10px;padding:5px 9px}
 body.touch-ready #audioSettings{top:auto;bottom:calc(39px + env(safe-area-inset-bottom,0px));left:50%;right:auto;transform:translateX(-50%);max-height:calc(100dvh - 58px);z-index:38}
 @media(max-width:540px){#audioSettings{right:8px;top:54px;padding:15px;max-height:calc(100dvh - 64px)}}
 
+
+/* v1.5.7 // multiplayer field preview & goal ready-up */
+#roundReadyDock{display:none;position:fixed;z-index:75;bottom:calc(20px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);width:min(440px,calc(100vw - 22px));padding:10px 13px;border:1px solid #70cdb8;border-radius:12px;background:linear-gradient(110deg,#0d2a37f7,#0c1f2df8);box-shadow:0 12px 50px #000c;align-items:center;gap:12px;justify-content:space-between}
+#roundReadyDock.active{display:flex}
+#roundReadyDock button{white-space:nowrap;border:1px solid #71edca;background:#195346;color:#d5fff4;padding:11px 15px;border-radius:9px;font:900 12px Oxanium,system-ui;cursor:pointer}
+#roundReadyDock button[aria-pressed="true"]{border-color:#f4bf77;color:#ffdcac;background:#44321f}
+#roundReadyStatus{font-size:11px;line-height:1.55;color:#c4e5e6}#roundReadyStatus strong{color:#9ffff0}
+#fieldSurvey[hidden],#fieldPlayersInShop[hidden]{display:none!important}
+#fieldSurvey{border:1px solid #387b79;border-radius:12px;background:#081c2b;padding:12px;margin:14px 0}
+#fieldSurvey .field-survey-title{font:900 12px Oxanium,system-ui;color:#8affdf;letter-spacing:.14em;margin-bottom:8px}
+#fieldMap{position:relative;aspect-ratio:25/17;width:100%;max-height:270px;border:2px solid #376778;border-radius:10px;background:repeating-linear-gradient(90deg,#102b3a,#102b3a 49px,#173845 50px);overflow:hidden}
+#fieldMap:before{content:'';position:absolute;left:50%;top:0;height:100%;border-left:1px dashed #7bb3b07a}
+.field-goal{position:absolute;top:39%;height:22%;width:8px;border:2px solid #f8b778;background:#ffa95040}
+.field-goal.left{left:0}.field-goal.right{right:0}
+.field-dot{position:absolute;transform:translate(-50%,-50%);min-width:15px;min-height:15px;border-radius:50%;border:2px solid #c5ffff;background:#6aeaff;box-shadow:0 0 10px #7ffeed66}
+.field-dot.orange{background:#ffac59;border-color:#fff0d9;box-shadow:0 0 10px #ffc78099}
+.field-dot.dead{opacity:.45}.field-dot.self{outline:2px solid #fff;outline-offset:3px}
+.field-dot.puck{width:11px;min-width:11px;min-height:11px;background:#fbffcf;border:2px solid #ffe6a0}
+#fieldPeople{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:9px}
+.field-person{font-size:10px;color:#def7f8;padding:6px 8px;background:#163343;border-radius:6px;overflow-wrap:anywhere}
+.field-person.cyan{border-left:3px solid #65efff}.field-person.orange{border-left:3px solid #ffb26e}
+.field-person small{display:block;font-size:9px;color:#a6c0c9;margin-top:2px}
+#fieldPlayersInShop{padding:10px 13px;cursor:pointer;font:800 11px Oxanium,system-ui;background:#153842;color:#d8fcf4;border:1px solid #5cbbaf;border-radius:8px;margin:0 0 12px}
+@media(max-width:520px){#fieldPeople{grid-template-columns:1fr}#roundReadyDock{bottom:calc(9px + env(safe-area-inset-bottom,0px))}}
+
 </style>
 </head>
 <body>
@@ -491,9 +516,9 @@ body.touch-ready #audioSettings{top:auto;bottom:calc(39px + env(safe-area-inset-
   <div class="topbar"><div><div class="brand">STRIKE <span>VECTOR</span></div><div class="subbrand">TACTICAL SURVIVAL SIMULATOR // 13</div></div><div class="topstats"><div><div class="statlabel">WAVE</div><div class="statnum" id="wave">01</div></div><div><div class="statlabel">KILLS</div><div class="statnum" id="kills">000</div></div><div><div class="statlabel">CREDITS</div><div class="statnum" id="credits">$0</div></div><div><div class="statlabel">SCORE</div><div class="statnum" id="score">00000</div></div></div></div>
   <div class="bottom"><div class="leftpanel"><div style="display:flex;justify-content:space-between;align-items:center"><span class="micro">OPERATIVE / HEALTH</span><span class="hpnum" id="health">100</span></div><div class="hpbar"><div class="hpfill" id="hpfill"></div></div><div class="shield-caption"><span>ENERGY SHIELD</span><span id="shieldText">0 / 0</span></div><div class="shieldbar"><div class="shieldfill" id="shieldfill"></div></div><div class="dodge"><span>COMBAT SLIDE</span><b id="dodge">READY</b></div></div><div class="controls"><span><b>WASD</b>MOVE</span><span><b>SHIFT</b>SPRINT</span><span><b>SPACE</b>SLIDE / DODGE</span><span><b>ALT</b>CROUCH</span><span><b>E</b>MELEE</span><span><b>R</b>RELOAD</span><span><b>1 / 2</b>KNIFE / GUN</span><span><b>TAB</b>ARMORY / PAUSE</span><span><b>F</b>FIRE MODE</span><span><b>3–5</b>ALT ABILITIES</span></div><div class="rightpanel"><div class="micro" id="weaponSlot">02 / CUSTOM</div><div class="weapon" id="weapon">9mm · COMPACT</div><div class="ammo" id="ammo">14 <small>/ 120</small></div><div class="alt" id="alt">RMB + LMB · PRECISION SHOT</div></div></div>
 </div>
-<div id="banner"></div><button id="reopenArmory" type="button">⚙ REOPEN ARMORY</button>
+<div id="banner"></div><button id="reopenArmory" type="button">⚙ REOPEN ARMORY</button><div id="roundReadyDock" role="group" aria-label="Goal ready-up"><div id="roundReadyStatus" aria-live="polite">READY 0 / 1</div><button id="roundReadyButton" type="button" aria-pressed="false">✓ READY UP</button></div>
 <div id="touchControls" aria-label="Mobile combat controls">
- <div class="touch-bar"><button type="button" data-touch="armory">⚙ ARMORY</button><button type="button" class="mp-only" data-touch="team">⇄ TEAM</button><button type="button" class="mp-only" data-touch="roster">☷ LOBBY</button><button type="button" data-touch="pause">Ⅱ PAUSE</button></div>
+ <div class="touch-bar"><button type="button" data-touch="armory">⚙ ARMORY</button><button type="button" class="mp-only" data-touch="roster">☷ LOBBY</button><button type="button" data-touch="pause">Ⅱ PAUSE</button></div>
  <div class="touch-stick" id="touchMove" role="group" aria-label="Movement joystick"><span class="touch-stick-label">MOVE</span><div class="touch-thumb"></div></div>
  <div class="touch-stick" id="touchAim" role="group" aria-label="Aim and fire joystick"><span class="touch-stick-label">AIM / FIRE</span><div class="touch-thumb"></div></div>
  <div class="touch-actions">
@@ -525,7 +550,7 @@ body.touch-ready #audioSettings{top:auto;bottom:calc(39px + env(safe-area-inset-
 <div class="net-overlay hidden" id="netLobby" role="dialog" aria-modal="true" aria-labelledby="netLobbyTitle">
  <section class="net-panel"><div class="net-kicker">EBATO // TACTICAL MATCHMAKING</div><h2 id="netLobbyTitle">STRIKE <span>VECTOR</span> / ARENA</h2>
  <p id="netLobbyStatus" aria-live="polite">Connecting…</p><div class="net-code" id="netLobbyCode">------</div>
- <div class="net-options" style="margin-top:11px"><button class="net-btn" id="netCopyInvite">COPY INVITE LINK</button><button class="net-btn" id="netLeave">LEAVE LOBBY</button></div>
+ <div class="net-options" style="margin-top:11px"><button class="net-btn" id="netCopyInvite">COPY INVITE LINK</button><button class="net-btn" id="netLeave">LEAVE LOBBY</button></div><section id="fieldSurvey" aria-label="Live battlefield positions" hidden><div class="field-survey-title">TACTICAL FIELD // LIVE PLAYER POSITIONS</div><div id="fieldMap" role="img" aria-label="Live map of player positions and puck"><div class="field-goal left"></div><div class="field-goal right"></div><div id="fieldDots"></div></div><div id="fieldPeople"></div></section>
  <hr class="net-separator"><div class="net-kicker">TEAM DRAFT // DRAG OR TAP TO REASSIGN</div>
  <div class="net-options" style="margin-top:9px"><button class="net-btn" id="netChooseCyan">◉ CYAN · ATTACK RIGHT →</button><button class="net-btn" id="netChooseOrange">◉ ORANGE · ATTACK LEFT ←</button></div>
  <div class="net-kicker" style="margin-top:14px">ARENA RULES // HOST CAN CHANGE LIVE</div>
@@ -547,9 +572,9 @@ body.touch-ready #audioSettings{top:auto;bottom:calc(39px + env(safe-area-inset-
  <div class="net-roster" id="netRoster" hidden></div><p>Share your room code to play together. The host controls puck, combat damage, cover, and NPC movement. Cross-network peer connectivity is still experimental.</p>
  <button class="cta" id="netBegin" type="button">START MATCH →</button><button class="net-btn" id="netLobbyClose" type="button" hidden>CLOSE ROSTER</button>
  </section></div>
-<div class="net-dock hidden" id="netDock"><b id="netDockRoom">ROOM</b><button id="netDockTeam" type="button" title="Switch team (T)">SWAP TEAM [T]</button><button id="netDockRoster" type="button" title="Lobby / roster [P]">LOBBY [P]</button></div>
+<div class="net-dock hidden" id="netDock"><b id="netDockRoom">ROOM</b><button id="netDockRoster" type="button" title="Pause / live player roster (ESC or P)">PLAYERS / PAUSE [P]</button></div>
 
-<div id="screen"><section class="modal"><div class="kicker" id="kicker">OPERATION // ARCADE PROTOTYPE</div><h1 id="modalTitle">STRIKE <span>VECTOR</span></h1><p class="intro" id="modalIntro">Start with one 9mm pistol. Fire pellets from a single cartridge, unlock all fire modes in one purchase, and fire or strike during a slide.</p><div class="legend" id="legend"><div class="legend-item"><span class="key">WASD</span>Move / strafe</div><div class="legend-item"><span class="key">MOUSE</span>Tap for semi/burst; hold for automatic fire</div><div class="legend-item"><span class="key">F</span>Switch unlocked SEMI / BURST / AUTO modes</div><div class="legend-item"><span class="key">SPACE</span>Slide / dodge · steer while sliding and fire freely</div><div class="legend-item"><span class="key">SHIFT</span>Hold to sprint</div><div class="legend-item"><span class="key">E</span>Quick buttstock / bayonet strike, even mid-slide</div><div class="legend-item"><span class="key">ALT</span>Hold to crouch · slower movement, tighter spread</div><div class="legend-item"><span class="key">RMB + LMB</span>Precision sniper shot / grenade / power shot</div><div class="legend-item"><span class="key">1 / 2 / 3–5</span>Knife / custom firearm / secondary abilities</div><div class="legend-item"><span class="key">R / TAB</span>Reload / armory pause</div><div class="legend-item"><span class="key">L / ESC</span>Laser [L] · ammo [X] / pause</div></div><div id="shop"><div id="roundBreakPanel" role="timer" aria-label="Intermission countdown"><div><div class="rb-heading" id="rbHeading">GOAL SCORED // SHOP BREAK</div><div class="rb-caption" id="rbCaption">Use the armory. The next round starts automatically.</div></div><div class="rb-count"><span id="rbSeconds">30</span><small> SEC</small></div><div class="rb-bar"><div id="rbProgress"></div></div></div><button type="button" id="touchShopClose">← RESUME GAME</button><div class="shop-summary"><div class="shop-bank" id="shopBank">$0 <small>AVAILABLE</small></div><div class="shop-message" id="shopMessage">BUY / REFUND AS MUCH AS YOU LIKE</div></div><div class="shop-stats" id="shopStats"></div><div class="shop-tabs" id="shopTabs" role="tablist" aria-label="Armory categories"></div><div class="shop-grid" id="shopGrid"></div><div class="shop-note" id="shopNote"></div></div><div class="net-launch" id="netLaunch"><div class="net-launch-head">▣ EBATO // MULTIPLAYER CONNECTION</div><div class="net-entry"><input id="netNickname" class="net-input" maxlength="18" aria-label="Your multiplayer nickname" placeholder="Your callsign" value="Operative"><input id="netCodeInput" class="net-input" maxlength="6" autocomplete="off" aria-label="Lobby code" placeholder="ROOM CODE (JOIN)"></div><div class="net-actions"><button class="net-btn" type="button" id="netCreate">+ CREATE LOBBY</button><button class="net-btn" type="button" id="netJoin">→ JOIN LOBBY</button></div><div class="net-launch-note">Live peer-to-peer rooms, up to 8 players. Share a six-character code or invite link. Press <b>T</b> anytime in a match to swap teams. Host must stay online.</div><div class="net-error" id="netLaunchError" role="status" aria-live="polite"></div></div><button type="button" id="puckModeToggle" aria-pressed="true">◉ PUCK ARENA: ON · SHOOT THE PUCK INTO THE ORANGE GOAL</button><button class="cta" id="start">DEPLOY OPERATIVE →</button><div class="hint" id="hint">Desktop keyboard + mouse recommended · Survive as long as you can</div></section></div>
+<div id="screen"><section class="modal"><div class="kicker" id="kicker">OPERATION // ARCADE PROTOTYPE</div><h1 id="modalTitle">STRIKE <span>VECTOR</span></h1><p class="intro" id="modalIntro">Start with one 9mm pistol. Fire pellets from a single cartridge, unlock all fire modes in one purchase, and fire or strike during a slide.</p><div class="legend" id="legend"><div class="legend-item"><span class="key">WASD</span>Move / strafe</div><div class="legend-item"><span class="key">MOUSE</span>Tap for semi/burst; hold for automatic fire</div><div class="legend-item"><span class="key">F</span>Switch unlocked SEMI / BURST / AUTO modes</div><div class="legend-item"><span class="key">SPACE</span>Slide / dodge · steer while sliding and fire freely</div><div class="legend-item"><span class="key">SHIFT</span>Hold to sprint</div><div class="legend-item"><span class="key">E</span>Quick buttstock / bayonet strike, even mid-slide</div><div class="legend-item"><span class="key">ALT</span>Hold to crouch · slower movement, tighter spread</div><div class="legend-item"><span class="key">RMB + LMB</span>Precision sniper shot / grenade / power shot</div><div class="legend-item"><span class="key">1 / 2 / 3–5</span>Knife / custom firearm / secondary abilities</div><div class="legend-item"><span class="key">R / TAB</span>Reload / armory pause</div><div class="legend-item"><span class="key">L / ESC</span>Laser [L] · ammo [X] / pause</div></div><div id="shop"><div id="roundBreakPanel" role="timer" aria-label="Intermission countdown"><div><div class="rb-heading" id="rbHeading">GOAL SCORED // SHOP BREAK</div><div class="rb-caption" id="rbCaption">Use the armory. The next round starts automatically.</div></div><div class="rb-count"><span id="rbSeconds">45</span><small> SEC</small></div><div class="rb-bar"><div id="rbProgress"></div></div></div><button type="button" id="touchShopClose">← RESUME GAME</button><div class="shop-summary"><div class="shop-bank" id="shopBank">$0 <small>AVAILABLE</small></div><div class="shop-message" id="shopMessage">BUY / REFUND AS MUCH AS YOU LIKE</div></div><button id="fieldPlayersInShop" type="button" hidden>☷ VIEW PLAYERS / LIVE FIELD (ESC)</button><div class="shop-stats" id="shopStats"></div><div class="shop-tabs" id="shopTabs" role="tablist" aria-label="Armory categories"></div><div class="shop-grid" id="shopGrid"></div><div class="shop-note" id="shopNote"></div></div><div class="net-launch" id="netLaunch"><div class="net-launch-head">▣ EBATO // MULTIPLAYER CONNECTION</div><div class="net-entry"><input id="netNickname" class="net-input" maxlength="18" aria-label="Your multiplayer nickname" placeholder="Your callsign" value="Operative"><input id="netCodeInput" class="net-input" maxlength="6" autocomplete="off" aria-label="Lobby code" placeholder="ROOM CODE (JOIN)"></div><div class="net-actions"><button class="net-btn" type="button" id="netCreate">+ CREATE LOBBY</button><button class="net-btn" type="button" id="netJoin">→ JOIN LOBBY</button></div><div class="net-launch-note">Live peer-to-peer rooms, up to 8 players. Share a six-character code or invite link. Press <b>T</b> anytime in a match to swap teams. Host must stay online.</div><div class="net-error" id="netLaunchError" role="status" aria-live="polite"></div></div><button type="button" id="puckModeToggle" aria-pressed="true">◉ PUCK ARENA: ON · SHOOT THE PUCK INTO THE ORANGE GOAL</button><button class="cta" id="start">DEPLOY OPERATIVE →</button><div class="hint" id="hint">Desktop keyboard + mouse recommended · Survive as long as you can</div></section></div>
 <script>
 (()=>{'use strict';
 const canvas=document.getElementById('game'),ctx=canvas.getContext('2d',{alpha:false});
@@ -563,7 +588,7 @@ const isCrouching=()=>keys.has('AltLeft')||keys.has('AltRight')||touchState.crou
 const WORLD={w:2500,h:1700},TAU=Math.PI*2,clamp=(v,l,h)=>Math.max(l,Math.min(h,v)),rand=(a,b)=>a+Math.random()*(b-a),dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 let player,enemies=[],bullets=[],grenades=[],knives=[],particles=[],texts=[],wave=0,kills=0,score=0,credits=0,shopOpen=false,shopMode="between",toSpawn=0,spawnTimer=0,nextWaveTimer=0,bannerUntil=0,shake=0,obstacles=[],coverSpawnTimer=5;
 let puckEnabled=true,puck=null,teamGoals=0,rivalGoals=0,goalFlash=0;
-const roundBreak={kind:'',until:0,duration:0,lastShown:-1};
+const roundBreak={kind:'',until:0,duration:0,lastShown:-1,ready:new Set(),humans:1};
 let netGrenadeSeq=0;
 const net={mode:'solo',phase:'off',peer:null,conn:null,clients:new Map(),remotes:new Map(),bots:[],botSeq:0,id:'',code:'',name:'',team:'cyan',sendClock:0,coverClock:0,npcClock:0,npcRemaining:0,connected:false,started:false,lastHostAt:0,settings:{npcs:false,cover:false,pvp:true,npcPuck:true,teamLock:false}};
 let shopTab='gun',selectedTreeNode='core',treePopupOpen=false,treePan={x:0,y:0},treeScale=1,treePanReady=false,treeDrag=null,treeSuppressUntil=0;let soundOn=true,sfxVolume=100,ac=null,sfxBus=null,activeVoices=0;const soundTimes=Object.create(null);function sound(kind){if(!soundOn||sfxVolume<=0||activeVoices>=8)return;const now=performance.now(),limit=(kind==='hit'?65:kind==='pistol'||kind==='rifle'?36:kind==='grenade'?75:22);if(now-(soundTimes[kind]||-1000)<limit)return;soundTimes[kind]=now;try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();
@@ -1385,7 +1410,7 @@ function showScreen(type){
  }else if(type==='pause'){
   ui.kicker.textContent='OPERATION SUSPENDED';ui.title.innerHTML='ON <span>HOLD</span>';ui.intro.textContent='Your operative is paused. Resume when ready.';ui.legend.style.display='grid';ui.start.textContent='RESUME OPERATION →';ui.hint.textContent='ESC resumes · TAB opens armory';
  }else{
-  ui.kicker.textContent='OPERATION // MODULAR ARSENAL';ui.title.innerHTML='STRIKE <span>VECTOR</span>';ui.intro.textContent='Play survival solo, or create a live multiplayer puck arena lobby with friends. Shoot the puck, launch it with grenades, and swap teams freely. Explosions hit hardest.';ui.legend.style.display='grid';ui.start.textContent='DEPLOY OPERATIVE →';ui.hint.textContent='SOLO: Deploy operative · ONLINE: Create or join a room above · SPACE slide · E melee · T swap team';
+  ui.kicker.textContent='OPERATION // MODULAR ARSENAL';ui.title.innerHTML='STRIKE <span>VECTOR</span>';ui.intro.textContent='Play survival solo, or create a live multiplayer puck arena lobby with friends. Shoot the puck, launch it with grenades, and swap teams freely. Explosions hit hardest.';ui.legend.style.display='grid';ui.start.textContent='DEPLOY OPERATIVE →';ui.hint.textContent='SOLO: Deploy operative · ONLINE: Create or join a room above · SPACE slide · E melee · P players';
  }
 }
 function begin(){if(roundBreak.kind)return;if(net.phase==='match'&&shopOpen){closeFieldShop();return;}if(net.mode!=='solo')return;lastShiftTap=-Infinity;renderedStill=false;if(shopOpen){const cleared=shopMode==='between';closeFieldShop();if(cleared)nextWave();sound('buy');return}if(!started||ended){reset();started=true}paused=false;ui.puckBoard.hidden=!puckEnabled;ui.screen.classList.add('hidden');sound('dodge');playMusic()}
@@ -1398,7 +1423,6 @@ window.addEventListener('keydown',e=>{const c=e.code;
  if((e.target instanceof HTMLInputElement)||(e.target instanceof HTMLTextAreaElement))return;
  if(c==='Escape'&&!audioSettings.hidden){e.preventDefault();setAudioPanel(false);return;}
  if(c==='KeyM'&&!e.repeat){e.preventDefault();setMusicOn(!musicOn);return;}
- if(net.phase==='match'&&c==='KeyT'&&!e.repeat){netTeam(net.team==='cyan'?'orange':'cyan');return}
  if(net.phase==='match'&&c==='KeyP'&&!e.repeat){netShowLobby($net('netLobby').classList.contains('hidden'));return}
  if(net.phase==='match'&&!$net('netLobby').classList.contains('hidden')){if(c==='Escape'){netShowLobby(false);return;}return;}
 
@@ -1771,7 +1795,7 @@ function scorePuck(side){
   burst(puck.x,puck.y,55,playerScored?'#7df7ff':'#ffab52',300);
   ui.banner.innerHTML=winning+' TEAM GOAL!'+`<strong>${teamGoals} : ${rivalGoals}</strong>`;
   ui.banner.classList.add('show');bannerUntil=clock+1.8;
-  resetPuck();puck.respawn=1.5;sound('buy');syncUI(1);startRoundBreak('goal',30);return;
+  resetPuck();puck.respawn=1.5;sound('buy');syncUI(1);startRoundBreak('goal',45);return;
  }
  if(playerScored){
   teamGoals++;
@@ -1784,7 +1808,7 @@ function scorePuck(side){
  ui.banner.innerHTML=(playerScored?'GOAL SCORED':'RIVAL GOAL')+`<strong>${teamGoals} : ${rivalGoals}</strong>`;
  ui.banner.classList.add('show');bannerUntil=clock+1.8;
  const p=puck;resetPuck();puck.respawn=1.5;
- sound('buy');syncUI(1);startRoundBreak('goal',30);
+ sound('buy');syncUI(1);startRoundBreak('goal',45);
 }
 function updatePuck(dt){
  if(!puckEnabled||!puck)return;
@@ -2267,8 +2291,7 @@ function netUpdateLobby(){
  $net('netChooseCyan').classList.toggle('selected',net.team==='cyan');
  $net('netChooseOrange').classList.toggle('selected',net.team==='orange');
  $net('netDockRoom').textContent=net.code;
- $net('netDockTeam').textContent=(net.team==='cyan'?'CYAN':'ORANGE')+(net.settings.teamLock&&net.mode==='guest'?' · LOCKED':' · SWITCH [T]');
- $net('netDockTeam').disabled=net.settings.teamLock&&net.mode==='guest';$net('netChooseCyan').disabled=net.settings.teamLock&&net.mode==='guest';$net('netChooseOrange').disabled=net.settings.teamLock&&net.mode==='guest';netRenderTeamBoard();
+ $net('netChooseCyan').disabled=net.settings.teamLock&&net.mode==='guest';$net('netChooseOrange').disabled=net.settings.teamLock&&net.mode==='guest';netRenderTeamBoard();
  $net('netRoster').innerHTML=netRosterData().map(p=>`<div><strong class="${p.team==='orange'?'orange':'cyan'}">${p.team==='orange'?'● ORANGE':'● CYAN'}</strong><br>${p.name.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')}${p.host?' ★ HOST':''}${Number.isFinite(p.hp)?`<br><span class="net-hp">HP ${Math.ceil(p.hp)}</span>`:''}</div>`).join('');
 }
 function netMsg(conn,data){if(conn&&conn.open)try{conn.send(data)}catch(e){console.warn('Peer send failed',e)}}
@@ -2594,7 +2617,6 @@ $net('netChooseCyan').addEventListener('click',()=>netTeam('cyan'));
 $net('netChooseOrange').addEventListener('click',()=>netTeam('orange'));
 $net('netLeave').addEventListener('click',()=>netClose('You left the lobby.'));
 $net('netLobbyClose').addEventListener('click',()=>netShowLobby(false));
-$net('netDockTeam').addEventListener('click',()=>netTeam(net.team==='cyan'?'orange':'cyan'));
 $net('netDockRoster').addEventListener('click',()=>netShowLobby(true));
 $net('netCopyInvite').addEventListener('click',async()=>{const url=new URL(location.href);url.searchParams.set('room',net.code);try{await navigator.clipboard.writeText(url.href);$net('netLobbyStatus').textContent='INVITE LINK COPIED ✓';}catch(e){$net('netLobbyStatus').textContent='ROOM '+net.code+' · Share this code with a friend.'}});
 const invited=safeCode(new URLSearchParams(location.search).get('room'));
@@ -2736,8 +2758,14 @@ for(let i=grenades.length-1;i>=0;i--){
 for(let i=knives.length-1;i>=0;i--){const k=knives[i];k.t-=dt;let dead=false,steps=Math.max(1,Math.ceil(Math.hypot(k.vx*dt,k.vy*dt)/14));for(let s=0;s<steps;s++){k.x+=k.vx*dt/steps;k.y+=k.vy*dt/steps;if(puckEnabled&&puck&&puck.respawn===0&&Math.hypot(k.x-puck.x,k.y-puck.y)<puck.r+6){const n=Math.hypot(k.vx,k.vy)||1;puckImpulse(puck.x,puck.y,k.vx/n*490,k.vy/n*490,'shot','player');dead=true;break;}const o=intersectsCover(k.x,k.y,5);if(k.t<=0||o||k.x<49||k.y<49||k.x>WORLD.w-49||k.y>WORLD.h-49){if(o)damageCover(o,k.damage*.45,k.x,k.y);dead=true;burst(k.x,k.y,3,'#c9f0ed',70);break}for(const e of enemies){if(e.dead)continue;if(Math.hypot(k.x-e.x,k.y-e.y)<e.r+7){hurtEnemy(e,k.damage,k.x,k.y,'player',k.vx,k.vy,380);dead=true;break}}if(dead)break}if(dead)knives.splice(i,1)}
 updatePuck(dt);goalFlash=Math.max(0,goalFlash-dt);
 for(let i=particles.length-1;i>=0;i--){let p=particles[i];p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=Math.max(0,1-dt*3);p.vy*=Math.max(0,1-dt*3);if(p.life<=0)particles.splice(i,1)}for(let i=texts.length-1;i>=0;i--){let t=texts[i];t.t+=dt;t.y-=30*dt;if(t.t>t.max)texts.splice(i,1)}
-if(net.phase==='match'&&net.mode==='host'&&net.settings.npcs&&net.npcRemaining===0&&enemies.length===0&&!roundBreak.kind)startRoundBreak('wave',10);
-if(net.phase!=='match'&&toSpawn===0&&enemies.length===0&&nextWaveTimer<0&&!shopOpen&&!roundBreak.kind)startRoundBreak('wave',10)
+if(net.phase==='match'&&net.mode==='host'&&net.settings.npcs&&net.npcRemaining===0&&enemies.length===0&&!roundBreak.kind){
+ const stipend=180+wave*70;credits+=stipend;netBroadcast({t:'reward',credits:stipend,points:0});
+ wave++;net.npcRemaining=npcWavePopulation(wave,true);net.npcClock=.4;
+ ui.banner.innerHTML='NEXT ENEMY WAVE<strong>WAVE '+wave+'</strong>';ui.banner.classList.add('show');bannerUntil=clock+1.6;
+}
+if(net.phase!=='match'&&toSpawn===0&&enemies.length===0&&nextWaveTimer<0&&!shopOpen&&!roundBreak.kind){
+ credits+=170+wave*55;nextWave();
+}
 }
 function rr(x,y,w,h,r=8){ctx.beginPath();ctx.roundRect(x,y,w,h,r)}
 function bg(){ctx.fillStyle='#0a1720';ctx.fillRect(0,0,sw,sh);ctx.save();ctx.translate(-cam.x,-cam.y);ctx.fillStyle='#10222c';ctx.fillRect(0,0,WORLD.w,WORLD.h);
@@ -2891,7 +2919,7 @@ function reticle(){
 }
 let uiTimer=0;function syncUI(dt){
  uiTimer-=dt;if(uiTimer>0)return;uiTimer=.06;if(shopOpen)refreshAffordableNodes();
- ui.wave.textContent=net.phase==='match'?'MP':String(wave).padStart(2,'0');ui.kills.textContent=String(kills).padStart(3,'0');ui.score.textContent=String(score).padStart(5,'0');ui.credits.textContent='$'+credits.toLocaleString();ui.puckBoard.hidden=!puckEnabled||!started;ui.puckBoard.classList.toggle('online',net.phase==='match');ui.puckBoard.querySelector('.puck-head').textContent=net.phase==='match'?'ONLINE PUCK ARENA // '+net.code:'PUCK ARENA // BONUS OBJECTIVE';ui.puckBoard.querySelector('.puck-tally').firstChild.textContent=net.phase==='match'?'CYAN ':'YOU ';ui.puckBoard.querySelector('.puck-tally span').textContent=net.phase==='match'?' ORANGE':' RIVALS';ui.puckPlayerGoals.textContent=String(teamGoals);ui.puckEnemyGoals.textContent=String(rivalGoals);if(puckEnabled&&puck){const pdx=puck.x-player.x,pdy=puck.y-player.y;const arrow=Math.abs(pdx)>Math.abs(pdy)?(pdx>=0?'→':'←'):(pdy>=0?'↓':'↑');ui.puckDirection.innerHTML=puck.respawn>0?'PUCK RESETTING…':`PUCK ${arrow} ${Math.round(Math.hypot(pdx,pdy))}m · ${net.phase==='match'?(net.team==='cyan'?'ATTACK ORANGE →':'ATTACK CYAN ←'):'SCORE IN ORANGE GOAL'} · <strong>${net.phase==='match'?'T SWAPS TEAMS':'+2,500 PTS'}</strong>`;}ui.health.textContent=player.hp<=0&&net.phase==='match'?'RESPAWN':Math.ceil(player.hp)+' / '+maxHealth();ui.hpfill.style.width=clamp(player.hp/maxHealth()*100,0,100)+'%';document.getElementById('shieldText').textContent=Math.ceil(player.shield)+' / '+shieldMax();document.getElementById('shieldfill').style.width=(shieldMax()?100*player.shield/shieldMax():0)+'%';ui.dodge.textContent=player.roll>0?'SLIDING':player.rollCd>0?player.rollCd.toFixed(1)+'s':'READY';ui.dodge.style.color=player.rollCd>0?'#e9b27f':'#c5faf0';
+ ui.wave.textContent=net.phase==='match'?'MP':String(wave).padStart(2,'0');ui.kills.textContent=String(kills).padStart(3,'0');ui.score.textContent=String(score).padStart(5,'0');ui.credits.textContent='$'+credits.toLocaleString();ui.puckBoard.hidden=!puckEnabled||!started;ui.puckBoard.classList.toggle('online',net.phase==='match');ui.puckBoard.querySelector('.puck-head').textContent=net.phase==='match'?'ONLINE PUCK ARENA // '+net.code:'PUCK ARENA // BONUS OBJECTIVE';ui.puckBoard.querySelector('.puck-tally').firstChild.textContent=net.phase==='match'?'CYAN ':'YOU ';ui.puckBoard.querySelector('.puck-tally span').textContent=net.phase==='match'?' ORANGE':' RIVALS';ui.puckPlayerGoals.textContent=String(teamGoals);ui.puckEnemyGoals.textContent=String(rivalGoals);if(puckEnabled&&puck){const pdx=puck.x-player.x,pdy=puck.y-player.y;const arrow=Math.abs(pdx)>Math.abs(pdy)?(pdx>=0?'→':'←'):(pdy>=0?'↓':'↑');ui.puckDirection.innerHTML=puck.respawn>0?'PUCK RESETTING…':`PUCK ${arrow} ${Math.round(Math.hypot(pdx,pdy))}m · ${net.phase==='match'?(net.team==='cyan'?'ATTACK ORANGE →':'ATTACK CYAN ←'):'SCORE IN ORANGE GOAL'} · <strong>${net.phase==='match'?'P VIEW PLAYERS':'+2,500 PTS'}</strong>`;}ui.health.textContent=player.hp<=0&&net.phase==='match'?'RESPAWN':Math.ceil(player.hp)+' / '+maxHealth();ui.hpfill.style.width=clamp(player.hp/maxHealth()*100,0,100)+'%';document.getElementById('shieldText').textContent=Math.ceil(player.shield)+' / '+shieldMax();document.getElementById('shieldfill').style.width=(shieldMax()?100*player.shield/shieldMax():0)+'%';ui.dodge.textContent=player.roll>0?'SLIDING':player.rollCd>0?player.rollCd.toFixed(1)+'s':'READY';ui.dodge.style.color=player.rollCd>0?'#e9b27f':'#c5faf0';
  if(player.weapon===2){ui.weapon.textContent='COMBAT KNIFE';ui.weaponSlot.textContent='01 / MELEE · '+(toSpawn+enemies.length)+(net.phase==='match'?' ONLINE TEAM ARENA':' HOSTILES LEFT');ui.ammo.innerHTML=(player.throwKnives===Infinity?'∞':player.throwKnives)+' <small>THROWING KNIVES</small>';ui.alt.textContent='SPACE / LMB · SLASH · RMB + LMB · THROW';return}
  ui.weapon.textContent=gunSpec().name+(projectileCount()>1?' · ×'+projectileCount()+' PELLETS':'')+' · '+fireModeLabel();ui.weaponSlot.textContent='02 / CUSTOM FIREARM · '+(toSpawn+enemies.length)+(net.phase==='match'?' ONLINE TEAM ARENA':' HOSTILES LEFT');
  ui.ammo.innerHTML=player.reload>0?`<span style="font-size:16px;color:#ffbf87">RELOADING ${player.reload.toFixed(1)}s</span>`:`${player.gun} <small>/ ${player.gunReserve===Infinity?'∞':player.gunReserve}</small>`;
