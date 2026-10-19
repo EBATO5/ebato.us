@@ -1327,16 +1327,16 @@ function finishRoundBreak(confirmedByHost=false){
  const kind=roundBreak.kind;roundBreak.kind='';roundBreak.until=0;roundBreak.lastShown=-1;roundBreak.ready.clear();roundBreak.humans=1;
  shopOpen=false;treePopupOpen=false;paused=false;ui.screen.classList.add('hidden');renderRoundBreakClock(true);updateRoundReady();keys.clear();fireHeld=false;altHeld=false;secondaryPending=false;
  if(net.phase==='match'){
-  if(kind==='goal'){
-   netResetLocal();puck.respawn=.55;if(net.mode==='host')for(const b of net.bots)netPlaceBot(b);
-   if(net.mode==='host')for(const [id,r] of net.remotes){const pt=netGoalSpawn(r.team);r.x=pt.x;r.y=pt.y;r.kvx=0;r.kvy=0;r.hp=maxHealth(r.defense);r.shield=shieldMax(r.defense);r.shieldHitAt=-999;r.respawn=0;r.invulUntil=clock+1.5;netMsg(net.clients.get(id),{t:'health',hp:r.hp,maxHp:maxHealth(r.defense),shield:r.shield,respawn:0,x:r.x,y:r.y});}
+  // Ready-up/expiry closes the roster as well as the armory for every player.
+  $net('netLobby').classList.add('hidden');
+  netResetLocal();puck.respawn=.55;
+  if(net.mode==='host'){
+   for(const bot of net.bots)netPlaceBot(bot);
+   for(const [id,r] of net.remotes){const pt=netGoalSpawn(r.team);r.x=pt.x;r.y=pt.y;r.kvx=0;r.kvy=0;r.hp=maxHealth(r.defense);r.shield=shieldMax(r.defense);r.shieldHitAt=-999;r.respawn=0;r.invulUntil=clock+1.5;netMsg(net.clients.get(id),{t:'health',hp:r.hp,maxHp:maxHealth(r.defense),shield:r.shield,respawn:0,x:r.x,y:r.y});}
+   if(net.settings.npcs){enemies=[];wave=Math.max(1,wave);net.npcRemaining=npcWavePopulation(wave,true);net.npcClock=.4;}
+   netBroadcast({t:'resume',kind,wave});
   }
-  if(net.mode==='host'&&net.settings.npcs){
-   if(kind==='goal'){enemies=[];net.npcRemaining=0;wave=Math.max(1,wave);}
-   if(kind==='wave'||kind==='goal'){if(kind==='wave')wave++;net.npcRemaining=npcWavePopulation(wave,true);net.npcClock=.4;}
-  }
-  if(net.mode==='host')netBroadcast({t:'resume',kind,wave});
- }else if(kind==='wave'){nextWave();}
+ }
  syncUI(1);
 }
 function openShop(mode='between',award=true){
