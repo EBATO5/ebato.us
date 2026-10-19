@@ -1254,45 +1254,78 @@ function renderShop(){
 
 ui.shopTabs.addEventListener('click',e=>{const button=e.target.closest('button[data-tab]');if(!button||!shopOpen)return;shopTab=button.dataset.tab;renderShop();});
 function roundBreakLeft(){return roundBreak.kind?Math.max(0,roundBreak.until-clock):0;}
+function breakHumanIds(){return net.phase==='match'&&net.mode==='host'?['host',...net.clients.keys()]:net.phase==='match'&&net.mode==='guest'?[net.id,...net.remotes.keys()].filter(id=>id&&!id.startsWith('bot-')):['solo'];}
+function updateRoundReady(){
+ const active=roundBreak.kind==='goal',dock=document.getElementById('roundReadyDock');
+ dock.classList.toggle('active',active);
+ if(!active)return;
+ const id=net.phase==='match'?(net.mode==='host'?'host':net.id):'solo',ready=roundBreak.ready.has(id);
+ const count=Math.min(roundBreak.humans,roundBreak.ready.size);
+ document.getElementById('roundReadyStatus').innerHTML='<strong>'+count+' / '+roundBreak.humans+' READY</strong> · '+Math.ceil(roundBreakLeft())+'s<br>'+(count===roundBreak.humans?'All players ready — starting!':'Ready up to begin before the countdown ends');
+ const button=document.getElementById('roundReadyButton');
+ button.textContent=ready?'✓ READY — CANCEL':'✓ READY UP';
+ button.setAttribute('aria-pressed',String(ready));
+}
+function broadcastReadyState(){
+ if(net.phase!=='match'||net.mode!=='host'||roundBreak.kind!=='goal')return;
+ roundBreak.humans=breakHumanIds().length;
+ netBroadcast({t:'readyState',ids:[...roundBreak.ready],total:roundBreak.humans});
+ renderRoundBreakClock(true);updateRoundReady();
+}
+function maybeFinishReadyBreak(){
+ if(roundBreak.kind!=='goal'||net.phase!=='match'||net.mode!=='host')return;
+ const humans=breakHumanIds();
+ if(humans.length>0&&humans.every(id=>roundBreak.ready.has(id)))finishRoundBreak();
+}
+function toggleRoundReady(){
+ if(roundBreak.kind!=='goal')return;
+ const id=net.phase==='match'?(net.mode==='host'?'host':net.id):'solo';
+ if(roundBreak.ready.has(id))roundBreak.ready.delete(id);else roundBreak.ready.add(id);
+ updateRoundReady();
+ if(net.phase!=='match'){if(roundBreak.ready.has('solo'))finishRoundBreak();return;}
+ if(net.mode==='guest'){netMsg(net.conn,{t:'ready',ready:roundBreak.ready.has(id)});return;}
+ broadcastReadyState();maybeFinishReadyBreak();
+}
+document.getElementById('roundReadyButton').addEventListener('click',toggleRoundReady);
 function renderRoundBreakClock(force=false){
  const active=!!roundBreak.kind,el=document.getElementById('roundBreakPanel');
  el.classList.toggle('active',active);
  document.getElementById('reopenArmory').classList.toggle('active',active&&!shopOpen);
  ui.start.disabled=active;document.getElementById('touchShopClose').disabled=false;
- if(!active)return;
+ if(!active){updateRoundReady();return;}
  const remaining=Math.ceil(roundBreakLeft());
  if(!force&&roundBreak.lastShown===remaining)return;
  roundBreak.lastShown=remaining;
  const goal=roundBreak.kind==='goal';
- document.getElementById('rbHeading').textContent=goal?'GOAL! // MANDATORY ARMORY':'WAVE CLEARED // MANDATORY ARMORY';
- document.getElementById('rbCaption').textContent=goal?'Next point starts together automatically':'Next wave begins when the timer reaches zero';
+ document.getElementById('rbHeading').textContent='GOAL! // 45-SECOND ARMORY';
+ document.getElementById('rbCaption').textContent='Everyone can ready up to resume early';
  document.getElementById('rbSeconds').textContent=String(remaining).padStart(2,'0');
  document.getElementById('rbProgress').style.width=(100*roundBreakLeft()/Math.max(1,roundBreak.duration)).toFixed(1)+'%';
- ui.kicker.textContent=goal?'EBATO // POINT INTERMISSION':'EBATO // WAVE INTERMISSION';
- ui.title.innerHTML=goal?'GOAL <span>INTERMISSION</span>':'WAVE <span>COMPLETE</span>';
- ui.intro.textContent=goal?'30-second shopping window. All players return to the arena together.':'10-second shopping window before the next wave of enemies.';
+ ui.kicker.textContent='EBATO // POINT INTERMISSION';
+ ui.title.innerHTML='GOAL <span>INTERMISSION</span>';
+ ui.intro.textContent='45 seconds to upgrade. The next point starts when everyone is ready.';
  ui.start.textContent='NEXT ROUND AUTOMATICALLY · '+remaining+'s';
  document.getElementById('touchShopClose').textContent='← CLOSE ARMORY · '+remaining+'s';
  document.getElementById('reopenArmory').textContent='⚙ REOPEN ARMORY · '+remaining+'s';
- ui.hint.textContent='Mandatory break · purchase or refund upgrades now · no early skip';
+ ui.hint.textContent='Upgrade freely, then press READY UP to skip the remaining time';updateRoundReady();
 }
-function startRoundBreak(kind,seconds=kind==='goal'?30:10,remote=false){
- if(roundBreak.kind)return;
+function startRoundBreak(kind,seconds=45,remote=false){
+ if(kind!=='goal'||roundBreak.kind)return;
  if(net.phase==='match'&&net.mode==='guest'&&!remote)return;
- roundBreak.kind=kind;roundBreak.duration=seconds;roundBreak.until=clock+seconds;roundBreak.lastShown=-1;
+ roundBreak.kind=kind;roundBreak.duration=seconds;roundBreak.until=clock+seconds;roundBreak.lastShown=-1;roundBreak.ready.clear();roundBreak.humans=breakHumanIds().length;
  // Freeze ballistics and enemy movement while the whole field is in the armory.
  fireHeld=false;altHeld=false;secondaryPending=false;keys.clear();bullets=[];grenades=[];knives=[];
  if(shopOpen){shopOpen=false;ui.screen.classList.add('hidden');}
  openShop(net.phase==='match'||kind==='goal'?'field':'between');
  paused=false; // Freeze is performed in update; the timer and networking still tick.
  renderRoundBreakClock(true);
- if(net.phase==='match'&&net.mode==='host'){if(kind==='wave'){const stipend=180+wave*70;credits+=stipend;netBroadcast({t:'reward',credits:stipend,points:0});}netBroadcast({t:'break',kind,seconds});}
+ if(net.phase==='match'&&net.mode==='host'){netBroadcast({t:'break',kind,seconds});broadcastReadyState();}
 }
 function finishRoundBreak(confirmedByHost=false){
  if(!roundBreak.kind)return;
  if(net.phase==='match'&&net.mode==='guest'&&!confirmedByHost)return;
- const kind=roundBreak.kind;roundBreak.kind='';roundBreak.until=0;roundBreak.lastShown=-1;
- shopOpen=false;treePopupOpen=false;paused=false;ui.screen.classList.add('hidden');renderRoundBreakClock(true);keys.clear();fireHeld=false;altHeld=false;secondaryPending=false;
+ const kind=roundBreak.kind;roundBreak.kind='';roundBreak.until=0;roundBreak.lastShown=-1;roundBreak.ready.clear();roundBreak.humans=1;
+ shopOpen=false;treePopupOpen=false;paused=false;ui.screen.classList.add('hidden');renderRoundBreakClock(true);updateRoundReady();keys.clear();fireHeld=false;altHeld=false;secondaryPending=false;
  if(net.phase==='match'){
   if(kind==='goal'){
    netResetLocal();puck.respawn=.55;if(net.mode==='host')for(const b of net.bots)netPlaceBot(b);
@@ -1309,7 +1342,7 @@ function finishRoundBreak(confirmedByHost=false){
 function openShop(mode='between',award=true){
  if(shopOpen)return;renderedStill=false;shopOpen=true;shopMode=mode;treePopupOpen=false;treeDrag=null;
  if(mode==='between'&&award){credits+=170+wave*55;bullets=[];grenades=[];knives=[]}
- fireHeld=false;altHeld=false;secondaryPending=false;player.triggerQueue=0;player.burstShots=0;paused=!roundBreak.kind&&net.phase!=='match';keys.clear();showScreen(mode==='field'?'fieldShop':'shop');renderShop();renderRoundBreakClock(true);syncUI(1);
+ fireHeld=false;altHeld=false;secondaryPending=false;player.triggerQueue=0;player.burstShots=0;paused=!roundBreak.kind&&net.phase!=='match';keys.clear();showScreen(mode==='field'?'fieldShop':'shop');document.getElementById('fieldPlayersInShop').hidden=net.phase!=='match';renderShop();renderRoundBreakClock(true);syncUI(1);
 }
 
 // Wheel zooms the skill map at the cursor, not the paused game or browser page.
@@ -2306,7 +2339,7 @@ function netClose(notice=''){const oldMode=net.mode;
  if(oldMode==='host')netBroadcast({t:'closed'});
  for(const c of net.clients.values())try{c.close()}catch(e){}
  try{net.conn?.close()}catch(e){}try{net.peer?.destroy()}catch(e){}
- net.mode='solo';net.phase='off';net.peer=null;net.conn=null;net.clients.clear();net.remotes.clear();net.bots=[];net.botSeq=0;net.code='';net.id='';net.connected=false;net.started=false;net.npcRemaining=0;net.settings={npcs:false,cover:false,pvp:true,npcPuck:true,teamLock:false};
+ roundBreak.kind='';roundBreak.until=0;roundBreak.ready.clear();updateRoundReady();net.mode='solo';net.phase='off';net.peer=null;net.conn=null;net.clients.clear();net.remotes.clear();net.bots=[];net.botSeq=0;net.code='';net.id='';net.connected=false;net.started=false;net.npcRemaining=0;net.settings={npcs:false,cover:false,pvp:true,npcPuck:true,teamLock:false};
  netShowLobby(false);$net('netDock').classList.add('hidden');$net('netLaunchError').textContent=notice;
  if(oldMode!=='solo'){started=false;ended=false;paused=true;shopOpen=false;reset();showScreen('title');}
 }
@@ -2324,7 +2357,7 @@ function netStartMatch(){
  // Start all operatives with the regular 9mm and an underbarrel grenade launcher.
  player.modules.grenade=true;player.secondary='grenade';
  cam.x=player.x-sw*.5;cam.y=player.y-sh*.5;
- net.phase='match';net.started=true;net.sendClock=0;net.npcRemaining=net.settings.npcs&&net.mode==='host'?npcWavePopulation(wave,true):0;player.respawn=0;player.maxHp=maxHealth();player.hp=maxHealth();player.kvx=0;player.kvy=0;player.invul=1.5;if(net.settings.cover&&net.mode==='host')buildLevel();
+ net.phase='match';net.started=true;net.sendClock=0;roundBreak.ready.clear();roundBreak.humans=1;net.npcRemaining=net.settings.npcs&&net.mode==='host'?npcWavePopulation(wave,true):0;player.respawn=0;player.maxHp=maxHealth();player.hp=maxHealth();player.kvx=0;player.kvy=0;player.invul=1.5;if(net.settings.cover&&net.mode==='host')buildLevel();
  $net('netLobby').classList.add('hidden');$net('netDock').classList.remove('hidden');
  ui.screen.classList.add('hidden');ui.puckBoard.hidden=false;netUpdateLobby();syncUI(1);playMusic();
 }
