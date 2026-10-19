@@ -2250,7 +2250,39 @@ function netCoverRestore(list){
   return o;
  }).filter(Boolean);
 }
-function netShowLobby(open){$net('netLobby').classList.toggle('hidden',!open);netUpdateLobby()}
+function netShowLobby(open){$net('netLobby').classList.toggle('hidden',!open);netUpdateLobby();if(open)renderFieldSurvey(true)}
+let nextFieldUpdateAt=0;
+function renderFieldSurvey(force=false){
+ const survey=document.getElementById('fieldSurvey'),visible=net.phase==='match';
+ survey.hidden=!visible;
+ if(!visible||document.getElementById('netLobby').classList.contains('hidden'))return;
+ if(!force&&clock<nextFieldUpdateAt)return;
+ nextFieldUpdateAt=clock+.3;
+ const people=[{id:net.id||'host',name:net.name||'YOU',team:net.team,x:player.x,y:player.y,hp:player.hp,self:true},
+  ...[...net.remotes.entries()].map(([id,r])=>({id,name:r.name,team:r.team,x:r.x,y:r.y,hp:r.hp})),
+  ...net.bots.map(b=>({id:b.id,name:b.name,team:b.team,x:b.x,y:b.y,hp:b.hp,bot:true}))];
+ const layer=document.getElementById('fieldDots'),list=document.getElementById('fieldPeople');
+ layer.replaceChildren();list.replaceChildren();
+ for(const member of people){
+  if(![member.x,member.y].every(Number.isFinite))continue;
+  const dot=document.createElement('span');
+  dot.className='field-dot '+(member.team==='orange'?'orange':'cyan')+(member.hp<=0?' dead':'')+(member.self?' self':'');
+  dot.style.left=clamp(member.x/WORLD.w*100,1.8,98.2)+'%';
+  dot.style.top=clamp(member.y/WORLD.h*100,2.5,97.5)+'%';
+  dot.title=safeName(member.name)+(member.bot?' (AI)':'')+' · '+member.team.toUpperCase()+' · HP '+Math.ceil(member.hp||0);
+  dot.setAttribute('aria-label',dot.title);layer.appendChild(dot);
+  const card=document.createElement('div');card.className='field-person '+member.team;
+  const strong=document.createElement('strong');strong.textContent=safeName(member.name)+(member.self?' (YOU)':'')+(member.bot?' ⚙ AI':'');
+  const detail=document.createElement('small');detail.textContent=member.team.toUpperCase()+' · HP '+Math.ceil(member.hp||0)+(member.hp<=0?' · DOWN':'');
+  card.append(strong,detail);list.appendChild(card);
+ }
+ if(puck&&Number.isFinite(puck.x)&&Number.isFinite(puck.y)){
+  const puckDot=document.createElement('span');puckDot.className='field-dot puck';
+  puckDot.style.left=clamp(puck.x/WORLD.w*100,1.8,98.2)+'%';puckDot.style.top=clamp(puck.y/WORLD.h*100,2.5,97.5)+'%';
+  puckDot.title='PUCK';layer.appendChild(puckDot);
+ }
+}
+document.getElementById('fieldPlayersInShop').addEventListener('click',()=>{if(net.phase==='match')netShowLobby(true);});
 function netRosterData(){
  return [{id:net.id,name:net.name,team:net.team,host:net.mode==='host',hp:net.phase==='match'?player.hp:undefined},
  ...Array.from(net.remotes.entries()).map(([id,r])=>({id,name:r.name,team:r.team,host:net.mode==='guest'&&id==='host',hp:r.hp})),
@@ -2318,13 +2350,14 @@ document.addEventListener('dragend',()=>document.querySelectorAll('.net-team-lan
 function netUpdateLobby(){
  $net('netLobbyCode').textContent=net.code||'------';
  for(const [key,id] of [['npcs','netRuleNPC'],['cover','netRuleCover'],['pvp','netRulePVP'],['npcPuck','netRuleNpcPuck'],['teamLock','netRuleTeamLock']]){const b=$net(id);b.classList.toggle('selected',net.settings[key]);b.setAttribute('aria-pressed',String(!!net.settings[key]));b.disabled=net.mode!=='host';b.firstChild.textContent=(net.settings[key]?'◉':'◯')+' '+(key==='npcs'?'HOSTILE NPCS':key==='cover'?'DESTRUCTIBLE COVER':key==='pvp'?'PLAYER DAMAGE':key==='npcPuck'?'NPC SHOTS MOVE PUCK':'HOST-LOCKED TEAMS');}
- $net('netRulesHelp').textContent=net.mode==='host'?'Drag players between teams; manage bots and rules live.':'Host manages bots and teams. '+(net.settings.teamLock?'Teams are host-locked.':'Team switching allowed.');
+ $net('netRulesHelp').textContent=net.mode==='host'?'Drag players between teams; manage bots and rules live.':'Live team roster and battlefield positions. '+(net.settings.teamLock?'Teams are host-locked.':'Use on-screen controls to change teams.');
  $net('netBegin').hidden=net.mode!=='host'||net.phase!=='lobby';
  $net('netLobbyClose').hidden=net.phase!=='match';
  $net('netChooseCyan').classList.toggle('selected',net.team==='cyan');
  $net('netChooseOrange').classList.toggle('selected',net.team==='orange');
  $net('netDockRoom').textContent=net.code;
  $net('netChooseCyan').disabled=net.settings.teamLock&&net.mode==='guest';$net('netChooseOrange').disabled=net.settings.teamLock&&net.mode==='guest';netRenderTeamBoard();
+ renderFieldSurvey();
  $net('netRoster').innerHTML=netRosterData().map(p=>`<div><strong class="${p.team==='orange'?'orange':'cyan'}">${p.team==='orange'?'● ORANGE':'● CYAN'}</strong><br>${p.name.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')}${p.host?' ★ HOST':''}${Number.isFinite(p.hp)?`<br><span class="net-hp">HP ${Math.ceil(p.hp)}</span>`:''}</div>`).join('');
 }
 function netMsg(conn,data){if(conn&&conn.open)try{conn.send(data)}catch(e){console.warn('Peer send failed',e)}}
@@ -2332,7 +2365,7 @@ function netBroadcast(data){for(const conn of net.clients.values())netMsg(conn,d
 function netSendRoster(){
  if(net.mode!=='host')return;
  netBroadcast({t:'roster',members:netRosterData().map(({id,name,team,host,bot})=>({id,name,team,host,bot}))});
- netUpdateLobby();
+ netUpdateLobby();if(roundBreak.kind==='goal'){broadcastReadyState();maybeFinishReadyBreak();}
 }
 function netJoinRoomInfo(id,r){net.remotes.set(id,{name:safeName(r.name),team:r.team==='orange'?'orange':'cyan',x:WORLD.w*.5,y:WORLD.h*.5,r:18,a:0,weapon:0,laserOn:false,hp:100,kvx:0,kvy:0,defense:{shieldCapacity:0,shieldRegen:0,shieldDelay:0,armor:0,maxHealth:0},meleeTier:0,bayonetOn:false,shield:0,shieldMax:0,shieldHitAt:-999,respawn:0,invulUntil:0,slash:0,seen:performance.now()});netUpdateLobby()}
 function netClose(notice=''){const oldMode=net.mode;
@@ -2369,10 +2402,14 @@ function netHandleHostData(conn,msg){
   if(net.clients.size+net.bots.length>7){netMsg(conn,{t:'error',message:'Lobby full (8 total human and AI players).'});conn.close();return;}
   netJoinRoomInfo(conn.peer,{name:msg.name,team:msg.team});
   netMsg(conn,{t:'welcome',id:conn.peer,code:net.code,started:net.phase==='match',rules:netRules(),members:netRosterData().map(({id,name,team,host,bot})=>({id,name,team,host,bot}))});
-  netSendRoster();if(net.phase==='match'){netMsg(conn,{t:'start'});if(roundBreak.kind)netMsg(conn,{t:'break',kind:roundBreak.kind,seconds:roundBreakLeft()});}
+  netSendRoster();if(net.phase==='match'){netMsg(conn,{t:'start'});if(roundBreak.kind){netMsg(conn,{t:'break',kind:roundBreak.kind,seconds:roundBreakLeft()});netMsg(conn,{t:'readyState',ids:[...roundBreak.ready],total:breakHumanIds().length});}}
   return;
  }
  if(!r)return;
+ if(msg.t==='ready'&&roundBreak.kind==='goal'&&net.phase==='match'){
+  if(msg.ready===true)roundBreak.ready.add(conn.peer);else roundBreak.ready.delete(conn.peer);
+  broadcastReadyState();maybeFinishReadyBreak();return;
+ }
  if(roundBreak.kind&&!['team','selfReset','state'].includes(msg.t))return;
  if(msg.t==='team'){if(net.settings.teamLock)return;r.team=msg.team==='orange'?'orange':'cyan';const pos=netGoalSpawn(r.team);r.x=pos.x;r.y=pos.y;r.kvx=0;r.kvy=0;r.hp=maxHealth(r.defense);r.shield=shieldMax(r.defense);r.shieldHitAt=-999;r.respawn=0;r.invulUntil=clock+1.5;netMsg(conn,{t:'health',hp:r.hp,maxHp:maxHealth(r.defense),shield:r.shield,respawn:0,x:r.x,y:r.y});netSendRoster();return;}
  if(msg.t==='selfReset'&&net.phase==='match'&&!net.settings.teamLock){const pos=netGoalSpawn(r.team);r.x=pos.x;r.y=pos.y;r.kvx=0;r.kvy=0;r.hp=maxHealth(r.defense);r.shield=shieldMax(r.defense);r.shieldHitAt=-999;r.respawn=0;r.invulUntil=clock+1.5;netMsg(conn,{t:'health',hp:r.hp,maxHp:maxHealth(r.defense),shield:r.shield,respawn:0,x:r.x,y:r.y});return;}
@@ -2455,6 +2492,9 @@ function netHandleGuestData(msg){
   netUpdateLobby();return;
  }
  if(msg.t==='rules'){netApplyRules(msg.rules);return;}
+ if(msg.t==='readyState'&&roundBreak.kind==='goal'&&Array.isArray(msg.ids)){
+  roundBreak.ready=new Set(msg.ids.filter(id=>typeof id==='string'&&id.length<150));roundBreak.humans=clamp(Number(msg.total)||1,1,8);renderRoundBreakClock(true);return;
+ }
  if(msg.t==='reward'&&net.phase==='match'){if(Number.isFinite(msg.credits))credits+=clamp(Math.floor(msg.credits),0,10000);if(Number.isFinite(msg.points))score+=clamp(Math.floor(msg.points),0,10000);if(Number.isFinite(msg.kills))kills+=clamp(Math.floor(msg.kills),0,20);if(msg.npcBounty&&msg.credits>0)floatText(player.x,player.y-38,(msg.assist?'ASSIST':'ELIM')+' +$'+Math.floor(msg.credits),msg.assist?'#f8cd86':'#bfffe5');syncUI(1);return;}
  if(msg.t==='impulse'&&net.phase==='match'&&[msg.vx,msg.vy].every(Number.isFinite)){
    player.kvx=clamp((player.kvx||0)+clamp(msg.vx,-1400,1400),-1550,1550);
@@ -2463,11 +2503,11 @@ function netHandleGuestData(msg){
   }
   if(msg.t==='health'&&net.phase==='match'){if(!Number.isFinite(msg.hp))return;player.hp=clamp(msg.hp,0,maxHealth());if(Number.isFinite(msg.shield)){if(msg.shield<player.shield)player.shieldHitAt=clock;player.shield=clamp(msg.shield,0,shieldMax());}player.respawn=clamp(msg.respawn||0,0,5);player.invul=player.hp>0?1.1:0;if(Number.isFinite(msg.x)&&Number.isFinite(msg.y)){player.x=msg.x;player.y=msg.y;player.kvx=0;player.kvy=0;keys.clear();}return;}
  if(msg.t==='start'){netApplyRules(msg.rules||{});if(net.phase!=='match')netStartMatch();return;}
- if(msg.t==='break'&&net.phase==='match'&&(msg.kind==='goal'||msg.kind==='wave')){if(!roundBreak.kind)startRoundBreak(msg.kind,clamp(Number(msg.seconds)||10,1,30),true);else if(roundBreak.kind===msg.kind)roundBreak.until=clock+clamp(Number(msg.seconds)||0,0,30);return;}
+ if(msg.t==='break'&&net.phase==='match'&&msg.kind==='goal'){if(!roundBreak.kind)startRoundBreak('goal',clamp(Number(msg.seconds)||45,1,45),true);else if(roundBreak.kind==='goal')roundBreak.until=clock+clamp(Number(msg.seconds)||0,0,45);return;}
  if(msg.t==='resume'&&net.phase==='match'){finishRoundBreak(true);if(Number.isFinite(msg.wave))wave=msg.wave;return;}
  if(msg.t==='snapshot'&&net.phase==='match'){
   if(!puck)return;
-  if(msg.intermission?.kind){if(!roundBreak.kind)startRoundBreak(msg.intermission.kind,clamp(msg.intermission.left||1,1,30),true);else if(roundBreak.kind===msg.intermission.kind&&Number.isFinite(msg.intermission.left))roundBreak.until=clock+clamp(msg.intermission.left,0,30);}
+  if(msg.intermission?.kind==='goal'){if(!roundBreak.kind)startRoundBreak('goal',clamp(msg.intermission.left||1,1,45),true);else if(roundBreak.kind==='goal'&&Number.isFinite(msg.intermission.left))roundBreak.until=clock+clamp(msg.intermission.left,0,45);if(Array.isArray(msg.intermission.ready)){roundBreak.ready=new Set(msg.intermission.ready);roundBreak.humans=clamp(Number(msg.intermission.humans)||1,1,8);updateRoundReady();}}
   if(msg.p&&[msg.p.x,msg.p.y,msg.p.vx,msg.p.vy].every(Number.isFinite)){
    puck.x=msg.p.x;puck.y=msg.p.y;puck.vx=msg.p.vx;puck.vy=msg.p.vy;puck.spin=msg.p.spin||0;puck.respawn=msg.p.respawn||0;
   }
@@ -2633,13 +2673,13 @@ function netBotAI(dt){
 }
 function netTick(dt){
  if(net.phase!=='match')return;
- net.sendClock+=dt;if(net.sendClock<.083)return;net.sendClock=0;
+ renderFieldSurvey();net.sendClock+=dt;if(net.sendClock<.083)return;net.sendClock=0;
  if(net.mode==='guest'){
   netMsg(net.conn,{t:'state',x:player.x,y:player.y,a:player.angle,kvx:player.kvx||0,kvy:player.kvy||0,weapon:player.weapon,laserOn:player.laserOn,bayonetOn:player.bayonetOn,meleeTier:player.mods.knife,team:net.team,defense:{shieldCapacity:player.mods.shieldCapacity,shieldRegen:player.mods.shieldRegen,shieldDelay:player.mods.shieldDelay,armor:player.mods.armor,maxHealth:player.mods.maxHealth}});return;
  }
  for(const [id,r] of net.remotes){if(r.hp>0&&!roundBreak.kind)rechargeShield(r,.083);if(r.respawn>0){r.respawn=Math.max(0,r.respawn-.083);if(r.respawn<=0){const pos=netGoalSpawn(r.team);r.x=pos.x;r.y=pos.y;r.kvx=0;r.kvy=0;r.hp=maxHealth(r.defense);r.shield=shieldMax(r.defense);r.shieldHitAt=-999;r.invulUntil=clock+1.6;netMsg(net.clients.get(id),{t:'health',hp:r.hp,maxHp:maxHealth(r.defense),shield:r.shield,respawn:0,x:pos.x,y:pos.y});}}}
  const players=[{id:'host',name:net.name,team:net.team,x:player.x,y:player.y,a:player.angle,weapon:player.weapon,laserOn:player.laserOn,hp:player.hp,maxHp:maxHealth(),shield:player.shield,shieldMax:shieldMax(),respawn:player.respawn||0},...Array.from(net.remotes.entries()).map(([id,r])=>({id,name:r.name,team:r.team,x:r.x,y:r.y,a:r.a,weapon:r.weapon,laserOn:r.laserOn,hp:r.hp,maxHp:maxHealth(r.defense),shield:r.shield,shieldMax:shieldMax(r.defense),respawn:r.respawn||0}))];
- netBroadcast({t:'snapshot',players,bots:net.bots.map(b=>({id:b.id,name:b.name,team:b.team,x:b.x,y:b.y,a:b.a,hp:b.hp,flash:b.flash||0})),intermission:roundBreak.kind?{kind:roundBreak.kind,left:roundBreakLeft()}:null,p:{x:puck.x,y:puck.y,vx:puck.vx,vy:puck.vy,spin:puck.spin,respawn:puck.respawn},cyan:teamGoals,orange:rivalGoals,enemies:net.settings.npcs?enemies.slice(0,20).map(e=>({x:e.x,y:e.y,a:e.a,hp:e.hp,maxHp:e.maxHp,type:e.type,dead:e.dead})):[],activeGrenades:grenades.slice(0,16).map(g=>({id:g.id,by:g.owner,sx:g.sx,sy:g.sy,a:Math.atan2(g.vy,g.vx),range:g.dur*Math.hypot(g.vx,g.vy),radius:g.radius,damage:g.damage,x:g.x,y:g.y,t:g.t}))});
+ netBroadcast({t:'snapshot',players,bots:net.bots.map(b=>({id:b.id,name:b.name,team:b.team,x:b.x,y:b.y,a:b.a,hp:b.hp,flash:b.flash||0})),intermission:roundBreak.kind?{kind:roundBreak.kind,left:roundBreakLeft(),ready:[...roundBreak.ready],humans:roundBreak.humans}:null,p:{x:puck.x,y:puck.y,vx:puck.vx,vy:puck.vy,spin:puck.spin,respawn:puck.respawn},cyan:teamGoals,orange:rivalGoals,enemies:net.settings.npcs?enemies.slice(0,20).map(e=>({x:e.x,y:e.y,a:e.a,hp:e.hp,maxHp:e.maxHp,type:e.type,dead:e.dead})):[],activeGrenades:grenades.slice(0,16).map(g=>({id:g.id,by:g.owner,sx:g.sx,sy:g.sy,a:Math.atan2(g.vy,g.vx),range:g.dur*Math.hypot(g.vx,g.vy),radius:g.radius,damage:g.damage,x:g.x,y:g.y,t:g.t}))});
  net.coverClock+=.083;if(net.settings.cover&&net.coverClock>=.7){net.coverClock=0;netBroadcast({t:'cover',list:netCoverPack()});}
 
 }
