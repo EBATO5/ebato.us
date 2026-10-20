@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
 <meta name="theme-color" content="#080e17" />
-<title>STRIKE VECTOR v1.5.7 — Live Field Roster & Ready-Up Goals</title>
+<title>STRIKE VECTOR v1.6.0 — FORT VECTOR Visual Upgrade</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{color-scheme:dark;--bg:#080e17;--panel:#101b28;--border:#263746;--mint:#74f7d4;--text:#eef6f7;--muted:#8da4b3;--orange:#ffbd75}
@@ -513,7 +513,7 @@ body.touch-ready #audioSettings{top:auto;bottom:calc(39px + env(safe-area-inset-
 <body>
 <canvas id="game"></canvas><div id="vignette"></div>
 <div id="hud">
-  <div class="topbar"><div><div class="brand">STRIKE <span>VECTOR</span></div><div class="subbrand">TACTICAL SURVIVAL SIMULATOR // 13</div></div><div class="topstats"><div><div class="statlabel">WAVE</div><div class="statnum" id="wave">01</div></div><div><div class="statlabel">KILLS</div><div class="statnum" id="kills">000</div></div><div><div class="statlabel">CREDITS</div><div class="statnum" id="credits">$0</div></div><div><div class="statlabel">SCORE</div><div class="statnum" id="score">00000</div></div></div></div>
+  <div class="topbar"><div><div class="brand">STRIKE <span>VECTOR</span></div><div class="subbrand">FORT VECTOR // TACTICAL SPORTS COMPLEX</div></div><div class="topstats"><div><div class="statlabel">WAVE</div><div class="statnum" id="wave">01</div></div><div><div class="statlabel">KILLS</div><div class="statnum" id="kills">000</div></div><div><div class="statlabel">CREDITS</div><div class="statnum" id="credits">$0</div></div><div><div class="statlabel">SCORE</div><div class="statnum" id="score">00000</div></div></div></div>
   <div class="bottom"><div class="leftpanel"><div style="display:flex;justify-content:space-between;align-items:center"><span class="micro">OPERATIVE / HEALTH</span><span class="hpnum" id="health">100</span></div><div class="hpbar"><div class="hpfill" id="hpfill"></div></div><div class="shield-caption"><span>ENERGY SHIELD</span><span id="shieldText">0 / 0</span></div><div class="shieldbar"><div class="shieldfill" id="shieldfill"></div></div><div class="dodge"><span>COMBAT SLIDE</span><b id="dodge">READY</b></div></div><div class="controls"><span><b>WASD</b>MOVE</span><span><b>SHIFT</b>SPRINT</span><span><b>SPACE</b>SLIDE / DODGE</span><span><b>ALT</b>CROUCH</span><span><b>E</b>MELEE</span><span><b>R</b>RELOAD</span><span><b>1 / 2</b>KNIFE / GUN</span><span><b>TAB</b>ARMORY / PAUSE</span><span><b>F</b>FIRE MODE</span><span><b>3–5</b>ALT ABILITIES</span></div><div class="rightpanel"><div class="micro" id="weaponSlot">02 / CUSTOM</div><div class="weapon" id="weapon">9mm · COMPACT</div><div class="ammo" id="ammo">14 <small>/ 120</small></div><div class="alt" id="alt">RMB + LMB · PRECISION SHOT</div></div></div>
 </div>
 <div id="banner"></div><button id="reopenArmory" type="button">⚙ REOPEN ARMORY</button><div id="roundReadyDock" role="group" aria-label="Goal ready-up"><div id="roundReadyStatus" aria-live="polite">READY 0 / 1</div><button id="roundReadyButton" type="button" aria-pressed="false">✓ READY UP</button></div>
@@ -575,6 +575,7 @@ body.touch-ready #audioSettings{top:auto;bottom:calc(39px + env(safe-area-inset-
 <div class="net-dock hidden" id="netDock"><b id="netDockRoom">ROOM</b><button id="netDockRoster" type="button" title="Pause / live player roster (ESC or P)">PLAYERS / PAUSE [P]</button></div>
 
 <div id="screen"><section class="modal"><div class="kicker" id="kicker">OPERATION // ARCADE PROTOTYPE</div><h1 id="modalTitle">STRIKE <span>VECTOR</span></h1><p class="intro" id="modalIntro">Start with one 9mm pistol. Fire pellets from a single cartridge, unlock all fire modes in one purchase, and fire or strike during a slide.</p><div class="legend" id="legend"><div class="legend-item"><span class="key">WASD</span>Move / strafe</div><div class="legend-item"><span class="key">MOUSE</span>Tap for semi/burst; hold for automatic fire</div><div class="legend-item"><span class="key">F</span>Switch unlocked SEMI / BURST / AUTO modes</div><div class="legend-item"><span class="key">SPACE</span>Slide / dodge · steer while sliding and fire freely</div><div class="legend-item"><span class="key">SHIFT</span>Hold to sprint</div><div class="legend-item"><span class="key">E</span>Quick buttstock / bayonet strike, even mid-slide</div><div class="legend-item"><span class="key">ALT</span>Hold to crouch · slower movement, tighter spread</div><div class="legend-item"><span class="key">RMB + LMB</span>Precision sniper shot / grenade / power shot</div><div class="legend-item"><span class="key">1 / 2 / 3–5</span>Knife / custom firearm / secondary abilities</div><div class="legend-item"><span class="key">R / TAB</span>Reload / armory pause</div><div class="legend-item"><span class="key">L / ESC</span>Laser [L] · ammo [X] / pause</div></div><div id="shop"><div id="roundBreakPanel" role="timer" aria-label="Intermission countdown"><div><div class="rb-heading" id="rbHeading">GOAL SCORED // SHOP BREAK</div><div class="rb-caption" id="rbCaption">Use the armory. The next round starts automatically.</div></div><div class="rb-count"><span id="rbSeconds">45</span><small> SEC</small></div><div class="rb-bar"><div id="rbProgress"></div></div></div><button type="button" id="touchShopClose">← RESUME GAME</button><div class="shop-summary"><div class="shop-bank" id="shopBank">$0 <small>AVAILABLE</small></div><div class="shop-message" id="shopMessage">BUY / REFUND AS MUCH AS YOU LIKE</div></div><button id="fieldPlayersInShop" type="button" hidden>☷ VIEW PLAYERS / LIVE FIELD (ESC)</button><div class="shop-stats" id="shopStats"></div><div class="shop-tabs" id="shopTabs" role="tablist" aria-label="Armory categories"></div><div class="shop-grid" id="shopGrid"></div><div class="shop-note" id="shopNote"></div></div><div class="net-launch" id="netLaunch"><div class="net-launch-head">▣ EBATO // MULTIPLAYER CONNECTION</div><div class="net-entry"><input id="netNickname" class="net-input" maxlength="18" aria-label="Your multiplayer nickname" placeholder="Your callsign" value="Operative"><input id="netCodeInput" class="net-input" maxlength="6" autocomplete="off" aria-label="Lobby code" placeholder="ROOM CODE (JOIN)"></div><div class="net-actions"><button class="net-btn" type="button" id="netCreate">+ CREATE LOBBY</button><button class="net-btn" type="button" id="netJoin">→ JOIN LOBBY</button></div><div class="net-launch-note">Live peer-to-peer rooms, up to 8 players. Share a six-character code or invite link. Press <b>T</b> anytime in a match to swap teams. Host must stay online.</div><div class="net-error" id="netLaunchError" role="status" aria-live="polite"></div></div><button type="button" id="puckModeToggle" aria-pressed="true">◉ PUCK ARENA: ON · SHOOT THE PUCK INTO THE ORANGE GOAL</button><button class="cta" id="start">DEPLOY OPERATIVE →</button><div class="hint" id="hint">Desktop keyboard + mouse recommended · Survive as long as you can</div></section></div>
+<script src="./arena-art.js"></script>
 <script>
 (()=>{'use strict';
 const canvas=document.getElementById('game'),ctx=canvas.getContext('2d',{alpha:false});
@@ -1717,6 +1718,7 @@ function damageCover(o,damage,x,y){
  else if(removed&&Math.random()<.75)burst(ix,iy,Math.min(7,2+removed),'#b8cbc9',100);
 }
 function repaintCover(o){
+ if(window.StrikeVectorArt){window.StrikeVectorArt.paintCover(o);return;}
  const g=o.texture.getContext('2d');g.clearRect(0,0,o.w,o.h);
  g.fillStyle=o.k==='crate'?'#314a50':'#293f4c';
  g.fillRect(0,0,o.w,o.h);g.lineWidth=2;g.strokeStyle=o.k==='crate'?'#5d7c76':'#536e7c';g.strokeRect(1,1,o.w-2,o.h-2);
@@ -1904,9 +1906,13 @@ function drawPuck(){
  ctx.save();ctx.translate(-cam.x,-cam.y);
  for(let i=puck.trail.length-1;i>=0;i--){const t=puck.trail[i];ctx.globalAlpha=.05+.24*(1-i/puck.trail.length);ctx.fillStyle='#b7fff0';ctx.beginPath();ctx.arc(t.x,t.y,PUCK_R*(1-i/(puck.trail.length+1)),0,TAU);ctx.fill();}
  ctx.globalAlpha=1;ctx.translate(puck.x,puck.y);ctx.rotate(puck.spin);
+ if(window.StrikeVectorArt){window.StrikeVectorArt.drawPuck(ctx,puck.r);}
+ else{
  ctx.fillStyle='rgba(0,0,0,.48)';ctx.beginPath();ctx.ellipse(5,9,28,17,0,0,TAU);ctx.fill();
  ctx.fillStyle='#183d4a';ctx.strokeStyle='#bafcf1';ctx.lineWidth=4;ctx.beginPath();ctx.arc(0,0,puck.r,0,TAU);ctx.fill();ctx.stroke();
  ctx.fillStyle='#98e8db';ctx.beginPath();ctx.arc(0,0,11,0,TAU);ctx.fill();ctx.fillStyle='#244d5a';ctx.fillRect(-3,-9,6,18);ctx.fillRect(-9,-3,18,6);
+
+ }
  ctx.restore();
 }
 function quickMelee(){
@@ -2841,11 +2847,15 @@ if(net.phase!=='match'&&toSpawn===0&&enemies.length===0&&nextWaveTimer<0&&!shopO
 }
 }
 function rr(x,y,w,h,r=8){ctx.beginPath();ctx.roundRect(x,y,w,h,r)}
-function bg(){ctx.fillStyle='#0a1720';ctx.fillRect(0,0,sw,sh);ctx.save();ctx.translate(-cam.x,-cam.y);ctx.fillStyle='#10222c';ctx.fillRect(0,0,WORLD.w,WORLD.h);
-let left=Math.floor(cam.x/80)*80,top=Math.floor(cam.y/80)*80;ctx.strokeStyle='rgba(126,195,195,.055)';ctx.lineWidth=1;ctx.beginPath();for(let x=left;x<cam.x+sw+90;x+=80){ctx.moveTo(x,Math.max(0,cam.y-20));ctx.lineTo(x,Math.min(WORLD.h,cam.y+sh+20))}for(let y=top;y<cam.y+sh+90;y+=80){ctx.moveTo(Math.max(0,cam.x-20),y);ctx.lineTo(Math.min(WORLD.w,cam.x+sw+20),y)}ctx.stroke();
-ctx.strokeStyle='rgba(105,168,172,.15)';ctx.lineWidth=2;ctx.setLineDash([12,15]);ctx.strokeRect(50,50,WORLD.w-100,WORLD.h-100);ctx.setLineDash([]);
+function bg(){
+ctx.fillStyle='#0a1720';ctx.fillRect(0,0,sw,sh);
+ctx.save();ctx.translate(-cam.x,-cam.y);
+if(window.StrikeVectorArt){window.StrikeVectorArt.drawFloor(ctx,WORLD);}
+else{
+ ctx.fillStyle='#10222c';ctx.fillRect(0,0,WORLD.w,WORLD.h);
+ ctx.strokeStyle='rgba(105,168,172,.15)';ctx.lineWidth=2;ctx.strokeRect(50,50,WORLD.w-100,WORLD.h-100);
+}
 drawPuckFieldBackdrop();
-for(let i=0;i<20;i++){let x=150+(i*311)%2170,y=105+(i*241)%1480;ctx.fillStyle='rgba(109,178,181,.055)';ctx.fillRect(x,y,60,3);ctx.fillRect(x+28,y-20,3,44)}
 for(const o of obstacles){
  if(o.x>cam.x+sw+40||o.y>cam.y+sh+40||o.x+o.w<cam.x-40||o.y+o.h<cam.y-40)continue;
  if(o.dirty)repaintCover(o);
@@ -2867,6 +2877,31 @@ for(const g of grenades){
 }
 for(const b of bullets){ctx.strokeStyle=b.color;ctx.globalAlpha=b.friend?.84:.75;ctx.lineWidth=b.trace?4:2.6;ctx.beginPath();ctx.moveTo(b.x-b.vx*.018,b.y-b.vy*.018);ctx.lineTo(b.x,b.y);ctx.stroke();ctx.globalAlpha=1;ctx.fillStyle=b.color;ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,TAU);ctx.fill()}
 for(const k of knives){ctx.save();ctx.translate(k.x,k.y);ctx.rotate(k.angle);ctx.strokeStyle='#ebf8f4';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(-10,0);ctx.lineTo(15,0);ctx.stroke();ctx.strokeStyle='#68dcbf';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-15,0);ctx.lineTo(-9,0);ctx.stroke();ctx.restore()}
+const arenaArt=window.StrikeVectorArt;
+if(arenaArt){
+ for(const e of enemies){
+  const angle=Number.isFinite(e.a)?e.a:Math.atan2(player.y-e.y,player.x-e.x);
+  arenaArt.drawUnit(ctx,{kind:'hostile',team:e.type==='rusher'?'rusher':'gunner',weapon:0,x:e.x,y:e.y,a:angle,flash:e.flash,dead:e.hp<=0});
+  if(e.hp<e.maxHp){ctx.fillStyle='#132329';ctx.fillRect(e.x-23,e.y-e.r-14,46,4);ctx.fillStyle=e.type==='rusher'?'#f6a36f':'#c6a1ff';ctx.fillRect(e.x-23,e.y-e.r-14,46*Math.max(0,e.hp/e.maxHp),4);}
+ }
+ if(net.phase==='match')for(const b of net.bots){
+  const color=teamColor(b.team);
+  arenaArt.drawUnit(ctx,{kind:'bot',team:b.team,weapon:0,x:b.x,y:b.y,a:b.a||0,flash:b.flash,dead:b.hp<=0});
+  ctx.textAlign='center';ctx.font='bold 11px Oxanium,system-ui';ctx.fillStyle=color;ctx.fillText(b.name||'AI',b.x,b.y-37);
+  ctx.fillStyle='#112934';ctx.fillRect(b.x-23,b.y-30,46,5);
+  ctx.fillStyle=b.hp<35?'#ff8b70':color;ctx.fillRect(b.x-23,b.y-30,46*clamp(b.hp/100,0,1),5);
+  if(b.slash>0){ctx.strokeStyle=color;ctx.lineWidth=8;ctx.beginPath();ctx.arc(b.x,b.y,75,(b.slashDir||0)-.7,(b.slashDir||0)+.7);ctx.stroke();}
+ }
+ if(net.phase==='match')for(const r of net.remotes.values()){
+  const color=teamColor(r.team);
+  arenaArt.drawUnit(ctx,{kind:'human',team:r.team,weapon:r.weapon,x:r.x,y:r.y,a:r.a||0,dead:r.hp<=0});
+  if(r.shield>0&&r.shieldMax>0){ctx.strokeStyle='rgba(107,227,255,.60)';ctx.lineWidth=2.5+2*r.shield/r.shieldMax;ctx.beginPath();ctx.arc(r.x,r.y,24,-Math.PI/2,-Math.PI/2+TAU*r.shield/r.shieldMax);ctx.stroke();}
+  ctx.textAlign='center';ctx.font='bold 12px Oxanium,system-ui';ctx.fillStyle=color;ctx.fillText(r.name||'OPERATIVE',r.x,r.y-36);
+  if(r.hp>0){ctx.fillStyle='#10262b';ctx.fillRect(r.x-22,r.y-29,44,4);ctx.fillStyle=color;ctx.fillRect(r.x-22,r.y-29,44*Math.max(0,r.hp/(r.maxHp||100)),4);}
+  if(r.weapon===0&&r.laserOn&&r.hp>0){const ax=Math.cos(r.a||0),ay=Math.sin(r.a||0),len=rayCoverDistance(r.x,r.y,ax,ay,1000);ctx.strokeStyle='rgba(255,86,95,.85)';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(r.x+ax*29,r.y+ay*29);ctx.lineTo(r.x+ax*len,r.y+ay*len);ctx.stroke();}
+  if(r.slash>0){ctx.strokeStyle=r.team==='orange'?'#ffce86':'#a4fff2';ctx.lineWidth=9;ctx.beginPath();ctx.arc(r.x,r.y,96,(r.slashDir||0)-.7,(r.slashDir||0)+.7);ctx.stroke();}
+ }
+}else{
 for(const e of enemies){ctx.fillStyle='#050f17aa';ctx.beginPath();ctx.ellipse(e.x+4,e.y+8,e.r+5,e.r*.75,0,0,TAU);ctx.fill();let a=Number.isFinite(e.a)?e.a:Math.atan2(player.y-e.y,player.x-e.x);ctx.save();ctx.translate(e.x,e.y);ctx.rotate(a);ctx.fillStyle=e.flash>0?'#ffffff':e.type==='rusher'?'#fa996c':'#b696eb';ctx.strokeStyle=e.type==='rusher'?'#ffb17e':'#d7c3ff';ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,0,e.r,0,TAU);ctx.fill();ctx.stroke();ctx.fillStyle='#1c2732';rr(7,-5,e.type==='rusher'?12:22,10,3);ctx.fill();ctx.fillStyle='#fff4de';ctx.fillRect(12,-2,6,4);ctx.restore();if(e.hp<e.maxHp){ctx.fillStyle='#132329';ctx.fillRect(e.x-23,e.y-e.r-14,46,4);ctx.fillStyle=e.type==='rusher'?'#f6a36f':'#c6a1ff';ctx.fillRect(e.x-23,e.y-e.r-14,46*Math.max(0,e.hp/e.maxHp),4)}}
 if(net.phase==='match')for(const b of net.bots){
   ctx.save();ctx.globalAlpha=b.hp<=0?.28:1;ctx.translate(b.x,b.y);ctx.rotate(b.a||0);const color=teamColor(b.team);
@@ -2891,9 +2926,11 @@ if(net.phase==='match')for(const b of net.bots){
  if(r.slash>0){ctx.strokeStyle=r.team==='orange'?'#ffce86':'#a4fff2';ctx.lineWidth=9;ctx.beginPath();ctx.arc(r.x,r.y,96,(r.slashDir||0)-.7,(r.slashDir||0)+.7);ctx.stroke();}
  ctx.globalAlpha=1;
  }
+
+}
 const a=player.angle,roll=player.roll>0,sliding=roll,crouch=isCrouching(),running=keys.has('ShiftLeft')||keys.has('ShiftRight');
 // Slides show a flattened body, a skid trail and independently aiming weapon.
-if(sliding){
+if(sliding&&!arenaArt){
  const travel=Math.atan2(player.rollDy,player.rollDx);
  ctx.save();ctx.translate(player.x,player.y);ctx.rotate(travel);
  ctx.fillStyle='#070e15a9';ctx.beginPath();ctx.ellipse(-8,7,40,14,0,0,TAU);ctx.fill();
@@ -2903,6 +2940,9 @@ if(sliding){
  ctx.fillStyle='#173b44';rr(-11,-9,24,18,5);ctx.fill();
  ctx.fillStyle='#d0ebd9';ctx.beginPath();ctx.arc(22,0,8,0,TAU);ctx.fill();ctx.restore();
 }
+if(arenaArt){
+ arenaArt.drawUnit(ctx,{kind:'human',team:net.phase==='match'?net.team:'cyan',weapon:player.weapon,x:player.x,y:player.y,a,slide:sliding,crouch,flash:player.invul>0&&Math.floor(clock*16)%2===0?.12:0});
+}else{
 ctx.save();ctx.translate(player.x,player.y);ctx.rotate(a);
 ctx.fillStyle='rgba(0,0,0,.32)';ctx.beginPath();ctx.ellipse(3,8,24,18,0,0,TAU);ctx.fill();if(player.invul>0&&Math.floor(clock*16)%2===0)ctx.globalAlpha=.45;
 if(!roll){ctx.fillStyle=net.phase==='match'&&net.team==='orange'?'#683d21':'#1b5460';ctx.beginPath();ctx.arc(0,0,crouch?14:19,0,TAU);ctx.fill();ctx.strokeStyle=net.phase==='match'?teamColor(net.team):'#a8ffe5';ctx.lineWidth=3;ctx.stroke();ctx.fillStyle=net.phase==='match'?teamColor(net.team):'#8ef4d9';rr(-12,-15,20,30,7);ctx.fill();ctx.fillStyle='#173f4a';rr(-7,-9,17,19,5);ctx.fill();ctx.fillStyle='#5ce7ce';ctx.fillRect(-14,-11,6,8);ctx.fillRect(-14,4,6,8)}
@@ -2910,6 +2950,7 @@ if(!roll){ctx.fillStyle=net.phase==='match'&&net.team==='orange'?'#683d21':'#1b5
 ctx.fillStyle='#c7fff2';rr(5,-5,player.weapon===2?14:gunSpec().barrel+player.mods.barrel*3,player.weapon===2?8:10,3);ctx.fill();ctx.fillStyle='#316772';rr(7,-5,16,10,2);ctx.fill();
 if(sliding){ctx.strokeStyle='#8ae9df';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(2,-10);ctx.lineTo(19,-5);ctx.stroke()}
 ctx.restore();
+}
 if(player.shield>0&&shieldMax()>0){ctx.strokeStyle='rgba(103,230,255,.77)';ctx.lineWidth=2.5+2.4*player.shield/shieldMax();ctx.beginPath();ctx.arc(player.x,player.y,28,-Math.PI/2,-Math.PI/2+TAU*player.shield/shieldMax());ctx.stroke();}
 if(player.slash>0){const gunStrike=player.slashKind==='quick'&&player.weapon===0;
  ctx.strokeStyle=gunStrike?`rgba(255,207,126,${Math.min(1,player.slash/.18)})`:`rgba(188,255,241,${Math.min(1,player.slash/.2)})`;
