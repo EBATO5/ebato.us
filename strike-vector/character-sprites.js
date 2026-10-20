@@ -1,4 +1,4 @@
-/* STRIKE VECTOR v1.10 — eased sprite locomotion and combat pose polish.
+/* STRIKE VECTOR v1.11.1 — Sunset movement clarity; keep Fort gait as before.
  * Files: Fort cyan atlas (4 original views, 2 poses), Sunset orange atlas
  * (4 concept-art views, 2 posed frames). Eight AIM sectors select and mirror
  * these views; fully unique hand-painted eight-way animation is a later goal.
@@ -137,14 +137,22 @@ function draw(g,info){
  const gait=Number(info.step)||0;
  const power=Math.max(0,Math.min(1,Number(info.recoil)||0));
  const sweep=Math.max(0,Math.min(1,Number(info.slash)||0));
- // Blend across the two authored poses instead of suddenly snapping whole
- // human bodies every half-stride. No cartoon bouncing or full sprite rotation.
+ // Sunset has distinctive authored movement art that previously stayed mostly
+ // transparent under the idle image. Use an OPAQUE running/stride frame for
+ // most of each step. No ghosting, extra stretching, or physics changes.
+ // Fort Vector keeps its earlier soft two-pose blend.
+ const sunset=arena()==='sunset',slide=!!info.slide;
+ const walking=moving>.16&&!slide&&!info.crouch&&!info.dead;
  const stridePhase=.5-.5*Math.cos(gait*2);
  const strideMix=Math.max(0,Math.min(1,(stridePhase-.12)*1.3))*moving;
+ // 1 full step every PI gait units (~2.9 steps/sec walk, faster sprint).
+ // Painted movement row gets ~68% of a walk or 74% of a run cycle.
+ const stepPhase=((gait/PI)%1+1)%1;
+ const movingRow=sunset&&walking&&stepPhase<(moving>.88?.74:.68)?1:0;
  const w=tile.w*scale,h=tile.h*scale;
  g.save();g.translate(info.x,info.y);
  if(info.dead)g.globalAlpha=.30;
- const baseAlpha=g.globalAlpha,slide=!!info.slide;
+ const baseAlpha=g.globalAlpha;
  g.fillStyle='rgba(0,6,12,.40)';
  g.beginPath();g.ellipse(3,21,slide?31:22,slide?9:12,0,0,PI*2);g.fill();
  // Ground-level kinetic FX in stadium coordinates: no attached / rotating shadows.
@@ -170,8 +178,8 @@ function draw(g,info){
  if(info.reload){g.translate(-1.5,1.5);g.rotate(.018);}
  if(power>0)g.translate(-power*3.1,-power*.6);
  if(flip)g.scale(-1,1);
- g.drawImage(atlas,...frameBounds(v.image,col,0),baseX,baseY,w,h);
- if(strideMix>.01&&!slide&&!info.crouch){
+ g.drawImage(atlas,...frameBounds(v.image,col,movingRow),baseX,baseY,w,h);
+ if(!sunset&&strideMix>.01&&!slide&&!info.crouch){
   g.globalAlpha=baseAlpha*strideMix;
   g.drawImage(atlas,...frameBounds(v.image,col,1),baseX,baseY,w,h);
   g.globalAlpha=baseAlpha;
