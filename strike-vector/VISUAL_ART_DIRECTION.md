@@ -4,7 +4,7 @@
 **Reference:** The approved two-arena mood board: FORT VECTOR / SUNSET CIRCUIT.
 **Rule:** Art must never change physics, matchmaking, puck boundaries, cover health/collision, gameplay scale, or reward systems.
 
-## Current implementation (v1.10.0 motion & combat polish)
+## Current implementation (v1.11.0 cinematic combat feedback)
 - \`arena-art.js\` supplies a cached stadium-floor painter, destructible cover skin, cached top-down player/bot/enemy sprites, and an energy puck skin.
 - \`index.html\` delegates rendering to that module while preserving the original collision, team, AI, sound, game loop, multiplayer, and arena dimensions.
 - Both FORT VECTOR and SUNSET CIRCUIT are selectable stadium skins. The online host chooses the stadium in the lobby; that selection is carried in the multiplayer room rules.
@@ -19,6 +19,10 @@
 
 - **v1.10.0:** existing transparent player atlases are blended for smoother gait and given stable facing selection, restrained muzzle recoil, reload cues, melee glints, low-profile slide trails, and multiplayer slide/reload/run animation-state synchronization. These are improved two-pose animations, **not** eight independently illustrated direction/frame cycles.
 - **v1.10.0 combat:** precision shot is 2.5× damage and projectile velocity, with 2.5× upgraded penetration capacity (rounded up to whole extra penetrations); multiplayer host reconstruction preserves the same modifiers. Landed melee attacks one-hit KO vulnerable opponents, preserve teammate knockback, and launch the puck with 1,320–1,600 initial force depending on the melee upgrade. Spawn protection and host-configured PVP rules still apply.
+
+- **v1.11.0 (implemented):** New `combat-vfx.js` contains bounded, expiring visual-only effects: directional muzzle flashes, ejected casings, melee energy sweeps, slide streaks/dust, and impact sparks. Both lobby-hosted multiplayer and solo paths emit effects using the existing hit/fire messages. Remote slide events are rendered through the established synchronized slide state. No damage, penetration, movement, melee power, puck physics, economy, or networking authority was modified.
+- The VFX module supports a `low` quality mode for future device settings and clears itself on game reset. Particle count is hard capped. Syntax and mocked effect lifecycle/rendering tests passed; **live browser/mobile/multiplayer testing remains pending**.
+- **Still pending:** truly hand-illustrated eight-direction idle/run/walk/slide/melee/reload sheets. Current illustrated character atlases contain four authored views with two usable poses (eight aim sectors through mirroring), enhanced by blended motion and independent action VFX.
 
 ## Arena A: FORT VECTOR / Tactical Arena
 
@@ -57,6 +61,8 @@ strike-vector/
   index.html                     # Gameplay, networking, world/collision logic
   arena-art.js                   # Phase 1: base procedural rendering module
   stadium-themes.js              # Phase 2: two themes and character motion sprites
+  character-sprites.js           # Illustrated player atlases and blended gait
+  combat-vfx.js                  # Transient action VFX, visual only
   art/
     fort-vector/
       environment-atlas.webp
