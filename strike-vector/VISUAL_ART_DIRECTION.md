@@ -4,10 +4,12 @@
 **Reference:** The approved two-arena mood board: FORT VECTOR / SUNSET CIRCUIT.
 **Rule:** Art must never change physics, matchmaking, puck boundaries, cover health/collision, gameplay scale, or reward systems.
 
-## Current implementation (v1.6.0)
+## Current implementation (v1.7.0)
 - \`arena-art.js\` supplies a cached stadium-floor painter, destructible cover skin, cached top-down player/bot/enemy sprites, and an energy puck skin.
 - \`index.html\` delegates rendering to that module while preserving the original collision, team, AI, sound, game loop, multiplayer, and arena dimensions.
-- FORT VECTOR is the default visual stadium in this first pass.
+- Both FORT VECTOR and SUNSET CIRCUIT are selectable stadium skins. The online host chooses the stadium in the lobby; that selection is carried in the multiplayer room rules.
+- The additional `stadium-themes.js` art module implements Sunset Circuit's cached gold-hour city court, neon goal gantries, edge storefronts, chain-link fences, graffiti, planter dressing, urban cover, and street-techwear characters. All geometry and collision footprints are unchanged.
+- Player models now use lightweight procedural gait, slide, crouch and reload poses; enemy, AI, and online human movement is animated without modifying the simulation.
 - Procedural drawings are a **playable art foundation**, not the final hand-authored concept-art-quality sprite sheets.
 
 ## Arena A: FORT VECTOR / Tactical Arena
@@ -45,7 +47,8 @@
 \`\`\`text
 strike-vector/
   index.html                     # Gameplay, networking, world/collision logic
-  arena-art.js                   # Phase 1: procedural rendering module
+  arena-art.js                   # Phase 1: base procedural rendering module
+  stadium-themes.js              # Phase 2: two themes and character motion sprites
   art/
     fort-vector/
       environment-atlas.webp
@@ -63,11 +66,11 @@ strike-vector/
 \`\`\`
 
 ## Implementation milestones
-1. **Fort Vector facelift — implemented:** cached industrial stadium paint, zone stencils, facility barriers, basic top-down sprites, bright mechanical puck. Verify desktop and mobile.
-2. **Character animation:** move from temporary cached procedural character silhouettes to frame-based 8-direction sprite sequences, including movement states.
-3. **Sunset Circuit:** introduce stadium selector in match host and solo setup; network stadium ID at match start; use the same fixed collider/goal layout and physics.
-4. **Art replacement:** use optimized hand-authored texture atlases and sprite sheets with preloading, fallback procedural painter, and controllable effects quality.
-5. **Presentation polish:** arena-appropriate branding, HUD iconography, celebrations, impact FX, goal lighting, ambient animations and music cues.
+1. **Fort Vector facelift — implemented (v1.6.0):** cached industrial stadium paint, zone stencils, facility barriers, procedural top-down sprites and mechanical puck.
+2. **Sunset Circuit — implemented (v1.7.0 first playable pass):** solo/online stadium selection, warm court, graffiti, edges, neon sports goals, cyberpunk recreational-player outfits, urban cover; game rules and cover footprints unchanged.
+3. **Movement animation — implemented (v1.7.0 first playable pass):** procedural steps, run gait, sliding/crouching poses, and local reload detail. Still to do: hand-painted sprite-sheet animation with 8 directions and polished melee/firing frames.
+4. **Art replacement — next:** optimized hand-authored texture atlases and sprite sheets with preloading, fallback procedural painter, and controllable effects quality.
+5. **Presentation polish — later:** arena-specific UI/scoreboards, improved lighting, impact FX, goal celebrations, ambient animation and audio.
 
 ## Technical guardrails / acceptance
 - Collision, barrier/chip coordinates and game mechanics remain **exactly** the same between stadiums.
