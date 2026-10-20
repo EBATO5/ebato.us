@@ -915,7 +915,7 @@ const OPTIONS=[
  {id:'grenadeMag',name:'GRENADE FEED CAPACITY',price:295,step:175,max:5,detail:'+1 loaded grenade per tier',requires:'grenade'},
  {id:'grenadeReload',name:'GRENADE LOADING SPEED',price:245,step:135,detail:'15% faster grenade reload per tier',requires:'grenade'},
  {id:'grenadeCycle',name:'GRENADE FIRING MECHANISM',price:275,step:150,detail:'15% faster follow-up grenade shots per tier',requires:'grenade'},
- {id:'knife',name:'MELEE EDGE',price:190,step:105,detail:'+42 knife slash, +36 buttstock, +48 bayonet, and +18 thrown-knife damage per tier. Fully refundable.'},
+ {id:'knife',name:'MELEE EDGE',price:190,step:105,detail:'ONE-HIT MELEE on opponents. Each tier increases puck-launch force (+55) and thrown-knife damage (+18). Fully refundable.'},
  {id:'maxHealth',name:'VITALITY TRAINING',price:350,step:210,max:5,detail:'+25 maximum health per tier (100 → 225 HP). Buying adds +25 current HP; refunding removes that health bonus and returns every credit.'},
  {id:'shieldCapacity',name:'ENERGY SHIELD ARRAY',price:340,step:190,max:5,detail:'+35 regenerating shield points per tier. New capacity immediately charges.'},
  {id:'shieldRegen',name:'SHIELD RECHARGE',price:290,step:170,max:5,detail:'+6 shield per second per tier, once shield capacity is installed.'},
@@ -1042,7 +1042,7 @@ function statText(o,lvl){
   case 'grenadeMag':return {now:`${grenadeClipSize()} grenades / mag`,next:o.max===lvl?'MAX':`${grenadeClipSize()+1} grenades / mag`};
   case 'grenadeReload':return {now:`${grenadeReloadDuration().toFixed(2)}s reload`,next:`${Math.max(.38,1.6*Math.pow(.85,next)).toFixed(2)}s reload`};
   case 'grenadeCycle':return {now:`${grenadeInterval().toFixed(2)}s launcher cycle`,next:`${Math.max(.15,.76*Math.pow(.85,next)).toFixed(2)}s cycle`};
-  case 'knife':return {now:`${meleeDamage('knife',curr)} slash / ${meleeDamage('quick',curr)} buttstock`,next:`${meleeDamage('knife',next)} slash / ${meleeDamage('quick',next)} buttstock`,hint:`Bayonet: ${meleeDamage('quick',curr,true)} → ${meleeDamage('quick',next,true)} · Throwing knife: ${78+curr*18} → ${78+next*18} base damage`};
+  case 'knife':return {now:`ONE-HIT · PUCK FORCE ${meleePuckForce(curr)}`,next:`ONE-HIT · PUCK FORCE ${meleePuckForce(next)}`,hint:`Player vs. enemy: one-hit KO (except spawn protection). Friendly melee still launches allies. Puck force: ${meleePuckForce(curr)} → ${meleePuckForce(next)} · Throwing knife: ${78+curr*18} → ${78+next*18} base damage`};
    case 'maxHealth':return {now:`${maxHealth()} maximum HP`,next:`${Math.min(225,maxHealth()+25)} maximum HP`,hint:`Current HP: ${Math.ceil(player.hp)} · Full tier-price refunds`};
     case 'shieldCapacity':return {now:`${shieldMax()} shield max`,next:`${shieldMax()+35} shield max`,hint:`Currently charged: ${Math.ceil(player.shield)}`};
    case 'shieldRegen':return {now:`${shieldRate()} shield / sec`,next:`${shieldMax()>0?shieldRate()+6:0} shield / sec`};
