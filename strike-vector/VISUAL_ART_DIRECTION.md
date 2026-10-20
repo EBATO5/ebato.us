@@ -4,15 +4,18 @@
 **Reference:** The approved two-arena mood board: FORT VECTOR / SUNSET CIRCUIT.
 **Rule:** Art must never change physics, matchmaking, puck boundaries, cover health/collision, gameplay scale, or reward systems.
 
-## Current implementation (v1.8.0 sprite pilot adapter)
+## Current implementation (v1.9.0 two-stadium sprite pilots)
 - \`arena-art.js\` supplies a cached stadium-floor painter, destructible cover skin, cached top-down player/bot/enemy sprites, and an energy puck skin.
 - \`index.html\` delegates rendering to that module while preserving the original collision, team, AI, sound, game loop, multiplayer, and arena dimensions.
 - Both FORT VECTOR and SUNSET CIRCUIT are selectable stadium skins. The online host chooses the stadium in the lobby; that selection is carried in the multiplayer room rules.
 - The additional `stadium-themes.js` art module implements Sunset Circuit's cached gold-hour city court, neon goal gantries, edge storefronts, chain-link fences, graffiti, planter dressing, urban cover, and street-techwear characters. All geometry and collision footprints are unchanged.
 - **v1.8.0 sprite adapter is committed**: `character-sprites.js` uses an authored four-view/two-pose transparent Fort Vector atlas, selects oblique view sectors without rotating human art 360°, generates orange team trims, and preserves procedural fallbacks. Multiplayer enemy/bot and Sunset Circuit rendering remain untouched.
-- **Deployment dependency**: the binary art from the Project ZIP must be uploaded to `strike-vector/art/characters/fort/fort_vector_cyan_pilot.webp` in GitHub. Until that asset exists on the site, the game loads the procedural fallback and displays a status note. The existing Project ZIP cannot itself be directly served by the website.
+- **Fort Vector binary installed:** `strike-vector/art/characters/fort/fort_vector_cyan_pilot.webp` was confirmed in the repository after the initial upload.
+- **Sunset Circuit pending binary:** the user must upload `sunset_circuit_orange_pilot.webp` (inside the v1.9 Sunset asset ZIP) into `strike-vector/art/characters/sunset/`. The new two-venue sprite loader can then display the illustrated player automatically. Until uploaded, Sunset displays its procedural fallback.
 - Player models now use lightweight procedural gait, slide, crouch and reload poses; enemy, AI, and online human movement is animated without modifying the simulation.
 - Procedural drawings are a **playable art foundation**, not the final hand-authored concept-art-quality sprite sheets.
+
+- **v1.9.0:** adds a separate Sunset Circuit orange character pilot extracted from the approved concept art and eight discrete aiming sectors for both stadiums. Orange/cyan color variants share art while physics and networking remain unchanged. Directional views still reuse or mirror **four hand-illustrated viewpoints**; the true unique eight-way walk, slide, reload and melee sheet remains unfinished.
 
 ## Arena A: FORT VECTOR / Tactical Arena
 
