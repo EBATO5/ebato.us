@@ -1,4 +1,4 @@
-/* STRIKE VECTOR v1.9 — two illustrated stadium player pilots.
+/* STRIKE VECTOR v1.9.2 — flexible-resolution illustrated stadium sprites.
  * Files: Fort cyan atlas (4 original views, 2 poses), Sunset orange atlas
  * (4 concept-art views, 2 posed frames). Eight AIM sectors select and mirror
  * these views; fully unique hand-painted eight-way animation is a later goal.
@@ -10,6 +10,15 @@ const art=window.StrikeVectorArt;
 if(!art||typeof art.drawUnit!=='function')return;
 const originalDraw=art.drawUnit;
 const tile={w:112,h:176},pivot={x:56,y:92},scale=.48,PI=Math.PI;
+// Frames always form a 4-column by 2-row grid; source files can be 448×352
+// or the newer 1415×1112 high-res Sunset sheet. Pixel-aligned crop bounds
+// prevent leaking one cell into another when width is not divisible by 4.
+function frameBounds(img,col,row){
+ const w=img.naturalWidth||img.width,h=img.naturalHeight||img.height;
+ const x=Math.round(col*w/4),x1=Math.round((col+1)*w/4);
+ const y=Math.round(row*h/2),y1=Math.round((row+1)*h/2);
+ return [x,y,x1-x,y1-y];
+}
 const variants={
  fort:{path:'./art/characters/fort/fort_vector_cyan_pilot.webp',primary:'cyan',image:null,opposite:null,status:'loading',error:''},
  sunset:{path:'./art/characters/sunset/sunset_circuit_orange_pilot.webp',primary:'orange',image:null,opposite:null,status:'loading',error:''}
@@ -69,8 +78,10 @@ function loadVariant(name){
  const v=variants[name],im=new Image();
  im.decoding='async';
  im.onload=()=>{
-  if(im.naturalWidth!==448||im.naturalHeight!==352){
-   v.status='fallback';v.error='Wrong sprite atlas dimensions, expected 448×352';
+  const w=im.naturalWidth,h=im.naturalHeight;
+  const expectedSize=(w===448&&h===352)||(w===1415&&h===1112);
+  if(!expectedSize){
+   v.status='fallback';v.error='Unrecognized sprite grid '+w+'×'+h+'; expected 448×352 or 1415×1112';
   }else{
    v.image=im;
    try{v.opposite=recolor(im,v.primary==='orange'?'cyan':'orange');}catch(e){v.opposite=im;}
@@ -116,7 +127,7 @@ function draw(g,info){
  if(info.slide){g.translate(-4,11);g.rotate(-.17);g.scale(1.04,.82);}
  else if(info.crouch)g.scale(.93,.9);
  if(flip)g.scale(-1,1);
- g.drawImage(atlas,col*tile.w,row*tile.h,tile.w,tile.h,-pivot.x*scale,-pivot.y*scale,w,h);
+ g.drawImage(atlas,...frameBounds(v.image,col,row),-pivot.x*scale,-pivot.y*scale,w,h);
  if(info.flash){
   g.globalCompositeOperation='screen';
   g.globalAlpha=Math.min(.21,Math.max(0,Number(info.flash)||0));
@@ -148,7 +159,7 @@ function drawPortrait(canvas,team,venue){
  }
  const atlas=team===selected.primary?selected.image:selected.opposite||selected.image;
  const ratio=Math.min((width-4)/tile.w,(height-5)/tile.h);
- g.drawImage(atlas,3*tile.w,0,tile.w,tile.h,(width-tile.w*ratio)/2,(height-tile.h*ratio)/2-1,tile.w*ratio,tile.h*ratio);
+ g.drawImage(atlas,...frameBounds(selected.image,3,0),(width-tile.w*ratio)/2,(height-tile.h*ratio)/2-1,tile.w*ratio,tile.h*ratio);
  return true;
 }
 art.drawUnit=draw;
