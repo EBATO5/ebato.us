@@ -4,7 +4,7 @@
 **Reference:** The approved two-arena mood board: FORT VECTOR / SUNSET CIRCUIT.
 **Rule:** Art must never change physics, matchmaking, puck boundaries, cover health/collision, gameplay scale, or reward systems.
 
-## Current implementation (v1.9.0 two-stadium sprite pilots)
+## Current implementation (v1.10.0 motion & combat polish)
 - \`arena-art.js\` supplies a cached stadium-floor painter, destructible cover skin, cached top-down player/bot/enemy sprites, and an energy puck skin.
 - \`index.html\` delegates rendering to that module while preserving the original collision, team, AI, sound, game loop, multiplayer, and arena dimensions.
 - Both FORT VECTOR and SUNSET CIRCUIT are selectable stadium skins. The online host chooses the stadium in the lobby; that selection is carried in the multiplayer room rules.
@@ -16,6 +16,9 @@
 - Procedural drawings are a **playable art foundation**, not the final hand-authored concept-art-quality sprite sheets.
 
 - **v1.9.0:** adds a separate Sunset Circuit orange character pilot extracted from the approved concept art and eight discrete aiming sectors for both stadiums. Orange/cyan color variants share art while physics and networking remain unchanged. Directional views still reuse or mirror **four hand-illustrated viewpoints**; the true unique eight-way walk, slide, reload and melee sheet remains unfinished.
+
+- **v1.10.0:** existing transparent player atlases are blended for smoother gait and given stable facing selection, restrained muzzle recoil, reload cues, melee glints, low-profile slide trails, and multiplayer slide/reload/run animation-state synchronization. These are improved two-pose animations, **not** eight independently illustrated direction/frame cycles.
+- **v1.10.0 combat:** precision shot is 2.5× damage and projectile velocity, with 2.5× upgraded penetration capacity (rounded up to whole extra penetrations); multiplayer host reconstruction preserves the same modifiers. Landed melee attacks one-hit KO vulnerable opponents, preserve teammate knockback, and launch the puck with 1,320–1,600 initial force depending on the melee upgrade. Spawn protection and host-configured PVP rules still apply.
 
 ## Arena A: FORT VECTOR / Tactical Arena
 
