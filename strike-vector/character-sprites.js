@@ -1,4 +1,4 @@
-/* STRIKE VECTOR v1.9.2 — flexible-resolution illustrated stadium sprites.
+/* STRIKE VECTOR v1.10 — eased sprite locomotion and combat pose polish.
  * Files: Fort cyan atlas (4 original views, 2 poses), Sunset orange atlas
  * (4 concept-art views, 2 posed frames). Eight AIM sectors select and mirror
  * these views; fully unique hand-painted eight-way animation is a later goal.
@@ -111,23 +111,91 @@ function facing(a){
   {col:1,flip:false}  // NE
  ][dir];
 }
+// Stabilize close-to-boundary directional aiming for each operative so a small
+// mouse jitter never swaps full-body artwork back and forth every frame.
+const actorFacing=new Map();
+function stableFacing(angle,id){
+ const raw=Number.isFinite(angle)?angle:0;
+ if(!id)return facing(raw);
+ const previous=actorFacing.get(id),next=Math.floor(((((raw+PI/8)%(2*PI))+2*PI)%(2*PI))/(PI/4));
+ let choice=next;
+ if(previous!==undefined&&previous!==next){
+  const center=previous*PI/4,delta=Math.atan2(Math.sin(raw-center),Math.cos(raw-center));
+  if(Math.abs(delta)<PI/8+.085)choice=previous;
+ }
+ actorFacing.set(id,choice);
+ const center=choice*PI/4;
+ return facing(center);
+}
 function draw(g,info){
  if(!expose.isUsingSprites(info)||!Number.isFinite(info.x)||!Number.isFinite(info.y)){
   return originalDraw(g,info);
  }
  const v=variant(),atlas=info.team===v.primary?v.image:v.opposite||v.image;
- const {col,flip}=facing(info.a);
+ const {col,flip}=stableFacing(info.a,info.id);
  const moving=Math.max(0,Math.min(1,Number(info.move)||0));
  const gait=Number(info.step)||0;
- const row=moving>.13&&Math.sin(gait)>0?1:0;
+ const power=Math.max(0,Math.min(1,Number(info.recoil)||0));
+ const sweep=Math.max(0,Math.min(1,Number(info.slash)||0));
+ // Blend across the two authored poses instead of suddenly snapping whole
+ // human bodies every half-stride. No cartoon bouncing or full sprite rotation.
+ const stridePhase=.5-.5*Math.cos(gait*2);
+ const strideMix=Math.max(0,Math.min(1,(stridePhase-.12)*1.3))*moving;
  const w=tile.w*scale,h=tile.h*scale;
  g.save();g.translate(info.x,info.y);
- if(info.dead)g.globalAlpha=.31;
- g.fillStyle='rgba(0,6,12,.42)';g.beginPath();g.ellipse(2,21,23,11,0,0,PI*2);g.fill();
- if(info.slide){g.translate(-4,11);g.rotate(-.17);g.scale(1.04,.82);}
- else if(info.crouch)g.scale(.93,.9);
+ if(info.dead)g.globalAlpha=.30;
+ const baseAlpha=g.globalAlpha,slide=!!info.slide;
+ g.fillStyle='rgba(0,6,12,.40)';
+ g.beginPath();g.ellipse(3,21,slide?31:22,slide?9:12,0,0,PI*2);g.fill();
+ // Ground-level kinetic FX in stadium coordinates: no attached / rotating shadows.
+ const energy=info.team==='orange'?'#ffa866':'#8bf5f4';
+ if(slide){
+  const dir=Number.isFinite(info.slideAngle)?info.slideAngle:Number(info.a)||0;
+  g.save();g.rotate(dir);
+  g.strokeStyle=energy;g.lineCap='round';
+  for(let i=-1;i<=1;i++){
+   g.globalAlpha=baseAlpha*(.24-.035*Math.abs(i));
+   g.lineWidth=2;
+   g.beginPath();g.moveTo(-51,i*9+15);g.lineTo(-27,i*6+17);g.stroke();
+  }
+  g.restore();g.globalAlpha=baseAlpha;
+ }else if(moving>.65&&stridePhase>.81){
+  g.globalAlpha=baseAlpha*.21;g.fillStyle=energy;
+  g.beginPath();g.ellipse(-10,22,14,3,0,0,PI*2);g.fill();
+  g.globalAlpha=baseAlpha;
+ }
+ const baseX=-pivot.x*scale,baseY=-pivot.y*scale;
+ if(slide){g.translate(-4,8);g.rotate(-.13);g.scale(1.07,.80);}
+ else if(info.crouch)g.scale(.93,.90);
+ if(info.reload){g.translate(-1.5,1.5);g.rotate(.018);}
+ if(power>0)g.translate(-power*3.1,-power*.6);
  if(flip)g.scale(-1,1);
- g.drawImage(atlas,...frameBounds(v.image,col,row),-pivot.x*scale,-pivot.y*scale,w,h);
+ g.drawImage(atlas,...frameBounds(v.image,col,0),baseX,baseY,w,h);
+ if(strideMix>.01&&!slide&&!info.crouch){
+  g.globalAlpha=baseAlpha*strideMix;
+  g.drawImage(atlas,...frameBounds(v.image,col,1),baseX,baseY,w,h);
+  g.globalAlpha=baseAlpha;
+ }
+ // The existing world-space melee slash draws outside this character. Add a
+ // brief glint to the weapon hand and a smaller, restrained recoil flash.
+ if(power>.06){
+  g.save();g.globalCompositeOperation='screen';
+  g.globalAlpha=baseAlpha*power*.67;
+  g.fillStyle='#ffebc4';
+  g.beginPath();g.ellipse(18,-3,3+4*power,2.1,0,0,PI*2);g.fill();
+  g.restore();
+ }
+ if(sweep>.05){
+  g.save();g.globalCompositeOperation='screen';
+  g.globalAlpha=baseAlpha*sweep*.38;
+  g.strokeStyle=energy;g.lineWidth=3.2;g.lineCap='round';
+  g.beginPath();g.arc(8,1,26,-.8,.36);g.stroke();
+  g.restore();
+ }
+ if(info.reload){
+  g.save();g.globalAlpha=baseAlpha*.36;g.fillStyle=energy;
+  g.fillRect(-4,11,10,2);g.restore();
+ }
  if(info.flash){
   g.globalCompositeOperation='screen';
   g.globalAlpha=Math.min(.21,Math.max(0,Number(info.flash)||0));
