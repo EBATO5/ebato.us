@@ -1,4 +1,4 @@
-/* STRIKE VECTOR v1.11.1 — Sunset movement clarity; keep Fort gait as before.
+/* STRIKE VECTOR v1.12 pilot-ready — optional 32-frame Sunset movement atlas; safe fallback.
  * Files: Fort cyan atlas (4 original views, 2 poses), Sunset orange atlas
  * (4 concept-art views, 2 posed frames). Eight AIM sectors select and mirror
  * these views; fully unique hand-painted eight-way animation is a later goal.
@@ -33,6 +33,12 @@ const variants={
  fort:{path:'./art/characters/fort/fort_vector_cyan_pilot.webp',primary:'cyan',image:null,opposite:null,status:'loading',error:''},
  sunset:{path:'./art/characters/sunset/sunset_circuit_orange_pilot.webp',primary:'orange',image:null,opposite:null,status:'loading',error:''}
 };
+// Optional 8x4 / 32-frame atlas. This file is NOT uploaded yet; until it exists
+// the approved v1.11.1 4x2 artwork remains the gameplay and lobby fallback.
+const sunsetMovement={
+ path:'./art/characters/sunset/sunset_orange_move_pilot.webp',
+ image:null,status:'pending',error:''
+};
 const options={enabled:true};
 function arena(){return art.getArena?.()==='sunset'?'sunset':'fort';}
 function variant(){return variants[arena()];}
@@ -41,6 +47,8 @@ const expose={
  get loaded(){return !!variant().image;},
  get enabled(){return options.enabled;},
  get currentArena(){return arena();},
+ get motionStatus(){return sunsetMovement.status;},
+ get motionPath(){return sunsetMovement.path;},
  get arenas(){return {fort:variants.fort.status,sunset:variants.sunset.status};},
  toggle(value){options.enabled=value!==false;return options.enabled;},
  pathFor(a){return variants[a==='sunset'?'sunset':'fort'].path;},
@@ -104,6 +112,38 @@ function loadVariant(name){
  };
  im.src=v.path;
 }
+function loadMovementPilot(){
+ const im=new Image();im.decoding='async';
+ im.onload=()=>{
+  const w=im.naturalWidth,h=im.naturalHeight;
+  if((w!==896||h!==704)&&(w!==1792||h!==1408)){
+   sunsetMovement.status='invalid';
+   sunsetMovement.error='Expected 896×704 or 1792×1408 (8 columns × 4 rows), got '+w+'×'+h;
+   sunsetMovement.image=null;
+  }else{
+   sunsetMovement.image=im;
+   sunsetMovement.status='ready';sunsetMovement.error='';
+  }
+  notify('sunset');
+ };
+ im.onerror=()=>{
+  sunsetMovement.image=null;sunsetMovement.status='missing';
+  // Missing optional future asset is expected during the pilot production.
+  // Keep the existing game playable and avoid presenting a sprite failure.
+ };
+ im.src=sunsetMovement.path;
+}
+function movingPilotFrame(aimColumn,walkMode,step){
+ const row=Math.max(0,Math.min(3,aimColumn));
+ // The game increments the phase at about 9/s walking and 15/s sprinting.
+ // 0.9 frames/phase = ~8.1 walk frames/s and ~13.5 run frames/s.
+ const frame=((Math.floor(Math.max(0,Number(step)||0)*.9)%4)+4)%4;
+ return {row,col:(walkMode==='run'?4:0)+frame};
+}
+function paintMovingPilot(g,atlas,pose,dx,dy,dw,dh){
+ const cellW=atlas.naturalWidth/8,cellH=atlas.naturalHeight/4;
+ g.drawImage(atlas,pose.col*cellW,pose.row*cellH,cellW,cellH,dx,dy,dw,dh);
+}
 function facing(a){
  // World x axis east, y axis south. Eight distinct input headings mapped
  // to four authored concept views + left/right reflections, never rotating
@@ -160,6 +200,7 @@ function draw(g,info){
  const stepPhase=((gait/PI)%1+1)%1;
  const movingRow=sunset&&walking&&stepPhase<(moving>.88?.74:.68)?1:0;
  const w=tile.w*scale,h=tile.h*scale;
+ const usingMovePilot=sunset&&walking&&info.team==='orange'&&!!sunsetMovement.image;
  g.save();g.translate(info.x,info.y);
  if(info.dead)g.globalAlpha=.30;
  const baseAlpha=g.globalAlpha;
@@ -188,7 +229,16 @@ function draw(g,info){
  if(info.reload){g.translate(-1.5,1.5);g.rotate(.018);}
  if(power>0)g.translate(-power*3.1,-power*.6);
  if(flip)g.scale(-1,1);
- paintFrame(g,atlas,v.image,col,movingRow,baseX,baseY,w,h,sunset);
+ if(usingMovePilot){
+  // Orange only until an independently illustrated cyan atlas is authored.
+  // Face follows aim direction, as it does with the original pilot artwork.
+  // Separate asset covers 4 authored views × (4 walk + 4 run) = 32 frames.
+  const mode=moving>.88?'run':'walk';
+  const frame=movingPilotFrame(col,mode,gait);
+  paintMovingPilot(g,sunsetMovement.image,frame,baseX,baseY,w,h);
+ }else{
+  paintFrame(g,atlas,v.image,col,movingRow,baseX,baseY,w,h,sunset);
+ }
  if(!sunset&&strideMix>.01&&!slide&&!info.crouch){
   g.globalAlpha=baseAlpha*strideMix;
   g.drawImage(atlas,...frameBounds(v.image,col,1),baseX,baseY,w,h);
@@ -252,7 +302,7 @@ art.drawUnit=draw;
 expose.draw=draw;
 expose.drawPortrait=drawPortrait;
 expose.facing=facing;
-function load(){for(const name of ['fort','sunset'])loadVariant(name);}
+function load(){for(const name of ['fort','sunset'])loadVariant(name);loadMovementPilot();}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',load,{once:true});
 else load();
 })();
