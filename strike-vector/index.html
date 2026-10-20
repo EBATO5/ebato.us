@@ -2170,10 +2170,11 @@ function loadPeerJS(){
 
 const netGoalSpawn=(team,i=0)=>({x:team==='orange'?WORLD.w-204:204,y:clamp(WORLD.h*.5+((i%5)-2)*57,280,WORLD.h-280)});
 function netResetLocal(){const p=netGoalSpawn(net.team);player.x=p.x;player.y=p.y;player.maxHp=maxHealth();player.hp=maxHealth();player.kvx=0;player.kvy=0;player.shield=shieldMax();player.shieldHitAt=-999;player.respawn=0;player.invul=1.5;player.roll=0;player.gun=clipSize();keys.clear();fireHeld=false;}
-function netRules(){return {npcs:!!net.settings.npcs,cover:!!net.settings.cover,pvp:!!net.settings.pvp,npcPuck:!!net.settings.npcPuck,teamLock:!!net.settings.teamLock}}
+function netRules(){return {npcs:!!net.settings.npcs,cover:!!net.settings.cover,pvp:!!net.settings.pvp,npcPuck:!!net.settings.npcPuck,teamLock:!!net.settings.teamLock,arena:net.settings.arena==='sunset'?'sunset':'fort'}}
 function netApplyRules(data){
  if(!data||typeof data!=='object')return;
  const before=netRules();for(const k of ['npcs','cover','pvp','npcPuck','teamLock'])if(typeof data[k]==='boolean')net.settings[k]=data[k];
+ if(data.arena==='fort'||data.arena==='sunset'){net.settings.arena=data.arena;setStadiumVisual(data.arena);}
  if(net.phase==='match'){
   if(!net.settings.npcs){enemies=[];net.npcRemaining=0;}
   if(!net.settings.cover)obstacles=[];
@@ -2407,7 +2408,7 @@ for(const lane of document.querySelectorAll('[data-drop-team]')){
 }
 document.addEventListener('dragend',()=>document.querySelectorAll('.net-team-lane.drag-over').forEach(v=>v.classList.remove('drag-over')));
 function netUpdateLobby(){
- $net('netLobbyCode').textContent=net.code||'------';
+ $net('netLobbyCode').textContent=net.code||'------';setStadiumVisual(net.mode==='solo'?arenaChoice:net.settings.arena);
  for(const [key,id] of [['npcs','netRuleNPC'],['cover','netRuleCover'],['pvp','netRulePVP'],['npcPuck','netRuleNpcPuck'],['teamLock','netRuleTeamLock']]){const b=$net(id);b.classList.toggle('selected',net.settings[key]);b.setAttribute('aria-pressed',String(!!net.settings[key]));b.disabled=net.mode!=='host';b.firstChild.textContent=(net.settings[key]?'◉':'◯')+' '+(key==='npcs'?'HOSTILE NPCS':key==='cover'?'DESTRUCTIBLE COVER':key==='pvp'?'PLAYER DAMAGE':key==='npcPuck'?'NPC SHOTS MOVE PUCK':'HOST-LOCKED TEAMS');}
  $net('netRulesHelp').textContent=net.mode==='host'?'Drag players between teams; manage bots and rules live.':'Live team roster and battlefield positions. '+(net.settings.teamLock?'Teams are host-locked.':'Use on-screen controls to change teams.');
  $net('netBegin').hidden=net.mode!=='host'||net.phase!=='lobby';
@@ -2431,7 +2432,7 @@ function netClose(notice=''){const oldMode=net.mode;
  if(oldMode==='host')netBroadcast({t:'closed'});
  for(const c of net.clients.values())try{c.close()}catch(e){}
  try{net.conn?.close()}catch(e){}try{net.peer?.destroy()}catch(e){}
- roundBreak.kind='';roundBreak.until=0;roundBreak.ready.clear();updateRoundReady();net.mode='solo';net.phase='off';net.peer=null;net.conn=null;net.clients.clear();net.remotes.clear();net.bots=[];net.botSeq=0;net.code='';net.id='';net.connected=false;net.started=false;net.npcRemaining=0;net.settings={npcs:false,cover:false,pvp:true,npcPuck:true,teamLock:false};
+ roundBreak.kind='';roundBreak.until=0;roundBreak.ready.clear();updateRoundReady();net.mode='solo';net.phase='off';net.peer=null;net.conn=null;net.clients.clear();net.remotes.clear();net.bots=[];net.botSeq=0;net.code='';net.id='';net.connected=false;net.started=false;net.npcRemaining=0;net.settings={npcs:false,cover:false,pvp:true,npcPuck:true,teamLock:false,arena:arenaChoice};
  netShowLobby(false);$net('netDock').classList.add('hidden');$net('netLaunchError').textContent=notice;
  if(oldMode!=='solo'){started=false;ended=false;paused=true;shopOpen=false;reset();showScreen('title');}
 }
@@ -2450,7 +2451,7 @@ function netStartMatch(){
  player.modules.grenade=true;player.secondary='grenade';
  cam.x=player.x-sw*.5;cam.y=player.y-sh*.5;
  net.phase='match';net.started=true;net.sendClock=0;roundBreak.ready.clear();roundBreak.humans=1;net.npcRemaining=net.settings.npcs&&net.mode==='host'?npcWavePopulation(wave,true):0;player.respawn=0;player.maxHp=maxHealth();player.hp=maxHealth();player.kvx=0;player.kvy=0;player.invul=1.5;if(net.settings.cover&&net.mode==='host')buildLevel();
- $net('netLobby').classList.add('hidden');$net('netDock').classList.remove('hidden');
+ $net('netLobby').classList.add('hidden');$net('netDock').classList.remove('hidden');setStadiumVisual(net.settings.arena);
  ui.screen.classList.add('hidden');ui.puckBoard.hidden=false;netUpdateLobby();syncUI(1);playMusic();
 }
 function netHandleHostData(conn,msg){
@@ -2606,7 +2607,7 @@ async function netCreateOrJoin(host){
  const code=host?Array.from(crypto.getRandomValues(new Uint8Array(6)),b=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b%32]).join(''):safeCode($net('netCodeInput').value);
  if(!host&&code.length!==6){netNotify('Enter a six-character lobby code.');return}
  if(net.mode!=='solo')netClose();
- net.mode=host?'host':'guest';net.phase='lobby';net.team='cyan';net.code=code;net.settings={npcs:false,cover:false,pvp:true,npcPuck:true,teamLock:false};
+ net.mode=host?'host':'guest';net.phase='lobby';net.team='cyan';net.code=code;net.settings={npcs:false,cover:false,pvp:true,npcPuck:true,teamLock:false,arena:host?arenaChoice:'fort'};setStadiumVisual(net.settings.arena);
  net.name=safeName($net('netNickname').value);net.id=host?'host':'';net.connected=false;
  netShowLobby(true);$net('netLobbyStatus').textContent='Connecting to PeerServer Cloud…';
  try{await loadPeerJS()}catch(e){netClose(e.message);return;}
