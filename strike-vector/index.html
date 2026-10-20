@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
 <meta name="theme-color" content="#080e17" />
-<title>STRIKE VECTOR v1.10.0 — Combat & Motion Update</title>
+<title>STRIKE VECTOR v1.11.0 — Combat Animation & Arena Effects</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{color-scheme:dark;--bg:#080e17;--panel:#101b28;--border:#263746;--mint:#74f7d4;--text:#eef6f7;--muted:#8da4b3;--orange:#ffbd75}
@@ -610,6 +610,7 @@ body[data-stadium="sunset"] .sprite-status{color:#ffbd91}
 <script src="./arena-art.js"></script>
 <script src="./stadium-themes.js"></script>
 <script src="./character-sprites.js"></script>
+<script src="./combat-vfx.js"></script>
 <script>
 (()=>{'use strict';
 const canvas=document.getElementById('game'),ctx=canvas.getContext('2d',{alpha:false});
@@ -885,6 +886,7 @@ function buildLevel(){
 }
 
 function reset(){
+ window.StrikeVectorVFX?.clear();
  buildLevel();player={x:1250,y:810,r:18,hp:100,maxHp:100,vx:0,vy:0,angle:0,weapon:0,
   mods:{receiver:0,barrel:0,damage:0,trigger:0,fireControl:0,mag:0,projectiles:0,penetration:0,reloadSpeed:0,blast:0,knife:0,grenadePower:0,grenadeRange:0,grenadeMag:0,grenadeReload:0,grenadeCycle:0,shieldCapacity:0,shieldRegen:0,shieldDelay:0,armor:0,maxHealth:0,dodgeCooldown:0},
   modules:{laser:false,grenade:false,power:false,explosive:false,bayonet:false},laserOn:false,explosiveOn:false,bayonetOn:false,secondary:'aim',
@@ -2005,7 +2007,7 @@ function quickMelee(){
  if(!player||paused||ended||player.hp<=0||player.meleeCd>0)return false;
  player.slash=.18;player.slashDir=mouseAim();player.slashKind=player.weapon===2?'knife':'quick';
  player.slashHits.clear();player.slashCoverDone=false;player.meleeCd=player.weapon===2?.35:.44;
- sound('knife');hitSlash();if(net.phase==='match')netSendMelee(player.slashKind==='knife'?'knife':'quick',player.slashDir);
+ sound('knife');window.StrikeVectorVFX?.melee(player.x,player.y,player.slashDir,net.phase==='match'?net.team:'cyan',player.slashKind==='knife');hitSlash();if(net.phase==='match')netSendMelee(player.slashKind==='knife'?'knife':'quick',player.slashDir);
  burst(player.x+Math.cos(player.slashDir)*30,player.y+Math.sin(player.slashDir)*30,5,'#a3f5e5',75);
  return true;
 }
@@ -2019,6 +2021,7 @@ function startSlide(){
  player.rollCd=dodgeCooldown();player.invul=.10;player.slideTurn=0;
  // Preserve any reload already in progress during the dash.
  sound('dodge');
+ window.StrikeVectorVFX?.slide(player.x,player.y,Math.atan2(player.rollDy,player.rollDx),net.phase==='match'?net.team:'cyan',true);
  for(let i=0;i<12;i++)particle(player.x-player.rollDx*19,player.y-player.rollDy*19,rand(-115,115)-player.rollDx*140,rand(-115,115)-player.rollDy*140,.35,'#b1a78e',rand(1,4));
  return true;
 }
@@ -2046,7 +2049,7 @@ function launchGrenade(){
  sound('grenade');shake=Math.max(shake,2.5);return true;
 }
 function fireBullet(a,spread,power=false,showEffects=true,precision=false){
- if(showEffects)player.spriteShotUntil=clock+.16;
+ if(showEffects){player.spriteShotUntil=clock+.16;window.StrikeVectorVFX?.flash(player.x,player.y,a,net.phase==='match'?net.team:'cyan',precision);}
  const spec=gunSpec(),angle=a+rand(-spread,spread),speed=(spec.velocity+player.mods.barrel*75)*(precision?2.5:1);
  const damage=(spec.damage+player.mods.damage*7)*(precision?2.5:power?2.65:1);
  const pierce=precision?precisionPierce(player.mods.penetration):player.mods.penetration+(power?2:0),color=precision?'#bffaff':power?'#ffca8c':player.explosiveOn?'#ffc07d':'#a1fff0';
@@ -2054,7 +2057,7 @@ function fireBullet(a,spread,power=false,showEffects=true,precision=false){
  bullets.push({x:player.x+Math.cos(a)*29,y:player.y+Math.sin(a)*29,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,t:precision?1.25:1,damage,friend:true,color,r:radius,pierce,trace:power||precision,precision,explosive:player.explosiveOn,owner:'host',visualOnly:net.phase==='match'&&net.mode==='guest'});
  if(net.phase==='match'){
   const data={t:'shot',a:angle,explosive:player.explosiveOn,precision,damage:Math.min(600,damage),velocity:speed,r:radius};
-  if(net.mode==='guest')netMsg(net.conn,data);else netBroadcast({...data,by:'host',x:player.x,y:player.y});
+  if(net.mode==='guest')netMsg(net.conn,data);else netBroadcast({...data,by:'host',x:player.x,y:player.y,team:net.team});
  }
  if(showEffects){burst(player.x+Math.cos(a)*29,player.y+Math.sin(a)*29,power||precision?10:4,'#ffe6a4',power||precision?210:130);shake=Math.max(shake,power||precision?5:1.8);
  sound(power||precision?'sniper':player.mods.receiver===2?'rifle':'pistol');}
@@ -2068,7 +2071,7 @@ function shoot(){
  const movementSpread=(crouch?.36:running?1.75:1);
  if(player.weapon===2){
   if(altHeld){player.secondaryCd=.48;throwKnife();return true}
-  player.fireCd=.34;player.slash=.20;player.slashDir=a;player.slashKind='knife';player.slashHits.clear();player.slashCoverDone=false;sound('knife');hitSlash();if(net.phase==='match')netSendMelee('knife',a);return true;
+  player.fireCd=.34;player.slash=.20;player.slashDir=a;player.slashKind='knife';player.slashHits.clear();player.slashCoverDone=false;sound('knife');window.StrikeVectorVFX?.melee(player.x,player.y,a,net.phase==='match'?net.team:'cyan',true);hitSlash();if(net.phase==='match')netSendMelee('knife',a);return true;
  }
  if(secondaryAttack&&player.secondary==='grenade')return launchGrenade();
  if(player.reload>0)return false;
@@ -2160,6 +2163,7 @@ function hurtEnemy(e,damage,x,y,source='player',vx=0,vy=0,force=0){
  }
  if(force>0)pushCombatBody(e,vx,vy,force);
  e.hp-=damage;e.flash=.10;burst(x,y,7,e.type==='rusher'?'#ffb176':'#dfc1ff',180);
+ window.StrikeVectorVFX?.impact(x,y,Math.atan2(vy||0,vx||1),e.type==='rusher'?'hostile':'neutral');
  if(e.hp<=0){
   e.dead=true;
   grantEnemyBounty(e,owner);
@@ -2296,7 +2300,7 @@ function netSendMelee(kind,a){
  if(net.mode==='host'){netHostMelee('host',kind,a);netBroadcast({t:'melee',by:'host',a,kind});}
  else netMsg(net.conn,{t:'melee',kind,a});
 }
-function netVisualMelee(id,a,kind){const r=net.remotes.get(id)||net.bots.find(b=>b.id===id);if(!r)return;r.slash=.22;r.slashDir=a;r.slashKind=kind;burst(r.x+Math.cos(a)*45,r.y+Math.sin(a)*45,5,teamColor(r.team),90);}
+function netVisualMelee(id,a,kind){const r=net.remotes.get(id)||net.bots.find(b=>b.id===id);if(!r)return;r.slash=.22;r.slashDir=a;r.slashKind=kind;window.StrikeVectorVFX?.melee(r.x,r.y,a,r.team,kind==='knife');burst(r.x+Math.cos(a)*45,r.y+Math.sin(a)*45,5,teamColor(r.team),90);}
 function netSendGrenade(a,range,id){
  if(net.phase!=='match'||!Number.isFinite(a))return;
  const data={t:'grenade',a,range,id,radius:grenadeRadius(),damage:grenadeDamage()};
@@ -2318,6 +2322,7 @@ function netVisualGrenade(msg,owner,visualOnly){
 function netVisualShot(msg){
  const shooter=net.remotes.get(msg.by)||net.bots.find(b=>b.id===msg.by);
  if(shooter)shooter.spriteShotUntil=clock+.15;
+ if([msg.x,msg.y,msg.a].every(Number.isFinite))window.StrikeVectorVFX?.flash(msg.x,msg.y,msg.a,msg.team==='orange'?'orange':shooter?.team||'cyan',!!msg.precision);
  const a=msg.a||0,v=clamp(msg.velocity||1260,500,msg.precision?6500:1950),x=clamp(msg.x,50,WORLD.w-50),y=clamp(msg.y,50,WORLD.h-50),radius=clamp(Number(msg.r)||3.2,2.5,9);
  bullets.push({x:x+Math.cos(a)*29,y:y+Math.sin(a)*29,vx:Math.cos(a)*v,vy:Math.sin(a)*v,t:.65,damage:0,friend:true,visualOnly:true,owner:msg.by,color:msg.precision?'#bffaff':msg.explosive?'#ffd080':teamColor(net.bots.find(b=>b.id===msg.by)?.team||net.remotes.get(msg.by)?.team),r:radius,pierce:0,precision:!!msg.precision,trace:!!msg.precision,explosive:!!msg.explosive});
  if(bullets.length>240)bullets.shift();
@@ -2549,8 +2554,9 @@ function netHandleHostData(conn,msg){
   const a=msg.a,precision=!!msg.precision&&r.weapon===0,v=clamp(Number(msg.velocity)||1260,500,precision?6500:1900),damage=clamp(Number(msg.damage)||26,6,precision?600:150),explosive=!!msg.explosive,radius=clamp(Number(msg.r)||3.2,2.5,9);
   if(!r.shotWindow||clock-r.shotWindow>1){r.shotWindow=clock;r.shotCount=0;}if(++r.shotCount>125)return;
   r.spriteShotUntil=clock+.15;
+  window.StrikeVectorVFX?.flash(r.x,r.y,a,r.team,precision);
   bullets.push({x:r.x+Math.cos(a)*29,y:r.y+Math.sin(a)*29,vx:Math.cos(a)*v,vy:Math.sin(a)*v,t:precision?1.25:1,damage,friend:true,color:precision?'#bffaff':explosive?'#ffd080':teamColor(r.team),r:radius,pierce:precision?precisionPierce(r.penetrationTier||0):Math.max(0,r.penetrationTier||0),trace:precision,precision,explosive,owner:conn.peer});
-  netBroadcast({t:'shot',by:conn.peer,x:r.x,y:r.y,a,velocity:v,explosive,precision,r:radius});return;
+  netBroadcast({t:'shot',by:conn.peer,x:r.x,y:r.y,a,velocity:v,explosive,precision,r:radius,team:r.team});return;
  }
  if(msg.t==='melee'&&net.phase==='match'&&Number.isFinite(msg.a)&&r.hp>0){
   const kind=msg.kind==='knife'?'knife':'quick';if((r.meleeAt||-10)+.24>clock)return;r.meleeAt=clock;
@@ -2703,7 +2709,8 @@ function netBotFire(bot,a,puckOnly=false){
  bot.spriteShotUntil=clock+.15;
  const angle=a+rand(puckOnly?-.035:-.09,puckOnly?.035:.09),v=puckOnly?1200:1030,r=puckOnly?3.2:3.7;
  bullets.push({x:bot.x+Math.cos(angle)*29,y:bot.y+Math.sin(angle)*29,vx:Math.cos(angle)*v,vy:Math.sin(angle)*v,t:1,damage:puckOnly?28:20,friend:true,puckOnly,color:teamColor(bot.team),r,pierce:0,owner:bot.id});
- netBroadcast({t:'shot',by:bot.id,x:bot.x,y:bot.y,a:angle,velocity:v,r,explosive:false});
+ window.StrikeVectorVFX?.flash(bot.x,bot.y,angle,bot.team,false);
+ netBroadcast({t:'shot',by:bot.id,x:bot.x,y:bot.y,a:angle,velocity:v,r,explosive:false,team:bot.team});
  burst(bot.x+Math.cos(angle)*26,bot.y+Math.sin(angle)*26,3,teamColor(bot.team),80);
 }
 function netBotMelee(bot,foe){
@@ -2711,6 +2718,7 @@ function netBotMelee(bot,foe){
  if(foe.npc){if(foe.enemy&&!foe.enemy.dead)hurtEnemy(foe.enemy,power,foe.enemy.x,foe.enemy.y,bot.id,Math.cos(bot.a),Math.sin(bot.a),490);}
  else netCombatImpact(bot.id,foe.id,power,Math.cos(bot.a),Math.sin(bot.a),780,false,true);
  bot.slash=.22;bot.slashDir=bot.a;
+ window.StrikeVectorVFX?.melee(bot.x,bot.y,bot.a,bot.team,false);
  netBroadcast({t:'melee',by:bot.id,a:bot.a,kind:'quick'});
  burst(bot.x+Math.cos(bot.a)*40,bot.y+Math.sin(bot.a)*40,6,teamColor(bot.team),110);
 }
@@ -2804,6 +2812,7 @@ if(invited.length===6){$net('netCodeInput').value=invited;$net('netLaunchError')
 function npcWavePopulation(w,online=false){const n=5+Math.ceil(Math.max(1,w)*2);return online?Math.min(24,n):n;}
 function nextWave(){wave++;toSpawn=npcWavePopulation(wave);spawnTimer=.15;nextWaveTimer=-1;player.hp=Math.min(maxHealth(),player.hp+(wave===1?0:22));if(wave>1)refillWeapons();spawnCover(Math.min(4,2+Math.floor(wave/3)));coverSpawnTimer=rand(3.3,5.2);ui.banner.innerHTML=`INCOMING HOSTILES<strong>WAVE ${String(wave).padStart(2,'0')}</strong>`;ui.banner.classList.add('show');bannerUntil=clock+1.8}
 function update(dt){clock+=dt;
+ window.StrikeVectorVFX?.update(dt);
  if(roundBreak.kind){
   if(net.phase==='match')netTick(dt);
   if(clock>=roundBreak.until&&(net.phase!=='match'||net.mode==='host'))finishRoundBreak();
@@ -2840,6 +2849,7 @@ const c=isCrouching()||touchState.crouch,run=(keys.has('ShiftLeft')||keys.has('S
 if(player.reload>0){player.reload-=dt;if(player.reload<=0){player.reload=0;const num=Math.min(clipSize()-player.gun,player.gunReserve);player.gun+=num;player.gunReserve-=num}}
 if(player.grenadeReload>0){player.grenadeReload-=dt;if(player.grenadeReload<=0){player.grenadeReload=0;const count=Math.min(grenadeClipSize()-player.grenades,player.grenadeReserve);player.grenades+=count;player.grenadeReserve-=count;sound('buy')}}
 if(player.roll>0){
+ if((player._nextSlideVfx||0)<=clock){window.StrikeVectorVFX?.slide(player.x,player.y,Math.atan2(player.rollDy,player.rollDx),net.phase==='match'?net.team:'cyan');player._nextSlideVfx=clock+.085;}
  player.roll=Math.max(0,player.roll-dt);
  const progress=1-player.roll/player.rollMax;
  // Low-profile slide with momentum loss and gentle steering.
@@ -2977,6 +2987,7 @@ function artMotion(o){
  return {step:o._artStep,move:o._artMove};
 }
 function drawEntities(){ctx.save();ctx.translate(-cam.x,-cam.y);
+window.StrikeVectorVFX?.drawUnder(ctx);
 for(const g of grenades){
  const p=clamp(g.t/g.dur,0,1),height=Math.sin(p*Math.PI)*52;
  ctx.fillStyle='#f8c28c30';ctx.beginPath();ctx.ellipse(g.x,g.y,11,6,0,0,TAU);ctx.fill();
@@ -3095,6 +3106,7 @@ if(altHeld&&player.weapon===0&&player.secondary==='aim'){
 }
 if(altHeld&&player.weapon===2){let charge=clamp((clock-altStart)/.65,0,1);ctx.strokeStyle='#8df7d5aa';ctx.lineWidth=2+charge*2;ctx.setLineDash([7,8]);ctx.beginPath();ctx.moveTo(player.x+Math.cos(a)*28,player.y+Math.sin(a)*28);ctx.lineTo(player.x+Math.cos(a)*690,player.y+Math.sin(a)*690);ctx.stroke();ctx.setLineDash([]);ctx.strokeStyle='#7af4d4';ctx.lineWidth=3;ctx.beginPath();ctx.arc(player.x,player.y,27,-Math.PI/2,-Math.PI/2+charge*TAU);ctx.stroke()}
 for(const r of [...net.remotes.values(),...net.bots])if(r.slash>0)r.slash=Math.max(0,r.slash-1/60);
+window.StrikeVectorVFX?.drawOver(ctx);
 for(const p of particles){if(p.x<cam.x-100||p.x>cam.x+sw+100||p.y<cam.y-100||p.y>cam.y+sh+100)continue;ctx.globalAlpha=clamp(p.life/p.max,0,1);if(p.ring){ctx.strokeStyle=p.color;ctx.lineWidth=5*(p.life/p.max);ctx.beginPath();ctx.arc(p.x,p.y,p.r*(1-p.life/p.max),0,TAU);ctx.stroke()}else{ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.r*(.5+p.life/p.max*.5),0,TAU);ctx.fill()}}ctx.globalAlpha=1;
 for(const t of texts){ctx.globalAlpha=1-t.t/t.max;ctx.fillStyle=t.color;ctx.font='bold 15px system-ui';ctx.textAlign='center';ctx.fillText(t.text,t.x,t.y)}ctx.globalAlpha=1;ctx.restore()}
 // Proximity radar is local to each operative: the ring fills as the puck
