@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
 <meta name="theme-color" content="#080e17" />
-<title>STRIKE VECTOR v1.6.0 — FORT VECTOR Visual Upgrade</title>
+<title>STRIKE VECTOR v1.7.0 — Two Stadiums & Animated Players</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{color-scheme:dark;--bg:#080e17;--panel:#101b28;--border:#263746;--mint:#74f7d4;--text:#eef6f7;--muted:#8da4b3;--orange:#ffbd75}
@@ -508,6 +508,22 @@ body.touch-ready #audioSettings{top:auto;bottom:calc(39px + env(safe-area-inset-
 #fieldPlayersInShop{padding:10px 13px;cursor:pointer;font:800 11px Oxanium,system-ui;background:#153842;color:#d8fcf4;border:1px solid #5cbbaf;border-radius:8px;margin:0 0 12px}
 @media(max-width:520px){#fieldPeople{grid-template-columns:1fr}#roundReadyDock{bottom:calc(9px + env(safe-area-inset-bottom,0px))}}
 
+
+/* Stadium selection for independent art skins sharing one physics arena. */
+.stadium-picker{margin:14px 0;padding:11px;border:1px solid #42676d;border-radius:12px;background:rgba(3,18,30,.76)}
+.stadium-picker[hidden]{display:none!important}
+.stadium-picker .stadium-title{font:800 10px Oxanium,system-ui;letter-spacing:.14em;color:#f1b782;margin-bottom:9px}
+.stadium-choices{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stadium-choices button{cursor:pointer;text-align:left;padding:11px 12px;border-radius:10px;border:1px solid #466878;color:#e4fbfa;background:linear-gradient(135deg,#1b3241,#122633);font:800 12px Oxanium,system-ui}
+.stadium-choices button:nth-child(2){background:linear-gradient(125deg,#4b3040,#463d3d)}
+.stadium-choices button small{display:block;color:#aac5c9;font:600 10px Oxanium,system-ui;margin-top:4px;line-height:1.4}
+.stadium-choices button.selected{border:2px solid #7ff0d8;box-shadow:0 0 18px #52debd33;padding:10px 11px}
+.stadium-choices button:nth-child(2).selected{border-color:#ffab70;box-shadow:0 0 18px #ff98603b}
+.stadium-choices button:disabled{cursor:default;opacity:.67}
+body[data-stadium="sunset"] .subbrand{color:#ffb688}
+body[data-stadium="sunset"] .brand span{color:#ffad79}
+@media(max-width:480px){.stadium-choices{grid-template-columns:1fr}.stadium-picker{padding:8px}.stadium-choices button{font-size:11px;padding:9px}}
+
 </style>
 </head>
 <body>
@@ -553,6 +569,7 @@ body.touch-ready #audioSettings{top:auto;bottom:calc(39px + env(safe-area-inset-
  <div class="net-options" style="margin-top:11px"><button class="net-btn" id="netCopyInvite">COPY INVITE LINK</button><button class="net-btn" id="netLeave">LEAVE LOBBY</button></div><section id="fieldSurvey" aria-label="Live battlefield positions" hidden><div class="field-survey-title">TACTICAL FIELD // LIVE PLAYER POSITIONS</div><div id="fieldMap" role="img" aria-label="Live map of player positions and puck"><div class="field-goal left"></div><div class="field-goal right"></div><div id="fieldDots"></div></div><div id="fieldPeople"></div></section>
  <hr class="net-separator"><div class="net-kicker">TEAM DRAFT // DRAG OR TAP TO REASSIGN</div>
  <div class="net-options" style="margin-top:9px"><button class="net-btn" id="netChooseCyan">◉ CYAN · ATTACK RIGHT →</button><button class="net-btn" id="netChooseOrange">◉ ORANGE · ATTACK LEFT ←</button></div>
+ <div id="netStadiumPicker" class="stadium-picker" role="group" aria-label="Host stadium selection"><div class="stadium-title">STADIUM // HOST CHOOSES BEFORE MATCH</div><div class="stadium-choices"><button id="netPickFort" type="button" aria-pressed="true">◈ FORT VECTOR<small>Industrial military training ground</small></button><button id="netPickSunset" type="button" aria-pressed="false">☀ SUNSET CIRCUIT<small>Golden-hour cyberpunk neighborhood court</small></button></div></div>
  <div class="net-kicker" style="margin-top:14px">ARENA RULES // HOST CAN CHANGE LIVE</div>
  <div class="net-rules" role="group" aria-label="Multiplayer arena options">
   <button id="netRuleNPC" class="net-rule" type="button" aria-pressed="false">◯ HOSTILE NPCS<span>Enemies pursue and shoot everyone.</span></button>
@@ -574,8 +591,9 @@ body.touch-ready #audioSettings{top:auto;bottom:calc(39px + env(safe-area-inset-
  </section></div>
 <div class="net-dock hidden" id="netDock"><b id="netDockRoom">ROOM</b><button id="netDockRoster" type="button" title="Pause / live player roster (ESC or P)">PLAYERS / PAUSE [P]</button></div>
 
-<div id="screen"><section class="modal"><div class="kicker" id="kicker">OPERATION // ARCADE PROTOTYPE</div><h1 id="modalTitle">STRIKE <span>VECTOR</span></h1><p class="intro" id="modalIntro">Start with one 9mm pistol. Fire pellets from a single cartridge, unlock all fire modes in one purchase, and fire or strike during a slide.</p><div class="legend" id="legend"><div class="legend-item"><span class="key">WASD</span>Move / strafe</div><div class="legend-item"><span class="key">MOUSE</span>Tap for semi/burst; hold for automatic fire</div><div class="legend-item"><span class="key">F</span>Switch unlocked SEMI / BURST / AUTO modes</div><div class="legend-item"><span class="key">SPACE</span>Slide / dodge · steer while sliding and fire freely</div><div class="legend-item"><span class="key">SHIFT</span>Hold to sprint</div><div class="legend-item"><span class="key">E</span>Quick buttstock / bayonet strike, even mid-slide</div><div class="legend-item"><span class="key">ALT</span>Hold to crouch · slower movement, tighter spread</div><div class="legend-item"><span class="key">RMB + LMB</span>Precision sniper shot / grenade / power shot</div><div class="legend-item"><span class="key">1 / 2 / 3–5</span>Knife / custom firearm / secondary abilities</div><div class="legend-item"><span class="key">R / TAB</span>Reload / armory pause</div><div class="legend-item"><span class="key">L / ESC</span>Laser [L] · ammo [X] / pause</div></div><div id="shop"><div id="roundBreakPanel" role="timer" aria-label="Intermission countdown"><div><div class="rb-heading" id="rbHeading">GOAL SCORED // SHOP BREAK</div><div class="rb-caption" id="rbCaption">Use the armory. The next round starts automatically.</div></div><div class="rb-count"><span id="rbSeconds">45</span><small> SEC</small></div><div class="rb-bar"><div id="rbProgress"></div></div></div><button type="button" id="touchShopClose">← RESUME GAME</button><div class="shop-summary"><div class="shop-bank" id="shopBank">$0 <small>AVAILABLE</small></div><div class="shop-message" id="shopMessage">BUY / REFUND AS MUCH AS YOU LIKE</div></div><button id="fieldPlayersInShop" type="button" hidden>☷ VIEW PLAYERS / LIVE FIELD (ESC)</button><div class="shop-stats" id="shopStats"></div><div class="shop-tabs" id="shopTabs" role="tablist" aria-label="Armory categories"></div><div class="shop-grid" id="shopGrid"></div><div class="shop-note" id="shopNote"></div></div><div class="net-launch" id="netLaunch"><div class="net-launch-head">▣ EBATO // MULTIPLAYER CONNECTION</div><div class="net-entry"><input id="netNickname" class="net-input" maxlength="18" aria-label="Your multiplayer nickname" placeholder="Your callsign" value="Operative"><input id="netCodeInput" class="net-input" maxlength="6" autocomplete="off" aria-label="Lobby code" placeholder="ROOM CODE (JOIN)"></div><div class="net-actions"><button class="net-btn" type="button" id="netCreate">+ CREATE LOBBY</button><button class="net-btn" type="button" id="netJoin">→ JOIN LOBBY</button></div><div class="net-launch-note">Live peer-to-peer rooms, up to 8 players. Share a six-character code or invite link. Press <b>T</b> anytime in a match to swap teams. Host must stay online.</div><div class="net-error" id="netLaunchError" role="status" aria-live="polite"></div></div><button type="button" id="puckModeToggle" aria-pressed="true">◉ PUCK ARENA: ON · SHOOT THE PUCK INTO THE ORANGE GOAL</button><button class="cta" id="start">DEPLOY OPERATIVE →</button><div class="hint" id="hint">Desktop keyboard + mouse recommended · Survive as long as you can</div></section></div>
+<div id="screen"><section class="modal"><div class="kicker" id="kicker">OPERATION // ARCADE PROTOTYPE</div><h1 id="modalTitle">STRIKE <span>VECTOR</span></h1><p class="intro" id="modalIntro">Start with one 9mm pistol. Fire pellets from a single cartridge, unlock all fire modes in one purchase, and fire or strike during a slide.</p><div id="soloStadiumPicker" class="stadium-picker" role="group" aria-label="Solo stadium selection"><div class="stadium-title">CHOOSE YOUR STADIUM</div><div class="stadium-choices"><button id="soloPickFort" type="button" aria-pressed="true">◈ FORT VECTOR<small>Military sports arena · steel and floodlights</small></button><button id="soloPickSunset" type="button" aria-pressed="false">☀ SUNSET CIRCUIT<small>Street-court league · neon and golden hour</small></button></div></div><div class="legend" id="legend"><div class="legend-item"><span class="key">WASD</span>Move / strafe</div><div class="legend-item"><span class="key">MOUSE</span>Tap for semi/burst; hold for automatic fire</div><div class="legend-item"><span class="key">F</span>Switch unlocked SEMI / BURST / AUTO modes</div><div class="legend-item"><span class="key">SPACE</span>Slide / dodge · steer while sliding and fire freely</div><div class="legend-item"><span class="key">SHIFT</span>Hold to sprint</div><div class="legend-item"><span class="key">E</span>Quick buttstock / bayonet strike, even mid-slide</div><div class="legend-item"><span class="key">ALT</span>Hold to crouch · slower movement, tighter spread</div><div class="legend-item"><span class="key">RMB + LMB</span>Precision sniper shot / grenade / power shot</div><div class="legend-item"><span class="key">1 / 2 / 3–5</span>Knife / custom firearm / secondary abilities</div><div class="legend-item"><span class="key">R / TAB</span>Reload / armory pause</div><div class="legend-item"><span class="key">L / ESC</span>Laser [L] · ammo [X] / pause</div></div><div id="shop"><div id="roundBreakPanel" role="timer" aria-label="Intermission countdown"><div><div class="rb-heading" id="rbHeading">GOAL SCORED // SHOP BREAK</div><div class="rb-caption" id="rbCaption">Use the armory. The next round starts automatically.</div></div><div class="rb-count"><span id="rbSeconds">45</span><small> SEC</small></div><div class="rb-bar"><div id="rbProgress"></div></div></div><button type="button" id="touchShopClose">← RESUME GAME</button><div class="shop-summary"><div class="shop-bank" id="shopBank">$0 <small>AVAILABLE</small></div><div class="shop-message" id="shopMessage">BUY / REFUND AS MUCH AS YOU LIKE</div></div><button id="fieldPlayersInShop" type="button" hidden>☷ VIEW PLAYERS / LIVE FIELD (ESC)</button><div class="shop-stats" id="shopStats"></div><div class="shop-tabs" id="shopTabs" role="tablist" aria-label="Armory categories"></div><div class="shop-grid" id="shopGrid"></div><div class="shop-note" id="shopNote"></div></div><div class="net-launch" id="netLaunch"><div class="net-launch-head">▣ EBATO // MULTIPLAYER CONNECTION</div><div class="net-entry"><input id="netNickname" class="net-input" maxlength="18" aria-label="Your multiplayer nickname" placeholder="Your callsign" value="Operative"><input id="netCodeInput" class="net-input" maxlength="6" autocomplete="off" aria-label="Lobby code" placeholder="ROOM CODE (JOIN)"></div><div class="net-actions"><button class="net-btn" type="button" id="netCreate">+ CREATE LOBBY</button><button class="net-btn" type="button" id="netJoin">→ JOIN LOBBY</button></div><div class="net-launch-note">Live peer-to-peer rooms, up to 8 players. Share a six-character code or invite link. Choose teams in the roster. Press <b>P</b> anytime in a match to swap teams. Host must stay online.</div><div class="net-error" id="netLaunchError" role="status" aria-live="polite"></div></div><button type="button" id="puckModeToggle" aria-pressed="true">◉ PUCK ARENA: ON · SHOOT THE PUCK INTO THE ORANGE GOAL</button><button class="cta" id="start">DEPLOY OPERATIVE →</button><div class="hint" id="hint">Desktop keyboard + mouse recommended · Survive as long as you can</div></section></div>
 <script src="./arena-art.js"></script>
+<script src="./stadium-themes.js"></script>
 <script>
 (()=>{'use strict';
 const canvas=document.getElementById('game'),ctx=canvas.getContext('2d',{alpha:false});
@@ -591,7 +609,42 @@ let player,enemies=[],bullets=[],grenades=[],knives=[],particles=[],texts=[],wav
 let puckEnabled=true,puck=null,teamGoals=0,rivalGoals=0,goalFlash=0;
 const roundBreak={kind:'',until:0,duration:0,lastShown:-1,ready:new Set(),humans:1};
 let netGrenadeSeq=0;
-const net={mode:'solo',phase:'off',peer:null,conn:null,clients:new Map(),remotes:new Map(),bots:[],botSeq:0,id:'',code:'',name:'',team:'cyan',sendClock:0,coverClock:0,npcClock:0,npcRemaining:0,connected:false,started:false,lastHostAt:0,settings:{npcs:false,cover:false,pvp:true,npcPuck:true,teamLock:false}};
+const net={mode:'solo',phase:'off',peer:null,conn:null,clients:new Map(),remotes:new Map(),bots:[],botSeq:0,id:'',code:'',name:'',team:'cyan',sendClock:0,coverClock:0,npcClock:0,npcRemaining:0,connected:false,started:false,lastHostAt:0,settings:{npcs:false,cover:false,pvp:true,npcPuck:true,teamLock:false,arena:'fort'}};
+let arenaChoice='fort';
+
+// All stadiums retain the same collider positions, goal sizes and puck physics.
+function setStadiumVisual(which){
+ const next=which==='sunset'?'sunset':'fort';
+ if(arenaChoice!==next||window.StrikeVectorArt?.getArena?.()!==next){
+  arenaChoice=next;
+  window.StrikeVectorArt?.setArena?.(next);
+  for(const cover of obstacles)cover.dirty=true;
+  renderedStill=false;
+ }
+ document.body.dataset.stadium=next;
+ const subbrand=document.querySelector('.subbrand');
+ if(subbrand)subbrand.textContent=next==='sunset'?'SUNSET CIRCUIT // GOLDEN HOUR STREET LEAGUE':'FORT VECTOR // TACTICAL SPORTS COMPLEX';
+ for(const [id,chosen] of [['soloPickFort',next==='fort'],['soloPickSunset',next==='sunset'],['netPickFort',next==='fort'],['netPickSunset',next==='sunset']]){
+  const button=document.getElementById(id);
+  button.classList.toggle('selected',chosen);button.setAttribute('aria-pressed',String(chosen));
+ }
+ const locked=net.mode!=='host'||net.phase!=='lobby';
+ for(const id of ['netPickFort','netPickSunset'])document.getElementById(id).disabled=locked;
+}
+function chooseHostStadium(which){
+ if(net.mode!=='host'||net.phase!=='lobby')return;
+ net.settings.arena=which==='sunset'?'sunset':'fort';
+ setStadiumVisual(net.settings.arena);
+ netBroadcast({t:'rules',rules:netRules()});
+}
+for(const [id,arena] of [['soloPickFort','fort'],['soloPickSunset','sunset']]){
+ document.getElementById(id).addEventListener('click',()=>{if(net.mode==='solo'&&(!started||ended))setStadiumVisual(arena);});
+}
+for(const [id,arena] of [['netPickFort','fort'],['netPickSunset','sunset']]){
+ document.getElementById(id).addEventListener('click',()=>chooseHostStadium(arena));
+}
+setStadiumVisual(new URLSearchParams(location.search).get('arena')==='sunset'?'sunset':'fort');
+
 let shopTab='gun',selectedTreeNode='core',treePopupOpen=false,treePan={x:0,y:0},treeScale=1,treePanReady=false,treeDrag=null,treeSuppressUntil=0;let soundOn=true,sfxVolume=100,ac=null,sfxBus=null,activeVoices=0;const soundTimes=Object.create(null);function sound(kind){if(!soundOn||sfxVolume<=0||activeVoices>=8)return;const now=performance.now(),limit=(kind==='hit'?65:kind==='pistol'||kind==='rifle'?36:kind==='grenade'?75:22);if(now-(soundTimes[kind]||-1000)<limit)return;soundTimes[kind]=now;try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();
 if(ac.state==='suspended'){const resumed=ac.resume();if(resumed&&resumed.catch)resumed.catch(()=>{});}
 if(!sfxBus){
@@ -1431,7 +1484,7 @@ function closeFieldShop(){renderedStill=false;shopOpen=false;paused=false;ui.scr
 function toggleTabShop(){if(!started||ended)return;if(shopOpen){if(shopMode==='field'||roundBreak.kind)closeFieldShop();return}if(roundBreak.kind)openShop(shopMode,false);else openShop('field')}
 function showScreen(type){
  renderedStill=false;ui.screen.classList.remove('hidden');
- ui.puckToggle.hidden=type!=='title';ui.puckBoard.hidden=!started||!puckEnabled;
+ ui.puckToggle.hidden=type!=='title';document.getElementById('soloStadiumPicker').hidden=type!=='title';ui.puckBoard.hidden=!started||!puckEnabled;
  ui.shop.classList.toggle('show',type==='shop'||type==='fieldShop');ui.screen.querySelector('.modal').classList.toggle('shop-mode',type==='shop'||type==='fieldShop');
  if(type==='shop'||type==='fieldShop'){
   ui.kicker.textContent=type==='fieldShop'?(net.phase==='match'?'ONLINE WORKSHOP // LIVE MATCH':'TACTICAL PAUSE // WAVE '+String(wave).padStart(2,'0')):'ARMORY // WAVE '+String(wave).padStart(2,'0')+' COMPLETE';
