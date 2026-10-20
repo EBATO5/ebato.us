@@ -2622,7 +2622,7 @@ function netHandleGuestData(msg){
   }
   for(const v of msg.players||[]){if(v.id===net.id){if(Number.isFinite(v.shield)){if(v.shield<player.shield-1)player.shieldHitAt=clock;player.shield=clamp(v.shield,0,shieldMax());}continue;}
    if(!net.remotes.has(v.id))netJoinRoomInfo(v.id,v);
-   const r=net.remotes.get(v.id);r.x=v.x;r.y=v.y;r.a=v.a;r.weapon=v.weapon;r.team=v.team;r.name=safeName(v.name);r.laserOn=!!v.laserOn;r.maxHp=clamp(Number(v.maxHp)||100,100,225);r.hp=clamp(Number.isFinite(v.hp)?v.hp:100,0,r.maxHp);r.shield=clamp(Number(v.shield)||0,0,175);r.shieldMax=clamp(Number(v.shieldMax)||0,0,175);r.respawn=v.respawn||0;
+   const r=net.remotes.get(v.id);r.x=v.x;r.y=v.y;r.a=v.a;r.weapon=v.weapon;r.team=v.team;r.name=safeName(v.name);r.laserOn=!!v.laserOn;r.slide=!!v.slide;r.slideAngle=Number.isFinite(v.slideAngle)?v.slideAngle:r.a;r.reloading=!!v.reloading;r.running=!!v.running;r.maxHp=clamp(Number(v.maxHp)||100,100,225);r.hp=clamp(Number.isFinite(v.hp)?v.hp:100,0,r.maxHp);r.shield=clamp(Number(v.shield)||0,0,175);r.shieldMax=clamp(Number(v.shieldMax)||0,0,175);r.respawn=v.respawn||0;
   }
   if(Array.isArray(msg.enemies)){enemies=msg.enemies.slice(0,25).filter(e=>[e.x,e.y,e.hp].every(Number.isFinite)).map(e=>({...e,flash:0,r:e.type==='rusher'?17:19}));}
   if(Array.isArray(msg.activeGrenades))for(const g of msg.activeGrenades.slice(0,16)){
@@ -2971,7 +2971,7 @@ function artMotion(o){
  // Presentation-only gait; never modifies remote physics/positions.
  const dt=Math.max(0,Math.min(.06,clock-(o._artTime??clock)));
  const travel=Math.hypot((o.x??0)-(o._artX??o.x??0),(o.y??0)-(o._artY??o.y??0));
- o._artMove=Math.max(travel>.6?1:0,(o._artMove||0)*Math.exp(-7*dt));
+ o._artMove=Math.max(travel>.6?(o.running?1:.73):0,(o._artMove||0)*Math.exp(-7*dt));
  o._artStep=(o._artStep||0)+o._artMove*12*dt;
  o._artTime=clock;o._artX=o.x;o._artY=o.y;
  return {step:o._artStep,move:o._artMove};
