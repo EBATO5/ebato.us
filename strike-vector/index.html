@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
 <meta name="theme-color" content="#080e17" />
-<title>STRIKE VECTOR v1.8.0 — Illustrated Fort Vector Sprite Pilot</title>
+<title>STRIKE VECTOR v1.9.0 — Fort & Sunset Illustrated Sprite Pilots</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{color-scheme:dark;--bg:#080e17;--panel:#101b28;--border:#263746;--mint:#74f7d4;--text:#eef6f7;--muted:#8da4b3;--orange:#ffbd75}
@@ -622,11 +622,12 @@ let arenaChoice='fort';
 function updateSpriteStatus(){
  const field=document.getElementById('characterSpriteStatus'),spr=window.StrikeVectorSprites;
  if(!field||!spr)return;
+ const location=window.StrikeVectorArt?.getArena?.()==='sunset'?'SUNSET CIRCUIT':'FORT VECTOR';
  field.textContent=spr.loaded
- ? '◈ ILLUSTRATED CHARACTER PILOT // FORT VECTOR · FOUR VIEWS / IDLE + STRIDE'
- :spr.state==='fallback'
- ? '◈ CHARACTER ART FILE PENDING // PROCEDURAL MODE STILL PLAYABLE'
- : '◈ LOADING CHARACTER ART PILOT…';
+  ? '◈ ILLUSTRATED PLAYER ART // '+location+' · 8 AIM SECTORS / 2 POSES'
+  :spr.state==='fallback'
+  ? '◈ '+location+' ART PENDING // PROCEDURAL PLAY MODE ACTIVE'
+  : '◈ LOADING '+location+' ILLUSTRATED CHARACTER…';
 }
 window.addEventListener('strike-vector-sprite-status',updateSpriteStatus);
 updateSpriteStatus();
@@ -647,6 +648,7 @@ function setStadiumVisual(which){
  }
  const locked=net.mode!=='host'||net.phase!=='lobby';
  for(const id of ['netPickFort','netPickSunset'])document.getElementById(id).disabled=locked;
+ updateSpriteStatus();
 }
 function chooseHostStadium(which){
  if(net.mode!=='host'||net.phase!=='lobby')return;
