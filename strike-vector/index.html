@@ -2893,7 +2893,7 @@ for(let i=bullets.length-1;i>=0;i--){
  for(let s=0;s<steps;s++){
   b.x+=b.vx*dt/steps;b.y+=b.vy*dt/steps;
   if(puckEnabled&&puck&&puck.respawn===0&&(b.friend||net.phase!=='match'||net.settings.npcPuck)&&Math.hypot(b.x-puck.x,b.y-puck.y)<puck.r+b.r){const speed=Math.hypot(b.vx,b.vy)||1;const force=b.puckOnly?590:b.friend?Math.min(620,260+b.damage*3.5):165;puckImpulse(puck.x,puck.y,b.vx/speed*force,b.vy/speed*force,b.friend?'shot':'enemy',b.friend?(b.owner==='host'?'player':net.bots.find(v=>v.id===b.owner)?.team||net.remotes.get(b.owner)?.team||net.team):'rival');if(b.friend&&b.explosive)smallExplosion(b.x,b.y,b,null);removed=true;break;}
-  const impact=intersectsCover(b.x,b.y,b.r);if(b.t<=0||impact||b.x<b.r+44||b.y<b.r+44||b.x>WORLD.w-b.r-44||b.y>WORLD.h-b.r-44){if(impact)damageCover(impact,b.friend?b.damage*(b.trace?1.25:1):b.damage*.8,b.x,b.y);if(b.friend&&b.explosive)smallExplosion(b.x,b.y,b,null);burst(b.x,b.y,3,b.color,75);removed=true;break}
+  const impact=intersectsCover(b.x,b.y,b.r);if(b.t<=0||impact||b.x<b.r+44||b.y<b.r+44||b.x>WORLD.w-b.r-44||b.y>WORLD.h-b.r-44){if(impact){damageCover(impact,b.friend?b.damage*(b.trace?1.25:1):b.damage*.8,b.x,b.y);window.StrikeVectorVFX?.impact(b.x,b.y,Math.atan2(b.vy,b.vx),b.friend?'cyan':'hostile');}if(b.friend&&b.explosive)smallExplosion(b.x,b.y,b,null);burst(b.x,b.y,3,b.color,75);removed=true;break}
   // Host and solo simulate NPC crossfire; the shooter is immune to its own muzzle.
   // Guest NPC shots are visuals only, so they never simulate damage twice.
   if(!removed&&!b.friend&&b.owner==='npc'&&net.mode!=='guest'){
@@ -3014,6 +3014,11 @@ if(arenaArt){
  }
  if(net.phase==='match')for(const r of net.remotes.values()){
   const color=teamColor(r.team);
+  if(r.slide&&r.hp>0){
+   if(!r._vfxSlideActive){window.StrikeVectorVFX?.slide(r.x,r.y,Number.isFinite(r.slideAngle)?r.slideAngle:r.a,r.team,true);}
+   if((r._nextSlideVfx||0)<=clock){window.StrikeVectorVFX?.slide(r.x,r.y,Number.isFinite(r.slideAngle)?r.slideAngle:r.a,r.team);r._nextSlideVfx=clock+.10;}
+  }
+  r._vfxSlideActive=!!r.slide;
   arenaArt.drawUnit(ctx,{id:r.id||r.name,kind:'human',team:r.team,weapon:r.weapon,x:r.x,y:r.y,a:r.a||0,dead:r.hp<=0,slide:!!r.slide,slideAngle:r.slideAngle,reload:!!r.reloading,recoil:Math.max(0,((r.spriteShotUntil||0)-clock)/.15),slash:Math.max(0,(r.slash||0)/.22),...artMotion(r)});
   if(r.shield>0&&r.shieldMax>0){ctx.strokeStyle='rgba(107,227,255,.60)';ctx.lineWidth=2.5+2*r.shield/r.shieldMax;ctx.beginPath();ctx.arc(r.x,r.y,24,-Math.PI/2,-Math.PI/2+TAU*r.shield/r.shieldMax);ctx.stroke();}
   ctx.textAlign='center';ctx.font='bold 12px Oxanium,system-ui';ctx.fillStyle=color;ctx.fillText(r.name||'OPERATIVE',r.x,r.y-(window.StrikeVectorSprites?.isUsingSprites({kind:'human',team:r.team})?56:36));
