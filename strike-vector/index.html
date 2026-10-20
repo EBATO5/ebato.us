@@ -2921,6 +2921,16 @@ for(const o of obstacles){
 }
 
 ctx.restore()}
+
+function artMotion(o){
+ // Presentation-only gait; never modifies remote physics/positions.
+ const dt=Math.max(0,Math.min(.06,clock-(o._artTime??clock)));
+ const travel=Math.hypot((o.x??0)-(o._artX??o.x??0),(o.y??0)-(o._artY??o.y??0));
+ o._artMove=Math.max(travel>.6?1:0,(o._artMove||0)*Math.exp(-7*dt));
+ o._artStep=(o._artStep||0)+o._artMove*12*dt;
+ o._artTime=clock;o._artX=o.x;o._artY=o.y;
+ return {step:o._artStep,move:o._artMove};
+}
 function drawEntities(){ctx.save();ctx.translate(-cam.x,-cam.y);
 for(const g of grenades){
  const p=clamp(g.t/g.dur,0,1),height=Math.sin(p*Math.PI)*52;
@@ -2935,12 +2945,12 @@ const arenaArt=window.StrikeVectorArt;
 if(arenaArt){
  for(const e of enemies){
   const angle=Number.isFinite(e.a)?e.a:Math.atan2(player.y-e.y,player.x-e.x);
-  arenaArt.drawUnit(ctx,{kind:'hostile',team:e.type==='rusher'?'rusher':'gunner',weapon:0,x:e.x,y:e.y,a:angle,flash:e.flash,dead:e.hp<=0});
+  arenaArt.drawUnit(ctx,{kind:'hostile',team:e.type==='rusher'?'rusher':'gunner',weapon:0,x:e.x,y:e.y,a:angle,flash:e.flash,dead:e.hp<=0,...artMotion(e)});
   if(e.hp<e.maxHp){ctx.fillStyle='#132329';ctx.fillRect(e.x-23,e.y-e.r-14,46,4);ctx.fillStyle=e.type==='rusher'?'#f6a36f':'#c6a1ff';ctx.fillRect(e.x-23,e.y-e.r-14,46*Math.max(0,e.hp/e.maxHp),4);}
  }
  if(net.phase==='match')for(const b of net.bots){
   const color=teamColor(b.team);
-  arenaArt.drawUnit(ctx,{kind:'bot',team:b.team,weapon:0,x:b.x,y:b.y,a:b.a||0,flash:b.flash,dead:b.hp<=0});
+  arenaArt.drawUnit(ctx,{kind:'bot',team:b.team,weapon:0,x:b.x,y:b.y,a:b.a||0,flash:b.flash,dead:b.hp<=0,...artMotion(b)});
   ctx.textAlign='center';ctx.font='bold 11px Oxanium,system-ui';ctx.fillStyle=color;ctx.fillText(b.name||'AI',b.x,b.y-37);
   ctx.fillStyle='#112934';ctx.fillRect(b.x-23,b.y-30,46,5);
   ctx.fillStyle=b.hp<35?'#ff8b70':color;ctx.fillRect(b.x-23,b.y-30,46*clamp(b.hp/100,0,1),5);
@@ -2948,7 +2958,7 @@ if(arenaArt){
  }
  if(net.phase==='match')for(const r of net.remotes.values()){
   const color=teamColor(r.team);
-  arenaArt.drawUnit(ctx,{kind:'human',team:r.team,weapon:r.weapon,x:r.x,y:r.y,a:r.a||0,dead:r.hp<=0});
+  arenaArt.drawUnit(ctx,{kind:'human',team:r.team,weapon:r.weapon,x:r.x,y:r.y,a:r.a||0,dead:r.hp<=0,...artMotion(r)});
   if(r.shield>0&&r.shieldMax>0){ctx.strokeStyle='rgba(107,227,255,.60)';ctx.lineWidth=2.5+2*r.shield/r.shieldMax;ctx.beginPath();ctx.arc(r.x,r.y,24,-Math.PI/2,-Math.PI/2+TAU*r.shield/r.shieldMax);ctx.stroke();}
   ctx.textAlign='center';ctx.font='bold 12px Oxanium,system-ui';ctx.fillStyle=color;ctx.fillText(r.name||'OPERATIVE',r.x,r.y-36);
   if(r.hp>0){ctx.fillStyle='#10262b';ctx.fillRect(r.x-22,r.y-29,44,4);ctx.fillStyle=color;ctx.fillRect(r.x-22,r.y-29,44*Math.max(0,r.hp/(r.maxHp||100)),4);}
@@ -2995,7 +3005,10 @@ if(sliding&&!arenaArt){
  ctx.fillStyle='#d0ebd9';ctx.beginPath();ctx.arc(22,0,8,0,TAU);ctx.fill();ctx.restore();
 }
 if(arenaArt){
- arenaArt.drawUnit(ctx,{kind:'human',team:net.phase==='match'?net.team:'cyan',weapon:player.weapon,x:player.x,y:player.y,a,slide:sliding,crouch,flash:player.invul>0&&Math.floor(clock*16)%2===0?.12:0});
+ arenaArt.drawUnit(ctx,{kind:'human',team:net.phase==='match'?net.team:'cyan',weapon:player.weapon,x:player.x,y:player.y,a,
+  slide:sliding,crouch,reload:player.reload>0,step:player.step,
+  move:(keys.has('KeyW')||keys.has('KeyA')||keys.has('KeyS')||keys.has('KeyD')||touchState.moveId!==null)?(keys.has('ShiftLeft')||keys.has('ShiftRight')||touchState.sprint?1:.72):0,
+  flash:player.invul>0&&Math.floor(clock*16)%2===0?.12:0});
 }else{
 ctx.save();ctx.translate(player.x,player.y);ctx.rotate(a);
 ctx.fillStyle='rgba(0,0,0,.32)';ctx.beginPath();ctx.ellipse(3,8,24,18,0,0,TAU);ctx.fill();if(player.invul>0&&Math.floor(clock*16)%2===0)ctx.globalAlpha=.45;
