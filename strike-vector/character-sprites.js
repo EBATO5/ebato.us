@@ -19,6 +19,16 @@ function frameBounds(img,col,row){
  const y=Math.round(row*h/2),y1=Math.round((row+1)*h/2);
  return [x,y,x1-x,y1-y];
 }
+// The newer Sunset sheet has a few stray pixels from the top-row shoes at
+// the beginning of the lower row. Trim 32 *source* pixels from the stride
+// cells while preserving destination alignment and the physical pivot.
+function paintFrame(g,atlas,source,col,row,x,y,w,h,isSunset){
+ const [sx,sy,sw,sh]=frameBounds(source,col,row);
+ if(isSunset&&row===1&&(source.naturalHeight||source.height)===1112){
+  const trim=32,destTrim=h*trim/sh;
+  g.drawImage(atlas,sx,sy+trim,sw,sh-trim,x,y+destTrim,w,h-destTrim);
+ }else g.drawImage(atlas,sx,sy,sw,sh,x,y,w,h);
+}
 const variants={
  fort:{path:'./art/characters/fort/fort_vector_cyan_pilot.webp',primary:'cyan',image:null,opposite:null,status:'loading',error:''},
  sunset:{path:'./art/characters/sunset/sunset_circuit_orange_pilot.webp',primary:'orange',image:null,opposite:null,status:'loading',error:''}
@@ -178,7 +188,7 @@ function draw(g,info){
  if(info.reload){g.translate(-1.5,1.5);g.rotate(.018);}
  if(power>0)g.translate(-power*3.1,-power*.6);
  if(flip)g.scale(-1,1);
- g.drawImage(atlas,...frameBounds(v.image,col,movingRow),baseX,baseY,w,h);
+ paintFrame(g,atlas,v.image,col,movingRow,baseX,baseY,w,h,sunset);
  if(!sunset&&strideMix>.01&&!slide&&!info.crouch){
   g.globalAlpha=baseAlpha*strideMix;
   g.drawImage(atlas,...frameBounds(v.image,col,1),baseX,baseY,w,h);
