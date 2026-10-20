@@ -95,3 +95,8 @@ strike-vector/
 - Mobile portrait/landscape, zoom, retina scaling, pause and live map must remain functional.
 - If external art fails to load, the game still renders playable geometry via fallback painter.
 - Before publishing future stages, verify a two-player host/guest match, enemy-wave continuity, shop/ready-up, goal reset and puck collisions.
+
+### v1.11.2 — Sprite pipeline preparation (implemented, no new art yet)
+- Prepared optional loader for `strike-vector/art/characters/sunset/sunset_orange_move_pilot.webp` (8 columns × 4 rows, 32 individually drawn poses). Accepted sizes: `1792×1408` or `896×704` WebP; orange Sunset walk/run only. The existing v1.11.1 4×2 Sunset art remains the fallback for missing or invalid assets, and cyan/fort art stays untouched.
+- Four frame cycles at approximately 8.1 fps walking and 13.5 fps sprinting, using existing input state/step animation and independent aim directions. No new simulation/network events or combat balance changes.
+- **Still not created**: 32 individually illustrated animation frames. Production checklist and indexing contract: [SUNSET_32_FRAME_MOVEMENT_PILOT.md](./SUNSET_32_FRAME_MOVEMENT_PILOT.md).
