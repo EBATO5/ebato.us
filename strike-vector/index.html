@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
 <meta name="theme-color" content="#080e17" />
-<title>STRIKE VECTOR v1.9.0 — Fort & Sunset Illustrated Sprite Pilots</title>
+<title>STRIKE VECTOR v1.9.1 — Illustrated Multiplayer Arena & Lobby</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{color-scheme:dark;--bg:#080e17;--panel:#101b28;--border:#263746;--mint:#74f7d4;--text:#eef6f7;--muted:#8da4b3;--orange:#ffbd75}
@@ -528,6 +528,17 @@ body[data-stadium="sunset"] .brand span{color:#ffad79}
 .sprite-status{margin:3px 0 12px;font:700 11px Oxanium,system-ui;letter-spacing:.075em;line-height:1.45;color:#76d8db;text-align:left;opacity:.92}
 body[data-stadium="sunset"] .sprite-status{color:#ffbd91}
 
+
+/* Illustrated match roster: a small canvas shows the exact skin that will
+ * appear in the selected stadium, with the same asset/fallback logic as play. */
+.net-team-member .net-player-portrait{width:48px;height:62px;flex:0 0 48px;border-radius:7px;border:1px solid #456d78;object-fit:contain;image-rendering:auto}
+.net-team-member .net-member-copy{flex:1 1 auto;min-width:0}
+.net-roster-player{display:flex;align-items:center;gap:9px}
+.net-roster-player .net-player-portrait{width:46px;height:58px;flex:0 0 46px;border-radius:6px;border:1px solid #456d78}
+.net-roster-player .net-roster-copy{min-width:0;overflow-wrap:anywhere}
+.net-team-lane[data-drop-team="orange"] .net-player-portrait,.net-roster-player:has(.orange) .net-player-portrait{border-color:#aa7456}
+@media(max-width:550px){.net-team-member{flex-wrap:wrap}.net-team-member .net-member-copy{flex-basis:calc(100% - 64px)}.net-team-member .net-player-portrait{width:43px;height:56px;flex-basis:43px}.net-team-member button{flex:1 1 auto}.net-roster-player .net-player-portrait{width:36px;height:48px;flex-basis:36px}}
+
 </style>
 </head>
 <body>
@@ -629,7 +640,7 @@ function updateSpriteStatus(){
   ? '◈ '+location+' ART PENDING // PROCEDURAL PLAY MODE ACTIVE'
   : '◈ LOADING '+location+' ILLUSTRATED CHARACTER…';
 }
-window.addEventListener('strike-vector-sprite-status',updateSpriteStatus);
+window.addEventListener('strike-vector-sprite-status',()=>{updateSpriteStatus();renderedStill=false;if(typeof drawLobbyPortraits==='function')drawLobbyPortraits();});
 updateSpriteStatus();
 function setStadiumVisual(which){
  const next=which==='sunset'?'sunset':'fort';
@@ -2402,7 +2413,7 @@ function netRenderTeamBoard(){
   el.innerHTML=items.filter(p=>p.team===team).map(p=>{
    const name=safeName(p.name).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
    const id=encodeURIComponent(p.id),target=team==='cyan'?'orange':'cyan';
-   return `<div class="net-team-member" data-member-id="${id}" draggable="${host}"><div><strong>${p.bot?'⚙ ':''}${name}${p.host?' ★':''}</strong><small>${p.bot?'AI PUCK PLAYER':'HUMAN'}${Number.isFinite(p.hp)?' · HP '+Math.ceil(p.hp):''}</small></div>${host?`<button type="button" data-assign-team="${target}" data-assign-id="${id}">MOVE → ${target.toUpperCase()}</button>${p.bot?`<button type="button" data-remove-bot="${id}" title="Remove this bot immediately">REMOVE AI</button>`:''}`:''}</div>`;
+   return `<div class="net-team-member" data-member-id="${id}" draggable="${host}"><canvas class="net-player-portrait" data-team="${team}" data-arena="${net.settings.arena}" width="54" height="70" aria-hidden="true"></canvas><div class="net-member-copy"><strong>${p.bot?'⚙ ':''}${name}${p.host?' ★':''}</strong><small>${p.bot?'AI PUCK PLAYER':'HUMAN'}${Number.isFinite(p.hp)?' · HP '+Math.ceil(p.hp):''}</small></div>${host?`<button type="button" data-assign-team="${target}" data-assign-id="${id}">MOVE → ${target.toUpperCase()}</button>${p.bot?`<button type="button" data-remove-bot="${id}" title="Remove this bot immediately">REMOVE AI</button>`:''}`:''}</div>`;
   }).join('')||'<span class="net-bot-note">Drop a player here</span>';
  }
  $net('netBotCount').textContent=net.bots.length+' AI · '+items.length+'/8 TOTAL';
@@ -2426,6 +2437,12 @@ for(const lane of document.querySelectorAll('[data-drop-team]')){
  lane.addEventListener('drop',e=>{e.preventDefault();lane.classList.remove('drag-over');if(net.mode==='host')netAssignTeam(e.dataTransfer.getData('text/plain'),lane.dataset.dropTeam);});
 }
 document.addEventListener('dragend',()=>document.querySelectorAll('.net-team-lane.drag-over').forEach(v=>v.classList.remove('drag-over')));
+function drawLobbyPortraits(){
+ const sprites=window.StrikeVectorSprites;if(!sprites?.drawPortrait)return;
+ for(const canvas of document.querySelectorAll('#netLobby canvas.net-player-portrait')){
+  sprites.drawPortrait(canvas,canvas.dataset.team,canvas.dataset.arena);
+ }
+}
 function netUpdateLobby(){
  $net('netLobbyCode').textContent=net.code||'------';setStadiumVisual(net.mode==='solo'?arenaChoice:net.settings.arena);
  for(const [key,id] of [['npcs','netRuleNPC'],['cover','netRuleCover'],['pvp','netRulePVP'],['npcPuck','netRuleNpcPuck'],['teamLock','netRuleTeamLock']]){const b=$net(id);b.classList.toggle('selected',net.settings[key]);b.setAttribute('aria-pressed',String(!!net.settings[key]));b.disabled=net.mode!=='host';b.firstChild.textContent=(net.settings[key]?'◉':'◯')+' '+(key==='npcs'?'HOSTILE NPCS':key==='cover'?'DESTRUCTIBLE COVER':key==='pvp'?'PLAYER DAMAGE':key==='npcPuck'?'NPC SHOTS MOVE PUCK':'HOST-LOCKED TEAMS');}
@@ -2437,7 +2454,8 @@ function netUpdateLobby(){
  $net('netDockRoom').textContent=net.code;
  $net('netChooseCyan').disabled=net.settings.teamLock&&net.mode==='guest';$net('netChooseOrange').disabled=net.settings.teamLock&&net.mode==='guest';netRenderTeamBoard();
  renderFieldSurvey();
- $net('netRoster').innerHTML=netRosterData().map(p=>`<div><strong class="${p.team==='orange'?'orange':'cyan'}">${p.team==='orange'?'● ORANGE':'● CYAN'}</strong><br>${p.name.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')}${p.host?' ★ HOST':''}${Number.isFinite(p.hp)?`<br><span class="net-hp">HP ${Math.ceil(p.hp)}</span>`:''}</div>`).join('');
+ $net('netRoster').innerHTML=netRosterData().map(p=>`<div class="net-roster-player"><canvas class="net-player-portrait" data-team="${p.team}" data-arena="${net.settings.arena}" width="54" height="70" aria-hidden="true"></canvas><div class="net-roster-copy"><strong class="${p.team==='orange'?'orange':'cyan'}">${p.team==='orange'?'● ORANGE':'● CYAN'}</strong><br>${p.name.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')}${p.host?' ★ HOST':''}${p.bot?' · AI':''}${Number.isFinite(p.hp)?`<br><span class="net-hp">HP ${Math.ceil(p.hp)}</span>`:''}</div></div>`).join('');
+ drawLobbyPortraits();
 }
 function netMsg(conn,data){if(conn&&conn.open)try{conn.send(data)}catch(e){console.warn('Peer send failed',e)}}
 function netBroadcast(data){for(const conn of net.clients.values())netMsg(conn,data)}
@@ -2970,9 +2988,9 @@ if(arenaArt){
  if(net.phase==='match')for(const b of net.bots){
   const color=teamColor(b.team);
   arenaArt.drawUnit(ctx,{kind:'bot',team:b.team,weapon:0,x:b.x,y:b.y,a:b.a||0,flash:b.flash,dead:b.hp<=0,...artMotion(b)});
-  ctx.textAlign='center';ctx.font='bold 11px Oxanium,system-ui';ctx.fillStyle=color;ctx.fillText(b.name||'AI',b.x,b.y-37);
-  ctx.fillStyle='#112934';ctx.fillRect(b.x-23,b.y-30,46,5);
-  ctx.fillStyle=b.hp<35?'#ff8b70':color;ctx.fillRect(b.x-23,b.y-30,46*clamp(b.hp/100,0,1),5);
+  ctx.textAlign='center';ctx.font='bold 11px Oxanium,system-ui';ctx.fillStyle=color;ctx.fillText(b.name||'AI',b.x,b.y-(window.StrikeVectorSprites?.isUsingSprites({kind:'bot',team:b.team})?56:37));
+  ctx.fillStyle='#112934';ctx.fillRect(b.x-23,b.y-(window.StrikeVectorSprites?.isUsingSprites({kind:'bot',team:b.team})?49:30),46,5);
+  ctx.fillStyle=b.hp<35?'#ff8b70':color;ctx.fillRect(b.x-23,b.y-(window.StrikeVectorSprites?.isUsingSprites({kind:'bot',team:b.team})?49:30),46*clamp(b.hp/100,0,1),5);
   if(b.slash>0){ctx.strokeStyle=color;ctx.lineWidth=8;ctx.beginPath();ctx.arc(b.x,b.y,75,(b.slashDir||0)-.7,(b.slashDir||0)+.7);ctx.stroke();}
  }
  if(net.phase==='match')for(const r of net.remotes.values()){
