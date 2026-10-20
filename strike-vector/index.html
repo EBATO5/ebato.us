@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
 <meta name="theme-color" content="#080e17" />
-<title>STRIKE VECTOR v1.9.2 — Sunset Sprite Resolution Fix</title>
+<title>STRIKE VECTOR v1.10.0 — Combat & Motion Update</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{color-scheme:dark;--bg:#080e17;--panel:#101b28;--border:#263746;--mint:#74f7d4;--text:#eef6f7;--muted:#8da4b3;--orange:#ffbd75}
@@ -942,6 +942,9 @@ function shieldProtection(mods=player.mods){return Math.min(.35,.07*(mods.armor|
 function barrelSpread(level=player.mods.barrel){return gunSpec().spread*Math.pow(.68,level)}
 function pelletFan(level=player.mods.barrel){return Math.pow(.79,level)}
 function meleeDamage(kind,level=player.mods.knife,bayonet=false){return kind==='knife'?155+42*level:bayonet?190+48*level:132+36*level}
+function meleeFinisherDamage(){return 1000000} // Opponents die on a landed melee, ignoring armor and shields; spawn protection still applies.
+function meleePuckForce(level=0){return Math.min(1600,1320+Math.max(0,level)*55)}
+function precisionPierce(level){return Math.ceil((1+Math.max(0,level))*2.5)}
 function dodgeCooldown(level=player.mods.dodgeCooldown){return Math.max(1,2-.2*level)}
 function projectileRadius(receiver=player.mods.receiver,power=false){return (3.2+receiver*1.55)*(power?1.4:1)}
 function absorbDamage(target,amount){
@@ -1255,8 +1258,8 @@ function renderGrenadeHubDetail(){
  const aimActive=player.secondary==='aim',grenActive=player.secondary==='grenade';
  const precision=`<div class="tree-detail-top"><div class="tree-icon-large">${iconArt('aim')}</div><div><div class="tree-detail-kicker">ALT FIRE SELECTOR · RIGHT CLICK + LEFT CLICK</div><div class="tree-detail-title">PRECISION SHOT / GRENADE</div></div></div>
  <div class="tree-detail-desc">Hold right-click to preview the narrow firing cone, then left-click for ONE high-velocity precision blast. Or switch to the underbarrel grenade launcher. Both occupy the same alternate-fire slot.</div>
- <div class="tree-mini-stats">${treeStatLine('PRECISION DAMAGE',Math.round((gunSpec().damage+player.mods.damage*7)*1.9)+' / hit')}${treeStatLine('PRECISION VELOCITY',Math.round((gunSpec().velocity+player.mods.barrel*75)*1.48)+' / sec')}${treeStatLine('CONE', (precisionShotSpread()*2*180/Math.PI).toFixed(2)+'°')}</div>
- <div class="tree-detail-actions single"><button type="button" class="shop-buy toggle ${aimActive?'active-mode':''}" data-secondary="aim">${aimActive?'✓ PRECISION SELECTED':'◎ EQUIP PRECISION SHOT'}<small>1 cartridge · semi-auto · bonus penetration</small></button></div>`;
+ <div class="tree-mini-stats">${treeStatLine('PRECISION DAMAGE',Math.round((gunSpec().damage+player.mods.damage*7)*2.5)+' / hit')}${treeStatLine('PRECISION VELOCITY',Math.round((gunSpec().velocity+player.mods.barrel*75)*2.5)+' / sec')}${treeStatLine('PENETRATION',precisionPierce(player.mods.penetration)+' extra targets')}${treeStatLine('CONE', (precisionShotSpread()*2*180/Math.PI).toFixed(2)+'°')}</div>
+ <div class="tree-detail-actions single"><button type="button" class="shop-buy toggle ${aimActive?'active-mode':''}" data-secondary="aim">${aimActive?'✓ PRECISION SELECTED':'◎ EQUIP PRECISION SHOT'}<small>1 cartridge · semi-auto · 2.5× damage, penetration & velocity</small></button></div>`;
  const grenade=owned?
   `<div class="tree-detail-desc">Underbarrel grenades bounce off arena edges and deal area damage.</div><div class="tree-mini-stats">${treeStatLine('LOADED',`${player.grenades} / ${grenadeClipSize()}`)}${treeStatLine('RANGE',String(grenadeRange()))}</div><div class="tree-detail-actions"><button type="button" class="shop-buy toggle ${grenActive?'active-mode':''}" data-secondary="grenade">${grenActive?'✓ GRENADE SELECTED':'◎ EQUIP GRENADE LAUNCHER'}<small>RIGHT CLICK + LEFT CLICK</small></button><button type="button" class="shop-buy shop-refund" data-module-refund="grenade">SELL LAUNCHER<small>$${mod.price.toLocaleString()}</small></button></div>`:
   `<div class="tree-status warn">GRENADE LAUNCHER LOCKED · $${mod.price.toLocaleString()}</div><div class="tree-detail-actions single"><button type="button" class="shop-buy" data-module-buy="grenade" ${credits<mod.price?'disabled':''}>+ BUY UNDERBARREL GRENADE</button></div>`;
@@ -2043,13 +2046,13 @@ function launchGrenade(){
  sound('grenade');shake=Math.max(shake,2.5);return true;
 }
 function fireBullet(a,spread,power=false,showEffects=true,precision=false){
- const spec=gunSpec(),angle=a+rand(-spread,spread),speed=(spec.velocity+player.mods.barrel*75)*(precision?1.48:1);
- const damage=(spec.damage+player.mods.damage*7)*(precision?1.9:power?2.65:1);
- const pierce=player.mods.penetration+(precision?1:power?2:0),color=precision?'#bffaff':power?'#ffca8c':player.explosiveOn?'#ffc07d':'#a1fff0';
+ const spec=gunSpec(),angle=a+rand(-spread,spread),speed=(spec.velocity+player.mods.barrel*75)*(precision?2.5:1);
+ const damage=(spec.damage+player.mods.damage*7)*(precision?2.5:power?2.65:1);
+ const pierce=precision?precisionPierce(player.mods.penetration):player.mods.penetration+(power?2:0),color=precision?'#bffaff':power?'#ffca8c':player.explosiveOn?'#ffc07d':'#a1fff0';
  const radius=projectileRadius(player.mods.receiver,power)*(precision?1.12:1);
  bullets.push({x:player.x+Math.cos(a)*29,y:player.y+Math.sin(a)*29,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,t:precision?1.25:1,damage,friend:true,color,r:radius,pierce,trace:power||precision,precision,explosive:player.explosiveOn,owner:'host',visualOnly:net.phase==='match'&&net.mode==='guest'});
  if(net.phase==='match'){
-  const data={t:'shot',a:angle,explosive:player.explosiveOn,precision,damage:Math.min(240,damage),velocity:speed,r:radius};
+  const data={t:'shot',a:angle,explosive:player.explosiveOn,precision,damage:Math.min(600,damage),velocity:speed,r:radius};
   if(net.mode==='guest')netMsg(net.conn,data);else netBroadcast({...data,by:'host',x:player.x,y:player.y});
  }
  if(showEffects){burst(player.x+Math.cos(a)*29,player.y+Math.sin(a)*29,power||precision?10:4,'#ffe6a4',power||precision?210:130);shake=Math.max(shake,power||precision?5:1.8);
@@ -2091,7 +2094,7 @@ function hitSlash(){
  if(net.phase==='match'&&net.mode==='guest')return;
  const isGunStrike=player.slashKind==='quick'&&player.weapon===0;
  const bayonet=isGunStrike&&player.modules.bayonet&&player.bayonetOn;
- const reach=isGunStrike?(bayonet?112:79):99,damage=meleeDamage(isGunStrike?'quick':'knife',player.mods.knife,bayonet);
+ const reach=isGunStrike?(bayonet?112:79):99,damage=meleeFinisherDamage();
  for(const e of enemies){
   if(e.hp<=0||player.slashHits.has(e))continue;
   const dx=e.x-player.x,dy=e.y-player.y,d=Math.hypot(dx,dy),raw=Math.atan2(dy,dx)-player.slashDir,da=Math.atan2(Math.sin(raw),Math.cos(raw));
@@ -2101,7 +2104,7 @@ function hitSlash(){
  }
  // A buttstock or bayonet can also chip a bit of destructible cover.
  if(!player.slashCoverDone){
-  if(puckEnabled&&puck&&puck.respawn===0){const d=Math.hypot(puck.x-player.x,puck.y-player.y),da=Math.atan2(Math.sin(Math.atan2(puck.y-player.y,puck.x-player.x)-player.slashDir),Math.cos(Math.atan2(puck.y-player.y,puck.x-player.x)-player.slashDir));if(d<reach+puck.r&&Math.abs(da)<.8)puckImpulse(puck.x,puck.y,Math.cos(player.slashDir)*520,Math.sin(player.slashDir)*520,'melee','player');}
+  if(puckEnabled&&puck&&puck.respawn===0){const d=Math.hypot(puck.x-player.x,puck.y-player.y),da=Math.atan2(Math.sin(Math.atan2(puck.y-player.y,puck.x-player.x)-player.slashDir),Math.cos(Math.atan2(puck.y-player.y,puck.x-player.x)-player.slashDir));if(d<reach+puck.r&&Math.abs(da)<.8)puckImpulse(puck.x,puck.y,Math.cos(player.slashDir)*meleePuckForce(player.mods.knife),Math.sin(player.slashDir)*meleePuckForce(player.mods.knife),'melee','player');}
   const impactX=player.x+Math.cos(player.slashDir)*(reach-12),impactY=player.y+Math.sin(player.slashDir)*(reach-12);
   const cover=intersectsCover(impactX,impactY,13);
   if(cover)damageCover(cover,bayonet?56:27,impactX,impactY);
@@ -2215,17 +2218,17 @@ function netApplyRules(data){
 }
 function netSetRule(key){if(net.mode!=='host'||!['npcs','cover','pvp','npcPuck','teamLock'].includes(key))return;netApplyRules({[key]:!net.settings[key]});netBroadcast({t:'rules',rules:netRules()});}
 for(const [key,id] of [['npcs','netRuleNPC'],['cover','netRuleCover'],['pvp','netRulePVP'],['npcPuck','netRuleNpcPuck'],['teamLock','netRuleTeamLock']])$net(id).addEventListener('click',()=>netSetRule(key));
-function netBotHit(bot,amount,hostile=false){
+function netBotHit(bot,amount,hostile=false,lethal=false){
  // Hostile NPC attacks always damage bots; PVP rules still control human/bot combat.
  if(net.mode!=='host'||net.phase!=='match'||(!net.settings.pvp&&!hostile)||!bot||bot.hp<=0||bot.invulUntil>clock)return;
- bot.hp=Math.max(0,bot.hp-Math.max(1,Math.min(180,amount)));bot.invulUntil=clock+.4;bot.flash=.14;
+ bot.hp=lethal?0:Math.max(0,bot.hp-Math.max(1,Math.min(180,amount)));if(lethal)bot.shield=0;bot.invulUntil=clock+.4;bot.flash=.14;
  if(bot.hp<=0){bot.respawn=2;floatText(bot.x,bot.y-32,'BOT DOWN',teamColor(bot.team));}
 }
-function netPvpHit(id,amount,hostile=false){
+function netPvpHit(id,amount,hostile=false,lethal=false){
  if(net.mode!=='host'||net.phase!=='match'||(!net.settings.pvp&&!hostile))return;
- if(id==='host'){hurtPlayer(amount);return}
+ if(id==='host'){hurtPlayer(lethal?meleeFinisherDamage():amount);return}
  const r=net.remotes.get(id);if(!r||r.hp<=0||r.invulUntil>clock)return;
- const hit=absorbDamage(r,Math.max(1,Math.min(180,amount)));r.hp=Math.max(0,r.hp-hit.hpDamage);r.invulUntil=clock+.4;
+ const hit=absorbDamage(r,lethal?meleeFinisherDamage():Math.max(1,Math.min(180,amount)));r.hp=lethal?0:Math.max(0,r.hp-hit.hpDamage);r.invulUntil=clock+.4;
  if(r.hp<=0){r.respawn=1.9;floatText(r.x,r.y-27,'RESPAWNING',teamColor(r.team));}
  netMsg(net.clients.get(id),{t:'health',hp:r.hp,shield:r.shield,respawn:r.respawn||0});
 }
@@ -2253,14 +2256,14 @@ function netPushBody(id,dx,dy,power){
  floatText(body.x,body.y-40,'YEET!',teamColor(combatTeam(id)));
  burst(body.x,body.y,8,teamColor(combatTeam(id)),100);
 }
-function netCombatImpact(owner,id,damage,dx,dy,power,hostile=false){
+function netCombatImpact(owner,id,damage,dx,dy,power,hostile=false,lethal=false){
  if(id===owner)return;
  const attackTeam=combatTeam(owner),defenseTeam=combatTeam(id);
  const allied=!hostile&&attackTeam&&defenseTeam&&attackTeam===defenseTeam;
  if(allied||hostile||net.settings.pvp)netPushBody(id,dx,dy,allied?power:hostile?power*.42:power*.55);
  if(allied)return;
- if(id==='host'||net.remotes.has(id))netPvpHit(id,damage,hostile);
- else netBotHit(net.bots.find(b=>b.id===id),damage,hostile);
+ if(id==='host'||net.remotes.has(id))netPvpHit(id,damage,hostile,lethal);
+ else netBotHit(net.bots.find(b=>b.id===id),damage,hostile,lethal);
 }
 function netAreaDamage(x,y,r,amount,owner){
  if(net.phase!=='match'||net.mode!=='host')return;
@@ -2280,12 +2283,12 @@ function netHostMelee(id,kind,angle){
  const p=id==='host'?player:net.remotes.get(id);if(!p||p.hp<=0)return;
  const strikeKind=kind==='knife'||p.weapon===2?'knife':'quick';
  const bayonet=strikeKind!=='knife'&&!!p.bayonetOn,level=clamp(Math.floor(Number(id==='host'?player.mods.knife:p.meleeTier)||0),0,40);
- const reach=strikeKind==='knife'?99:bayonet?112:79,damage=meleeDamage(strikeKind,level,bayonet);
+ const reach=strikeKind==='knife'?99:bayonet?112:79,damage=meleeFinisherDamage();
  const hits=(v)=>{const d=Math.hypot(v.x-p.x,v.y-p.y),a=Math.atan2(v.y-p.y,v.x-p.x);return d<reach+18&&Math.abs(Math.atan2(Math.sin(a-angle),Math.cos(a-angle)))<.9};
- if(id!=='host'&&hits(player))netCombatImpact(id,'host',damage,Math.cos(angle),Math.sin(angle),1120);
- for(const [other,v] of net.remotes)if(other!==id&&hits(v))netCombatImpact(id,other,damage,Math.cos(angle),Math.sin(angle),1120);
- for(const bot of net.bots)if(bot.id!==id&&hits(bot))netCombatImpact(id,bot.id,damage,Math.cos(angle),Math.sin(angle),1120);
- if(id!=='host'){for(const e of enemies)if(!e.dead&&hits(e))hurtEnemy(e,damage,e.x,e.y,id,Math.cos(angle),Math.sin(angle),700);if(puck&&puck.respawn<=0&&hits(puck))puckImpulse(puck.x,puck.y,Math.cos(angle)*520,Math.sin(angle)*520,'melee',p.team);}
+ if(id!=='host'&&hits(player))netCombatImpact(id,'host',damage,Math.cos(angle),Math.sin(angle),1120,false,true);
+ for(const [other,v] of net.remotes)if(other!==id&&hits(v))netCombatImpact(id,other,damage,Math.cos(angle),Math.sin(angle),1120,false,true);
+ for(const bot of net.bots)if(bot.id!==id&&hits(bot))netCombatImpact(id,bot.id,damage,Math.cos(angle),Math.sin(angle),1120,false,true);
+ if(id!=='host'){for(const e of enemies)if(!e.dead&&hits(e))hurtEnemy(e,damage,e.x,e.y,id,Math.cos(angle),Math.sin(angle),700);if(puck&&puck.respawn<=0&&hits(puck))puckImpulse(puck.x,puck.y,Math.cos(angle)*meleePuckForce(level),Math.sin(angle)*meleePuckForce(level),'melee',p.team);}
 }
 function netSendMelee(kind,a){
  if(net.phase!=='match')return;
@@ -2699,9 +2702,9 @@ function netBotFire(bot,a,puckOnly=false){
  burst(bot.x+Math.cos(angle)*26,bot.y+Math.sin(angle)*26,3,teamColor(bot.team),80);
 }
 function netBotMelee(bot,foe){
- const power=85;
+ const power=meleeFinisherDamage();
  if(foe.npc){if(foe.enemy&&!foe.enemy.dead)hurtEnemy(foe.enemy,power,foe.enemy.x,foe.enemy.y,bot.id,Math.cos(bot.a),Math.sin(bot.a),490);}
- else netCombatImpact(bot.id,foe.id,power,Math.cos(bot.a),Math.sin(bot.a),780);
+ else netCombatImpact(bot.id,foe.id,power,Math.cos(bot.a),Math.sin(bot.a),780,false,true);
  bot.slash=.22;bot.slashDir=bot.a;
  netBroadcast({t:'melee',by:bot.id,a:bot.a,kind:'quick'});
  burst(bot.x+Math.cos(bot.a)*40,bot.y+Math.sin(bot.a)*40,6,teamColor(bot.team),110);
