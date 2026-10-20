@@ -26,7 +26,7 @@ const expose={
  toggle(value){options.enabled=value!==false;return options.enabled;},
  pathFor(a){return variants[a==='sunset'?'sunset':'fort'].path;},
  isUsingSprites(info){
-  return !!variant().image&&options.enabled&&info?.kind==='human'&&!info.forceProcedural;
+  return !!variant().image&&options.enabled&&(info?.kind==='human'||info?.kind==='bot')&&!info.forceProcedural;
  }
 };
 window.StrikeVectorSprites=expose;
@@ -124,8 +124,36 @@ function draw(g,info){
  }
  g.restore();
 }
+// Draw actual atlas portraits into the host's lobby, guest roster, and team draft.
+// The preview only reads pixels; it does not alter stadium, physics or network state.
+function drawPortrait(canvas,team,venue){
+ if(!canvas||typeof canvas.getContext!=='function')return false;
+ const g=canvas.getContext('2d');
+ if(!g)return false;
+ const width=canvas.width||54,height=canvas.height||68;
+ const selected=variants[venue==='sunset'?'sunset':'fort'];
+ const color=team==='orange'?'#ffa365':'#78ecf4';
+ g.clearRect(0,0,width,height);
+ g.fillStyle=venue==='sunset'?'#332536':'#142a35';
+ g.fillRect(0,0,width,height);
+ g.fillStyle=color;g.fillRect(0,height-3,width,3);
+ if(!selected.image){
+  // Meaningful silhouette placeholder while images are loading.
+  g.globalAlpha=.42;
+  g.fillStyle=color;
+  g.beginPath();g.arc(width*.5,height*.34,9,0,PI*2);g.fill();
+  g.beginPath();g.ellipse(width*.5,height*.83,17,20,0,0,PI*2);g.fill();
+  g.globalAlpha=1;
+  return false;
+ }
+ const atlas=team===selected.primary?selected.image:selected.opposite||selected.image;
+ const ratio=Math.min((width-4)/tile.w,(height-5)/tile.h);
+ g.drawImage(atlas,3*tile.w,0,tile.w,tile.h,(width-tile.w*ratio)/2,(height-tile.h*ratio)/2-1,tile.w*ratio,tile.h*ratio);
+ return true;
+}
 art.drawUnit=draw;
 expose.draw=draw;
+expose.drawPortrait=drawPortrait;
 expose.facing=facing;
 function load(){for(const name of ['fort','sunset'])loadVariant(name);}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',load,{once:true});
