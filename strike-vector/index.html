@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover" />
 <meta name="theme-color" content="#080e17" />
-<title>STRIKE VECTOR v1.11.2 — Animation Atlas Pipeline Ready</title>
+<title>STRIKE VECTOR v1.12.1 — Full Twin-Stick Gamepad Support</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{color-scheme:dark;--bg:#080e17;--panel:#101b28;--border:#263746;--mint:#74f7d4;--text:#eef6f7;--muted:#8da4b3;--orange:#ffbd75}
@@ -611,6 +611,7 @@ body[data-stadium="sunset"] .sprite-status{color:#ffbd91}
 <script src="./stadium-themes.js"></script>
 <script src="./character-sprites.js"></script>
 <script src="./combat-vfx.js"></script>
+<script src="./controller-support.js"></script>
 <script>
 (()=>{'use strict';
 const canvas=document.getElementById('game'),ctx=canvas.getContext('2d',{alpha:false});
@@ -620,7 +621,9 @@ if(touchSupported)document.body.classList.add('touch-ready');
 if(touchSupported){document.getElementById('hint').textContent='Mobile: move with left stick · aim & fire with right stick · tap ARMORY for upgrades';}
 const touchState={move:{x:0,y:0},aim:{x:1,y:0},moveId:null,aimId:null,activeAim:false,activeFire:false,sprint:false,crouch:false,alt:false,lastShot:0,shown:false};
 let sw=innerWidth,sh=innerHeight,dpr=1,renderedStill=false,cam={x:0,y:0},clock=0,last=0,started=false,paused=true,ended=false,fireHeld=false,altHeld=false,secondaryPending=false,altStart=0,mouse={x:innerWidth*.64,y:innerHeight*.5,active:false},keys=new Set(),lastShiftTap=-Infinity;
-const isCrouching=()=>keys.has('AltLeft')||keys.has('AltRight')||touchState.crouch;
+const padState={active:false,moveX:0,moveY:0,aimX:1,aimY:0,hasAim:false,sprint:false,crouch:false,ownedFire:false,ownedAlt:false,menuIndex:-1,lastStatus:'',lastMenuAt:-1};
+
+const isCrouching=()=>keys.has('AltLeft')||keys.has('AltRight')||touchState.crouch||padState.active&&padState.crouch;
 const WORLD={w:2500,h:1700},TAU=Math.PI*2,clamp=(v,l,h)=>Math.max(l,Math.min(h,v)),rand=(a,b)=>a+Math.random()*(b-a),dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 let player,enemies=[],bullets=[],grenades=[],knives=[],particles=[],texts=[],wave=0,kills=0,score=0,credits=0,shopOpen=false,shopMode="between",toSpawn=0,spawnTimer=0,nextWaveTimer=0,bannerUntil=0,shake=0,obstacles=[],coverSpawnTimer=5;
 let puckEnabled=true,puck=null,teamGoals=0,rivalGoals=0,goalFlash=0;
@@ -1581,7 +1584,7 @@ window.addEventListener('keydown',e=>{const c=e.code;
 
 window.addEventListener('keyup',e=>{if((e.code==='AltLeft'||e.code==='AltRight')&&started&&!ended)e.preventDefault();keys.delete(e.code)});
 window.addEventListener('blur',()=>{lastShiftTap=-Infinity;keys.clear();fireHeld=false;altHeld=false;secondaryPending=false;if(player)player.burstShots=0});document.addEventListener('visibilitychange',()=>{if(document.hidden){lastShiftTap=-Infinity;keys.clear();fireHeld=false;altHeld=false;secondaryPending=false}});
-function aimWorld(){return{x:mouse.x+cam.x,y:mouse.y+cam.y}}function mouseAim(){const m=aimWorld(),dx=m.x-player.x,dy=m.y-player.y;return Math.atan2(dy,dx)}
+function aimWorld(){if(padState.active&&padState.hasAim)return{x:player.x+padState.aimX*850,y:player.y+padState.aimY*850};return{x:mouse.x+cam.x,y:mouse.y+cam.y}}function mouseAim(){const m=aimWorld(),dx=m.x-player.x,dy=m.y-player.y;return Math.atan2(dy,dx)}
 // Mouse buttons are tracked from individual down/up events. `event.buttons`
 // is deliberately not used: some browsers/trackpads report an inconsistent
 // bitmask during a right+left chord or when crossing the canvas boundary.
@@ -2013,7 +2016,7 @@ function quickMelee(){
 }
 function startSlide(){
  if(!player||paused||ended||player.hp<=0||player.rollCd>0||player.roll>0)return false;
- let vx=touchState.moveId!==null?touchState.move.x:(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),vy=touchState.moveId!==null?touchState.move.y:(keys.has('KeyS')?1:0)-(keys.has('KeyW')?1:0);
+ let vx=touchState.moveId!==null?touchState.move.x:padState.active&&Math.hypot(padState.moveX,padState.moveY)>.03?padState.moveX:(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),vy=touchState.moveId!==null?touchState.move.y:padState.active&&Math.hypot(padState.moveX,padState.moveY)>.03?padState.moveY:(keys.has('KeyS')?1:0)-(keys.has('KeyW')?1:0);
  if(!vx&&!vy){vx=Math.cos(player.angle);vy=Math.sin(player.angle)}
  const n=Math.hypot(vx,vy)||1;
  player.rollDx=vx/n;player.rollDy=vy/n;
@@ -2067,7 +2070,7 @@ function shoot(){
  if(paused||ended||player.hp<=0)return false;
  if(secondaryAttack&&player.secondaryCd>0)return false;
  if(!secondaryAttack&&player.fireCd>0)return false;
- const a=mouseAim(),crouch=isCrouching(),running=keys.has('ShiftLeft')||keys.has('ShiftRight');
+ const a=mouseAim(),crouch=isCrouching(),running=keys.has('ShiftLeft')||keys.has('ShiftRight')||padState.active&&padState.sprint;
  const movementSpread=(crouch?.36:running?1.75:1);
  if(player.weapon===2){
   if(altHeld){player.secondaryCd=.48;throwKnife();return true}
@@ -2788,10 +2791,10 @@ function netTick(dt){
  if(net.phase!=='match')return;
  renderFieldSurvey();net.sendClock+=dt;if(net.sendClock<.083)return;net.sendClock=0;
  if(net.mode==='guest'){
-  netMsg(net.conn,{t:'state',x:player.x,y:player.y,a:player.angle,kvx:player.kvx||0,kvy:player.kvy||0,weapon:player.weapon,laserOn:player.laserOn,bayonetOn:player.bayonetOn,meleeTier:player.mods.knife,penetrationTier:player.mods.penetration,slide:player.roll>0,slideAngle:Math.atan2(player.rollDy||0,player.rollDx||1),reloading:player.reload>0,running:keys.has('ShiftLeft')||keys.has('ShiftRight')||touchState.sprint,team:net.team,defense:{shieldCapacity:player.mods.shieldCapacity,shieldRegen:player.mods.shieldRegen,shieldDelay:player.mods.shieldDelay,armor:player.mods.armor,maxHealth:player.mods.maxHealth}});return;
+  netMsg(net.conn,{t:'state',x:player.x,y:player.y,a:player.angle,kvx:player.kvx||0,kvy:player.kvy||0,weapon:player.weapon,laserOn:player.laserOn,bayonetOn:player.bayonetOn,meleeTier:player.mods.knife,penetrationTier:player.mods.penetration,slide:player.roll>0,slideAngle:Math.atan2(player.rollDy||0,player.rollDx||1),reloading:player.reload>0,running:keys.has('ShiftLeft')||keys.has('ShiftRight')||touchState.sprint||padState.active&&padState.sprint,team:net.team,defense:{shieldCapacity:player.mods.shieldCapacity,shieldRegen:player.mods.shieldRegen,shieldDelay:player.mods.shieldDelay,armor:player.mods.armor,maxHealth:player.mods.maxHealth}});return;
  }
  for(const [id,r] of net.remotes){if(r.hp>0&&!roundBreak.kind)rechargeShield(r,.083);if(r.respawn>0){r.respawn=Math.max(0,r.respawn-.083);if(r.respawn<=0){const pos=netGoalSpawn(r.team);r.x=pos.x;r.y=pos.y;r.kvx=0;r.kvy=0;r.hp=maxHealth(r.defense);r.shield=shieldMax(r.defense);r.shieldHitAt=-999;r.invulUntil=clock+1.6;netMsg(net.clients.get(id),{t:'health',hp:r.hp,maxHp:maxHealth(r.defense),shield:r.shield,respawn:0,x:pos.x,y:pos.y});}}}
- const players=[{id:'host',name:net.name,team:net.team,x:player.x,y:player.y,a:player.angle,weapon:player.weapon,laserOn:player.laserOn,slide:player.roll>0,slideAngle:Math.atan2(player.rollDy||0,player.rollDx||1),reloading:player.reload>0,running:keys.has('ShiftLeft')||keys.has('ShiftRight')||touchState.sprint,hp:player.hp,maxHp:maxHealth(),shield:player.shield,shieldMax:shieldMax(),respawn:player.respawn||0},...Array.from(net.remotes.entries()).map(([id,r])=>({id,name:r.name,team:r.team,x:r.x,y:r.y,a:r.a,weapon:r.weapon,laserOn:r.laserOn,slide:r.slide,slideAngle:r.slideAngle,reloading:r.reloading,running:r.running,hp:r.hp,maxHp:maxHealth(r.defense),shield:r.shield,shieldMax:shieldMax(r.defense),respawn:r.respawn||0}))];
+ const players=[{id:'host',name:net.name,team:net.team,x:player.x,y:player.y,a:player.angle,weapon:player.weapon,laserOn:player.laserOn,slide:player.roll>0,slideAngle:Math.atan2(player.rollDy||0,player.rollDx||1),reloading:player.reload>0,running:keys.has('ShiftLeft')||keys.has('ShiftRight')||touchState.sprint||padState.active&&padState.sprint,hp:player.hp,maxHp:maxHealth(),shield:player.shield,shieldMax:shieldMax(),respawn:player.respawn||0},...Array.from(net.remotes.entries()).map(([id,r])=>({id,name:r.name,team:r.team,x:r.x,y:r.y,a:r.a,weapon:r.weapon,laserOn:r.laserOn,slide:r.slide,slideAngle:r.slideAngle,reloading:r.reloading,running:r.running,hp:r.hp,maxHp:maxHealth(r.defense),shield:r.shield,shieldMax:shieldMax(r.defense),respawn:r.respawn||0}))];
  netBroadcast({t:'snapshot',players,bots:net.bots.map(b=>({id:b.id,name:b.name,team:b.team,x:b.x,y:b.y,a:b.a,hp:b.hp,flash:b.flash||0})),intermission:roundBreak.kind?{kind:roundBreak.kind,left:roundBreakLeft(),ready:[...roundBreak.ready],humans:roundBreak.humans}:null,p:{x:puck.x,y:puck.y,vx:puck.vx,vy:puck.vy,spin:puck.spin,respawn:puck.respawn},cyan:teamGoals,orange:rivalGoals,enemies:net.settings.npcs?enemies.slice(0,20).map(e=>({x:e.x,y:e.y,a:e.a,hp:e.hp,maxHp:e.maxHp,type:e.type,dead:e.dead})):[],activeGrenades:grenades.slice(0,16).map(g=>({id:g.id,by:g.owner,sx:g.sx,sy:g.sy,a:Math.atan2(g.vy,g.vx),range:g.dur*Math.hypot(g.vx,g.vy),radius:g.radius,damage:g.damage,x:g.x,y:g.y,t:g.t}))});
  net.coverClock+=.083;if(net.settings.cover&&net.coverClock>=.7){net.coverClock=0;netBroadcast({t:'cover',list:netCoverPack()});}
 
@@ -2845,7 +2848,7 @@ function update(dt){clock+=dt;
   if(created===0)coverSpawnTimer=Math.max(coverSpawnTimer,3.4);
  }
 }for(const o of obstacles){o.hit=Math.max(0,(o.hit||0)-dt);o.newborn=Math.max(0,(o.newborn||0)-dt)}if(toSpawn>0&&net.phase!=='match'){spawnTimer-=dt;if(spawnTimer<=0){if(enemies.length<48){spawnEnemy();toSpawn--;spawnTimer=clamp(1.0-wave*.047,.40,1.0)}else spawnTimer=.35}}
-const c=isCrouching()||touchState.crouch,run=(keys.has('ShiftLeft')||keys.has('ShiftRight')||touchState.sprint)&&!c,movingX=touchState.moveId!==null?touchState.move.x:(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),movingY=touchState.moveId!==null?touchState.move.y:(keys.has('KeyS')?1:0)-(keys.has('KeyW')?1:0),norm=Math.max(1,Math.hypot(movingX,movingY));player.angle=mouseAim();player.step+=dt*(run?15:c?4:9)*Math.min(1,Math.hypot(movingX,movingY));player.fireCd=Math.max(0,player.fireCd-dt);player.secondaryCd=Math.max(0,player.secondaryCd-dt);player.rollCd=Math.max(0,player.rollCd-dt);player.meleeCd=Math.max(0,player.meleeCd-dt);player.invul=Math.max(0,player.invul-dt);player.slash=Math.max(0,player.slash-dt);rechargeShield(player,dt);
+const c=isCrouching()||touchState.crouch,run=(keys.has('ShiftLeft')||keys.has('ShiftRight')||touchState.sprint||padState.active&&padState.sprint)&&!c,movingX=touchState.moveId!==null?touchState.move.x:padState.active&&Math.hypot(padState.moveX,padState.moveY)>.03?padState.moveX:(keys.has('KeyD')?1:0)-(keys.has('KeyA')?1:0),movingY=touchState.moveId!==null?touchState.move.y:padState.active&&Math.hypot(padState.moveX,padState.moveY)>.03?padState.moveY:(keys.has('KeyS')?1:0)-(keys.has('KeyW')?1:0),norm=Math.max(1,Math.hypot(movingX,movingY));player.angle=mouseAim();player.step+=dt*(run?15:c?4:9)*Math.min(1,Math.hypot(movingX,movingY));player.fireCd=Math.max(0,player.fireCd-dt);player.secondaryCd=Math.max(0,player.secondaryCd-dt);player.rollCd=Math.max(0,player.rollCd-dt);player.meleeCd=Math.max(0,player.meleeCd-dt);player.invul=Math.max(0,player.invul-dt);player.slash=Math.max(0,player.slash-dt);rechargeShield(player,dt);
 if(player.reload>0){player.reload-=dt;if(player.reload<=0){player.reload=0;const num=Math.min(clipSize()-player.gun,player.gunReserve);player.gun+=num;player.gunReserve-=num}}
 if(player.grenadeReload>0){player.grenadeReload-=dt;if(player.grenadeReload<=0){player.grenadeReload=0;const count=Math.min(grenadeClipSize()-player.grenades,player.grenadeReserve);player.grenades+=count;player.grenadeReserve-=count;sound('buy')}}
 if(player.roll>0){
@@ -3069,7 +3072,7 @@ if(arenaArt){
  arenaArt.drawUnit(ctx,{kind:'human',team:net.phase==='match'?net.team:'cyan',weapon:player.weapon,x:player.x,y:player.y,a,
   id:'self',slide:sliding,slideAngle:Math.atan2(player.rollDy||0,player.rollDx||1),crouch,reload:player.reload>0,step:player.step,
   recoil:Math.max(0,((player.spriteShotUntil||0)-clock)/.16),slash:Math.max(0,(player.slash||0)/.22),
-  move:(keys.has('KeyW')||keys.has('KeyA')||keys.has('KeyS')||keys.has('KeyD')||touchState.moveId!==null)?(keys.has('ShiftLeft')||keys.has('ShiftRight')||touchState.sprint?1:.72):0,
+  move:(keys.has('KeyW')||keys.has('KeyA')||keys.has('KeyS')||keys.has('KeyD')||touchState.moveId!==null||padState.active&&Math.hypot(padState.moveX,padState.moveY)>.10)?(keys.has('ShiftLeft')||keys.has('ShiftRight')||touchState.sprint||padState.active&&padState.sprint?1:.72):0,
   flash:player.invul>0&&Math.floor(clock*16)%2===0?.12:0});
 }else{
 ctx.save();ctx.translate(player.x,player.y);ctx.rotate(a);
@@ -3178,6 +3181,7 @@ let frameErrors=0;
 function loop(t){
  try{
   const dt=Math.min((t-last)/1000||0,.035);last=t;
+  pollController();
   refreshTouchUI();
   if(!paused&&!ended){update(dt);syncUI(dt);renderedStill=false}
   else if(!started){clock+=dt*.22}
