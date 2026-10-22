@@ -1544,6 +1544,139 @@ document.getElementById('touchShopClose').addEventListener('click',()=>{if(round
 document.getElementById('reopenArmory').addEventListener('click',()=>{if(roundBreak.kind&&!shopOpen)openShop(shopMode,false)});
 ui.start.addEventListener('click',begin);
 function switchWeapon(n){if(!started||paused||ended||(n!==0&&n!==2))return;if(player.weapon===n)return;player.weapon=n;player.fireCd=Math.min(player.fireCd,.10);player.slash=0;player.triggerQueue=0;player.burstShots=0;secondaryPending=false;sound('dry')}
+
+// Standard Xbox / PlayStation browser controller. Gamepad API events only
+// provide sampled inputs; existing combat functions still own all mechanics.
+function releasePadTriggers(){
+ if(padState.ownedFire){fireHeld=false;padState.ownedFire=false;}
+ if(padState.ownedAlt){altHeld=false;padState.ownedAlt=false;}
+ secondaryPending=false;
+}
+function releaseController(){
+ releasePadTriggers();padState.active=false;padState.moveX=0;padState.moveY=0;
+ padState.sprint=false;padState.crouch=false;padState.hasAim=false;
+ padState.menuIndex=-1;padState.menuFireGuard=false;
+}
+function gamepadMenuRoot(){
+ const lobby=document.getElementById('netLobby');
+ return !lobby.classList.contains('hidden')?lobby:ui.screen.classList.contains('hidden')?null:ui.screen;
+}
+function gamepadMenuButtons(){
+ const root=gamepadMenuRoot();if(!root)return [];
+ return [...root.querySelectorAll('button:not([disabled]),a[href],input:not([disabled]),[role="button"][tabindex]')]
+  .filter(el=>!el.hidden&&!el.closest('[hidden]')&&el.getClientRects().length>0);
+}
+function gamepadMenuFocus(dir){
+ const controls=gamepadMenuButtons();if(!controls.length)return;
+ const current=controls.indexOf(document.activeElement),i=current<0?(dir>0?-1:0):current;
+ const next=controls[((i+dir)%controls.length+controls.length)%controls.length];
+ next.focus({preventScroll:true});next.scrollIntoView?.({block:'nearest',inline:'nearest'});
+ padState.menuIndex=controls.indexOf(next);
+}
+function gamepadMenuActivate(){
+ const controls=gamepadMenuButtons();
+ if(!controls.length){if(net.mode==='solo'&&(!started||ended||paused))begin();return;}
+ let active=controls.includes(document.activeElement)?document.activeElement:null;
+ if(!active){active=net.phase==='off'&&!started&&controls.includes(ui.start)?ui.start:controls[0];active.focus({preventScroll:true});}
+ active.click();
+}
+function gamepadMenuBack(){
+ if(shopOpen&&treePopupOpen){treePopupOpen=false;updateTreeDetailPanel();return;}
+ if(!document.getElementById('netLobby').classList.contains('hidden')){netShowLobby(false);return;}
+ if(shopOpen){if(shopMode==='field'||roundBreak.kind)closeFieldShop();else if(net.mode==='solo')begin();return;}
+ if(started&&!ended&&paused&&net.mode==='solo')begin();
+}
+function cyclePadSecondary(direction=1){
+ const choices=['aim','grenade','power'].filter(id=>id==='aim'||player.modules[id]);
+ const index=choices.indexOf(player.secondary);
+ selectSecondary(choices[(index+direction+choices.length)%choices.length]);
+}
+function updateGamepadStatus(connected,id){
+ const el=document.getElementById('gamepadStatus');if(!el)return;
+ const kind=/dualsense|dualshock|playstation|wireless controller/i.test(id)?'PLAYSTATION':/xbox|xinput/i.test(id)?'XBOX':'GAMEPAD';
+ const label=connected?'🎮 '+kind+' CONNECTED':'';
+ if(label!==padState.lastStatus){el.textContent=label;el.hidden=!connected;padState.lastStatus=label;}
+}
+function pollController(){
+ const p=window.StrikeVectorPad?.poll();
+ if(!p?.connected){
+  if(padState.active||padState.ownedFire||padState.ownedAlt)releaseController();
+  updateGamepadStatus(false,'');return;
+ }
+ updateGamepadStatus(true,p.id);
+ if(p.active||p.pressed.length)padState.active=true;
+ if(!padState.active)return;
+ padState.moveX=p.move.x;padState.moveY=p.move.y;
+ if(p.aimActive){
+  const n=Math.hypot(p.aim.x,p.aim.y)||1;
+  padState.aimX=p.aim.x/n;padState.aimY=p.aim.y/n;padState.hasAim=true;
+ }
+ padState.sprint=!!(p.buttons[4]||p.buttons[10]);
+ const pressed=i=>p.pressed.includes(i);
+ if(gamepadMenuRoot()||roundBreak.kind){
+  releasePadTriggers();
+  if(p.buttons[7])padState.menuFireGuard=true;
+  else padState.menuFireGuard=false;
+  const down=p.buttons[13]||p.buttons[15]||p.move.y>.65;
+  const up=p.buttons[12]||p.buttons[14]||p.move.y<-.65;
+  const dir=(down?1:0)-(up?1:0);
+  const now=performance.now();
+  if(dir&&(pressed(12)||pressed(13)||pressed(14)||pressed(15)||now-(padState.lastMenuAt||0)>235)){
+   gamepadMenuFocus(dir);padState.lastMenuAt=now;
+  }
+  if(pressed(1)){gamepadMenuBack();return;}
+  if(pressed(9)){
+   if(!started&&net.mode==='solo')begin();
+   else gamepadMenuBack();
+   return;
+  }
+  if(pressed(0)||pressed(7))gamepadMenuActivate();
+  return;
+ }
+ if(!started||paused||ended||shopOpen||!document.getElementById('netLobby').classList.contains('hidden')){
+  releasePadTriggers();return;
+ }
+ if(pressed(9)){
+  releasePadTriggers();padState.menuFireGuard=true;
+  if(net.phase==='match')netShowLobby(true);
+  else{paused=true;keys.clear();showScreen('pause');}
+  return;
+ }
+ if(pressed(8)){
+  releasePadTriggers();padState.menuFireGuard=true;toggleTabShop();return;
+ }
+ // A/Cross slide; B/Circle melee; X/Square reload; Y/Triangle swap weapon.
+ // LB/L3 sprint, RB cycle alternate, R3/D-down toggle crouch, D-up fire mode.
+ if(pressed(0))startSlide();
+ if(pressed(1))quickMelee();
+ if(pressed(2))reload();
+ if(pressed(3))switchWeapon(player.weapon===0?2:0);
+ if(pressed(5)||pressed(15))cyclePadSecondary(1);
+ if(pressed(14))cyclePadSecondary(-1);
+ if(pressed(12))cycleFireMode();
+ if(pressed(11)||pressed(13))padState.crouch=!padState.crouch;
+ // LT arms alternate shot; RT attacks. Trigger edges preserve semi/burst
+ // clicking behavior, and LT+RT sends precisely one secondary shot.
+ if(p.buttons[6]){
+  if(!padState.ownedAlt){
+   padState.ownedAlt=true;altHeld=true;altStart=clock;
+   if(padState.ownedFire){secondaryPending=true;player.burstShots=0;player.triggerQueue=0;}
+  }
+ }else if(padState.ownedAlt){padState.ownedAlt=false;altHeld=false;secondaryPending=false;}
+ if(!p.buttons[7])padState.menuFireGuard=false;
+ if(p.buttons[7]&&!padState.menuFireGuard){
+  if(!padState.ownedFire){
+   padState.ownedFire=true;fireHeld=true;
+   if(altHeld)secondaryPending=true;
+   else pressPrimaryTrigger();
+  }
+  if(altHeld&&secondaryPending&&shoot())secondaryPending=false;
+ }else if(padState.ownedFire){padState.ownedFire=false;fireHeld=false;secondaryPending=false;}
+}
+window.addEventListener('gamepaddisconnected',()=>{releaseController();updateGamepadStatus(false,'')});
+window.addEventListener('blur',releaseController);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)releaseController()});
+
 window.addEventListener('keydown',e=>{const c=e.code;
  if((e.target instanceof HTMLInputElement)||(e.target instanceof HTMLTextAreaElement))return;
  if(c==='Escape'&&!audioSettings.hidden){e.preventDefault();setAudioPanel(false);return;}
