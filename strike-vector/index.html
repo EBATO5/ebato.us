@@ -3301,7 +3301,13 @@ function drawPuckTracker(){
  ctx.restore();
 }
 function reticle(){
- if(!mouse.active)return;const x=mouse.x,y=mouse.y,crouch=isCrouching(),running=keys.has('ShiftLeft')||keys.has('ShiftRight');
+ const padAim=padState.active&&padState.hasAim;
+ if(!mouse.active&&!padAim)return;
+ // Keep the controller sight near the character and on screen; the actual
+ // ballistic aimWorld is still independent of this display-only reticle.
+ const x=padAim?clamp(player.x-cam.x+padState.aimX*165,17,sw-17):mouse.x;
+ const y=padAim?clamp(player.y-cam.y+padState.aimY*165,17,sh-17):mouse.y;
+ const crouch=isCrouching(),running=keys.has('ShiftLeft')||keys.has('ShiftRight')||padState.active&&padState.sprint;
  const r=player.weapon===2?13:(altHeld&&player.secondary==='aim'?7:crouch?10:running?21:15)+(altHeld&&player.secondary==='aim'?0:Math.max(0,projectileCount()-1)*1.25);
  ctx.save();ctx.translate(x,y);ctx.strokeStyle=player.weapon===0&&altHeld&&player.secondary!=='aim'?'#ffd193':'#a1ffe2';ctx.lineWidth=1.6;ctx.beginPath();ctx.arc(0,0,r,0,TAU);ctx.stroke();ctx.beginPath();ctx.moveTo(-r-10,0);ctx.lineTo(-r+3,0);ctx.moveTo(r-3,0);ctx.lineTo(r+10,0);ctx.moveTo(0,-r-10);ctx.lineTo(0,-r+3);ctx.moveTo(0,r-3);ctx.lineTo(0,r+10);ctx.stroke();ctx.fillStyle=ctx.strokeStyle;ctx.fillRect(-1,-1,2,2);ctx.restore();
 }
