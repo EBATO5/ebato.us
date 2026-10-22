@@ -1807,7 +1807,11 @@ function refreshTouchUI(){
 }
 function releaseTouchControls(){
  touchState.moveId=null;touchState.aimId=null;touchState.move.x=0;touchState.move.y=0;touchState.activeAim=false;touchState.activeFire=false;touchState.sprint=false;touchState.crouch=false;touchState.alt=false;
- fireHeld=false;altHeld=false;secondaryPending=false;
+ // Touch controls may disappear because a Bluetooth controller took over.
+ // Never cancel the gamepad's physical trigger while clearing touch pointers.
+ if(!padState.ownedFire)fireHeld=false;
+ if(!padState.ownedAlt)altHeld=false;
+ if(!padState.ownedFire&&!padState.ownedAlt)secondaryPending=false;
  for(const el of touchUI.querySelectorAll('.touch-thumb'))el.style.transform='translate(0px,0px)';
  for(const el of touchUI.querySelectorAll('.touch-actions button'))el.classList.remove('is-active');
 }
